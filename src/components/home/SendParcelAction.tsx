@@ -37,7 +37,7 @@ export function SendParcelAction({
       onClick={handleStart}
       disabled={loading}
       className={cn(
-        "group flex min-h-14 w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200 active:scale-[0.99] disabled:opacity-90",
+        "group touch-manipulation flex min-h-[56px] w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left transition-all duration-200 active:scale-[0.985] disabled:opacity-90",
         "bg-primary text-white shadow-[0_4px_16px_rgb(13_148_136/0.28)]",
         className
       )}

@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function HeroIllustration() {
   return (
-    <div className="relative mx-auto w-full max-w-[300px]" aria-hidden>
+    <div className="relative mx-auto w-full max-w-[320px]" aria-hidden>
       <Image
         src="/image.png"
         alt=""
@@ -10,7 +10,7 @@ export function HeroIllustration() {
         height={1024}
         priority
         unoptimized
-        className="relative h-auto w-full object-contain"
+        className="relative h-auto max-h-[260px] w-full object-contain"
       />
     </div>
   );

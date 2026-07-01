@@ -18,7 +18,7 @@ export function AppShell({
   return (
     <div
       className={cn(
-        "mx-auto flex min-h-dvh w-full max-w-md flex-col md:max-w-2xl lg:max-w-4xl",
+        "mx-auto flex min-h-dvh w-full max-w-[430px] flex-col",
         variant === "hero" ? "mesh-hero" : "bg-background",
         shellClassName
       )}
