@@ -12,7 +12,7 @@ import { TrackWizardSteps } from "@/components/track/TrackWizardSteps";
 import { AppShell } from "@/components/ui/AppShell";
 import { ScrollMoreHint } from "@/components/ui/ScrollMoreHint";
 import { formatItemLabel } from "@/lib/bookingItems";
-import { lookupParcelAsync, lookupParcelByTokenAsync } from "@/lib/tracking";
+import { lookupParcelAsync, resolveStationCoords } from "@/lib/tracking";
 import type { TrackedParcel } from "@/types/parcel";
 
 function TrackCollectContent() {

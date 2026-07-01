@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -11,7 +12,6 @@ import {
   MapPin,
   Navigation,
 } from "lucide-react";
-import { CollectionStationMap } from "@/components/track/CollectionStationMap";
 import { PenaltyNotice } from "@/components/track/PenaltyNotice";
 import { TrackNotFound } from "@/components/track/TrackNotFound";
 import { TrackWizardSteps } from "@/components/track/TrackWizardSteps";
@@ -19,6 +19,15 @@ import { stationDirectionsUrl } from "@/lib/maps";
 import { OPERATOR_ACCENT } from "@/lib/operators";
 import { lookupParcelAsync, resolveStationCoords } from "@/lib/tracking";
 import type { TrackedParcel } from "@/types/parcel";
+
+const CollectionStationMap = dynamic(
+  () =>
+    import("@/components/track/CollectionStationMap").then((m) => m.CollectionStationMap),
+  {
+    ssr: false,
+    loading: () => <div className="h-full min-h-[320px] flex-1 animate-pulse bg-muted/20" />,
+  }
+);
 
 const SHEET_HEIGHT = 280;
 

@@ -1,6 +1,7 @@
 import type { PreBooking } from "@/types/parcel";
 import { normalizePreBooking } from "@/lib/bookingItems";
-import { createBookingApi, getBookingApi, type CreateBookingPayload } from "@/lib/api";
+import { createBookingApi, getBookingApi } from "@/lib/api";
+import type { CreateBookingPayload } from "@/lib/api-types";
 import { getStationById } from "@/lib/stations";
 import type { Operator } from "@/types/parcel";
 
