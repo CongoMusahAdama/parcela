@@ -1,0 +1,226 @@
+@import "tailwindcss";
+@import "sweetalert2/dist/sweetalert2.min.css";
+
+@theme {
+  --color-primary: #0d9488;
+  --color-primary-dark: #0f766e;
+  --color-primary-light: #14b8a6;
+  --color-accent: #f59e0b;
+  --color-accent-dark: #d97706;
+  --color-surface: #ffffff;
+  --color-background: #f4f7fb;
+  --color-foreground: #0f172a;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+  --color-success: #16a34a;
+  --color-danger: #dc2626;
+
+  --font-display: var(--font-syne), ui-sans-serif, sans-serif;
+  --font-body: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --shadow-soft: 0 4px 24px -4px rgb(15 23 42 / 0.08);
+  --shadow-card: 0 8px 32px -8px rgb(15 23 42 / 0.12);
+  --shadow-elevated: 0 16px 48px -12px rgb(13 148 136 / 0.25);
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .parcela-map-marker {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  body {
+    @apply bg-background font-body text-foreground antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display font-bold tracking-tight;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply font-body;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .mesh-hero {
+    background-color: #f4f7fb;
+    background-image:
+      radial-gradient(at 0% 0%, rgb(13 148 136 / 0.18) 0, transparent 50%),
+      radial-gradient(at 100% 0%, rgb(245 158 11 / 0.14) 0, transparent 45%),
+      radial-gradient(at 50% 100%, rgb(13 148 136 / 0.08) 0, transparent 55%);
+  }
+
+  .glass {
+    @apply border border-white/60 bg-white/80 backdrop-blur-md;
+  }
+
+  .receipt-card {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  .brand-wordmark {
+    font-family: var(--font-display);
+  }
+
+  .splash-logo-spin {
+    animation: splash-logo-spin 1.6s cubic-bezier(0.45, 0.05, 0.25, 1) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .splash-logo-spin {
+      animation: splash-logo-pulse 1.6s ease-in-out infinite;
+    }
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.5s ease-out forwards;
+  }
+
+  .animate-fade-up-delay-1 {
+    animation: fade-up 0.5s ease-out 0.08s forwards;
+  }
+
+  .animate-fade-up-delay-2 {
+    animation: fade-up 0.5s ease-out 0.16s forwards;
+  }
+
+  .animate-fade-up-delay-3 {
+    animation: fade-up 0.5s ease-out 0.24s forwards;
+  }
+
+  .animate-fade-up-delay-4 {
+    animation: fade-up 0.5s ease-out 0.38s forwards;
+  }
+
+  .animate-fade-up-delay-5 {
+    animation: fade-up 0.5s ease-out 0.52s forwards;
+  }
+
+  .animate-fade-up-delay-6 {
+    animation: fade-up 0.5s ease-out 0.66s forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-up,
+    .animate-fade-up-delay-1,
+    .animate-fade-up-delay-2,
+    .animate-fade-up-delay-3,
+    .animate-fade-up-delay-4,
+    .animate-fade-up-delay-5,
+    .animate-fade-up-delay-6 {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes splash-logo-spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.06);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes splash-logo-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.88;
+    transform: scale(1.04);
+  }
+}
+
+/* SweetAlert2 — Parcela theme */
+.parcela-swal-popup {
+  font-family: var(--font-body) !important;
+  border-radius: 1rem !important;
+  padding: 1.75rem 1.5rem 1.5rem !important;
+  box-shadow: var(--shadow-elevated) !important;
+}
+
+.parcela-swal-title {
+  font-family: var(--font-display) !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  color: var(--color-foreground) !important;
+}
+
+.parcela-swal-text {
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  color: var(--color-muted) !important;
+}
+
+.parcela-swal-confirm {
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  font-size: 0.875rem !important;
+  border-radius: 0.75rem !important;
+  padding: 0.65rem 1.5rem !important;
+  box-shadow: none !important;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #booking-receipt,
+  #booking-receipt * {
+    visibility: visible !important;
+  }
+
+  #booking-receipt {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  footer,
+  header,
+  .no-print {
+    display: none !important;
+  }
+}

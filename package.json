@@ -1,0 +1,40 @@
+{
+  "name": "parcela",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "dev:fresh": "npx --yes kill-port 3001 && rm -rf .next && next dev -p 3001",
+    "api": "cd backend && npm run start:dev",
+    "api:build": "cd backend && npm run build",
+    "seed": "cd backend && npm run seed",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "mobile": "cd mobile && npm start"
+  },
+  "dependencies": {
+    "html-to-image": "^1.11.13",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.22.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-leaflet": "^5.0.0",
+    "react-leaflet-cluster": "^4.1.3",
+    "sweetalert2": "^11.26.25"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^15.1.0",
+    "sharp": "^0.35.2",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
