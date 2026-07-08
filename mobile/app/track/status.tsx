@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useRef, useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Button } from "@/components/ui/Button";
@@ -10,6 +10,7 @@ import { ScreenIllustration } from "@/components/ui/ScreenIllustration";
 import { ParcelStatusTimeline } from "@/components/track/ParcelStatusTimeline";
 import { PenaltyNotice } from "@/components/track/PenaltyNotice";
 import { lookupParcel, resolveStationCoords, TRACK_STATUS_LABELS } from "@/lib/tracking";
+import { getTrackStatusStepLabel, goBackOrTrackHome } from "@/lib/track-navigation";
 import { formatExpectedArrival } from "@/lib/tracking-shared";
 import { formatItemLabel } from "@/lib/bookingItems";
 import { useSweetAlert } from "@/lib/sweetalert";
@@ -53,20 +54,31 @@ export default function TrackStatusScreen() {
   const [parcel, setParcel] = useState<TrackedParcel | null | undefined>(undefined);
   const shownNotFound = useRef(false);
 
-  useEffect(() => {
-    if (!code) return;
-    lookupParcel(code).then((result) => {
-      setParcel(result);
-      if (!result && !shownNotFound.current) {
-        shownNotFound.current = true;
-        sweetAlert.error({
-          title: "Parcel not found",
-          text: "Check the pickup code and try again.",
-          confirmText: "Try again",
-        });
-      }
-    });
-  }, [code, sweetAlert]);
+  const loadParcel = useCallback(
+    (refresh = false) => {
+      if (!code) return;
+      void lookupParcel(code, { refresh }).then((result) => {
+        setParcel(result);
+        if (!result && !shownNotFound.current) {
+          shownNotFound.current = true;
+          sweetAlert.error({
+            title: "Parcel not found",
+            text: "Check the pickup code and try again.",
+            confirmText: "Try again",
+          });
+        }
+      });
+    },
+    [code, sweetAlert],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      loadParcel(true);
+      const interval = setInterval(() => loadParcel(true), 30_000);
+      return () => clearInterval(interval);
+    }, [loadParcel]),
+  );
 
   if (parcel === undefined) {
     return (
@@ -92,6 +104,7 @@ export default function TrackStatusScreen() {
   }
 
   const canCollect = parcel.status === "ready_for_collection" || parcel.status === "arrived";
+  const isCollected = parcel.status === "collected";
   const coords = resolveStationCoords(parcel);
 
   return (
@@ -106,6 +119,8 @@ export default function TrackStatusScreen() {
               router.push({ pathname: "/track/collect", params: { code: parcel.pickupCode } })
             }
           />
+        ) : isCollected ? (
+          <Button label="Track another parcel" onPress={() => router.replace("/track")} />
         ) : coords ? (
           <Button
             label="Find station on map"
@@ -117,7 +132,7 @@ export default function TrackStatusScreen() {
       }
     >
       <View style={styles.fixedHeader}>
-        <Pressable onPress={() => router.back()} style={styles.back}>
+        <Pressable onPress={() => goBackOrTrackHome(router)} style={styles.back}>
           <Ionicons name="arrow-back" size={20} color={colors.primary} />
           <Text style={styles.backText}>Back</Text>
         </Pressable>
@@ -126,15 +141,19 @@ export default function TrackStatusScreen() {
 
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
-            <Text style={styles.step}>Step 2 of 4</Text>
-            <Text style={styles.title}>Parcel status</Text>
+            <Text style={[styles.step, isCollected && styles.stepComplete]}>
+              {getTrackStatusStepLabel(parcel.status)}
+            </Text>
+            <Text style={styles.title}>
+              {isCollected ? "Parcel collected" : "Parcel status"}
+            </Text>
           </View>
           <View style={styles.codeBlock}>
             <Text style={styles.code}>{parcel.pickupCode}</Text>
             <Text
               style={[
                 styles.statusBadge,
-                parcel.status === "ready_for_collection" && styles.statusSuccess,
+                (parcel.status === "ready_for_collection" || isCollected) && styles.statusSuccess,
               ]}
             >
               {TRACK_STATUS_LABELS[parcel.status]}
@@ -152,7 +171,7 @@ export default function TrackStatusScreen() {
           </Text>
         </View>
 
-        {coords ? (
+        {!isCollected && coords ? (
           <Pressable
             onPress={() =>
               router.push({ pathname: "/track/station", params: { code: parcel.pickupCode } })
@@ -211,7 +230,7 @@ export default function TrackStatusScreen() {
               Expected arrival {formatExpectedArrival(parcel.expectedArrival)}
             </Text>
           ) : null}
-          <Text style={styles.collectLabel}>Collect at</Text>
+          <Text style={styles.collectLabel}>{isCollected ? "Collected at" : "Collect at"}</Text>
           <Text style={styles.collectName}>{parcel.destinationStationName}</Text>
           <Text style={styles.collectAddr}>{parcel.destinationStationAddress}</Text>
           <Text style={styles.collectHours}>{parcel.destinationStationHours}</Text>
@@ -241,6 +260,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginTop: 4 },
   headerText: { flex: 1 },
   step: { fontFamily: fonts.display, fontSize: 9, fontWeight: "700", color: colors.primary, textTransform: "uppercase" },
+  stepComplete: { color: colors.success },
   title: { fontFamily: fonts.display, fontSize: 18, fontWeight: "700", color: colors.foreground, marginTop: 2 },
   subtitle: { fontSize: 14, color: colors.muted, marginTop: 8 },
   codeBlock: { alignItems: "flex-end" },

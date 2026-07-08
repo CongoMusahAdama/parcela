@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Onest, Syne } from "next/font/google";
-import { SplashGateProvider } from "@/components/brand/SplashGate";
-import { SplashScreen } from "@/components/brand/SplashScreen";
-import { MobileAppFrame } from "@/components/ui/MobileAppFrame";
+import { AppChrome } from "@/components/ui/AppChrome";
 import "./globals.css";
 
 const syne = Syne({
@@ -58,16 +56,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${syne.variable} ${onest.variable} ${jetbrainsMono.variable} min-h-dvh overflow-x-hidden antialiased`}
-      >
-        <MobileAppFrame>
-          <SplashGateProvider>
-            <SplashScreen />
-            {children}
-          </SplashGateProvider>
-        </MobileAppFrame>
+    <html
+      lang="en"
+      className={`${syne.variable} ${onest.variable} ${jetbrainsMono.variable}`}
+    >
+      <body className="min-h-dvh overflow-x-hidden font-body text-foreground antialiased">
+        <AppChrome>{children}</AppChrome>
       </body>
     </html>
   );

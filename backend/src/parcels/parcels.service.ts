@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -15,8 +16,9 @@ import {
 } from '../common/utils/codes.util';
 import { SmsService } from '../sms/sms.service';
 import { StationsService } from '../stations/stations.service';
+import { OperatorControlsService } from '../admin/operator-controls.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
-import { toPreBooking, toTrackedParcel } from './parcel.mapper';
+import { toPreBooking, toStaffParcelDetail, toStaffParcelSummary, toTrackedParcel } from './parcel.mapper';
 import { Parcel, ParcelDocument } from './schemas/parcel.schema';
 
 @Injectable()
@@ -28,6 +30,7 @@ export class ParcelsService {
     private readonly stationsService: StationsService,
     private readonly smsService: SmsService,
     private readonly config: ConfigService,
+    private readonly operatorControls: OperatorControlsService,
   ) {}
 
   private trackingUrl(token: string) {
@@ -51,6 +54,10 @@ export class ParcelsService {
   async createBooking(dto: CreateBookingDto) {
     const origin = await this.stationsService.findByStationId(dto.stationId);
     if (!origin) throw new NotFoundException('Origin station not found');
+
+    if (await this.operatorControls.isBookingsLocked(origin.operator)) {
+      throw new ForbiddenException('Bookings are temporarily locked for this operator');
+    }
 
     const destination = await this.stationsService.findByStationId(dto.destinationStationId);
     if (!destination) throw new NotFoundException('Destination station not found');
@@ -144,5 +151,168 @@ export class ParcelsService {
       .limit(100)
       .lean();
     return parcels;
+  }
+
+  async listByStation(stationId: string) {
+    const normalized = stationId.trim();
+    if (!normalized) throw new BadRequestException('stationId required');
+
+    const parcels = await this.parcelModel
+      .find({
+        $or: [{ originStationId: normalized }, { destinationStationId: normalized }],
+      })
+      .sort({ updatedAt: -1 })
+      .limit(200)
+      .lean();
+
+    return parcels.map((parcel) => toStaffParcelSummary(parcel, normalized));
+  }
+
+  async getBranchSummary(stationId: string) {
+    const parcels = await this.listByStation(stationId);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const counts = {
+      total: parcels.length,
+      pending_dropoff: 0,
+      in_transit: 0,
+      arrived: 0,
+      ready_for_collection: 0,
+      collected: 0,
+      outgoing: 0,
+      incoming: 0,
+      updatedToday: 0,
+    };
+
+    for (const parcel of parcels) {
+      if (parcel.status === 'pending_dropoff' && parcel.originStationId === stationId) {
+        counts.pending_dropoff++;
+      } else if (parcel.status === 'in_transit') counts.in_transit++;
+      else if (parcel.status === 'arrived' && parcel.destinationStationId === stationId) {
+        counts.arrived++;
+      } else if (
+        parcel.status === 'ready_for_collection' &&
+        parcel.destinationStationId === stationId
+      ) {
+        counts.ready_for_collection++;
+      } else if (parcel.status === 'collected') counts.collected++;
+
+      if (parcel.direction === 'outgoing') counts.outgoing++;
+      if (parcel.direction === 'incoming') counts.incoming++;
+      if (new Date(parcel.updatedAt) >= todayStart) counts.updatedToday++;
+    }
+
+    return {
+      stationId,
+      counts,
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  async getStaffParcelByReference(reference: string, stationId: string) {
+    const parcel = await this.parcelModel.findOne({
+      bookingReference: reference.trim().toUpperCase(),
+    });
+    if (!parcel) throw new NotFoundException('Parcel not found');
+
+    const belongsToStation =
+      parcel.originStationId === stationId || parcel.destinationStationId === stationId;
+    if (!belongsToStation) {
+      throw new ForbiddenException('Parcel is not linked to your station');
+    }
+
+    return toStaffParcelDetail(parcel.toObject(), stationId);
+  }
+
+  async verifyAndLogParcel(
+    reference: string,
+    stationId: string,
+    input: { busNumber: string; driverName?: string; driverPhone: string },
+  ) {
+    const parcel = await this.parcelModel.findOne({
+      bookingReference: reference.trim().toUpperCase(),
+    });
+    if (!parcel) throw new NotFoundException('Parcel not found');
+
+    if (parcel.originStationId !== stationId) {
+      throw new ForbiddenException('Only origin station staff can verify and log parcels');
+    }
+    if (parcel.status !== 'pending_dropoff') {
+      throw new BadRequestException('Parcel is not awaiting drop-off');
+    }
+
+    parcel.status = 'in_transit';
+    parcel.busNumber = input.busNumber.trim().toUpperCase();
+    parcel.driverName = input.driverName?.trim() || undefined;
+    parcel.driverPhone = input.driverPhone.replace(/\s/g, '').trim();
+    await parcel.save();
+
+    return toStaffParcelDetail(parcel.toObject(), stationId);
+  }
+
+  async confirmBusArrival(stationId: string, busNumber: string) {
+    const normalizedBus = busNumber.trim().toUpperCase();
+    const parcels = await this.parcelModel.find({
+      destinationStationId: stationId,
+      busNumber: normalizedBus,
+      status: 'in_transit',
+    });
+
+    if (parcels.length === 0) {
+      throw new NotFoundException('No in-transit parcels found for this bus at your station');
+    }
+
+    const now = new Date();
+    const updated: string[] = [];
+    const smsResults: Array<{ bookingReference: string; sent: boolean }> = [];
+
+    for (const parcel of parcels) {
+      parcel.status = 'ready_for_collection';
+      parcel.arrivedAt = now;
+      await parcel.save();
+      updated.push(parcel.bookingReference);
+
+      const trackingUrl = this.trackingUrl(parcel.trackingToken);
+      const sent = await this.smsService.sendArrivalNotification({
+        recipientPhone: parcel.recipientPhone,
+        recipientName: parcel.recipientName,
+        pickupCode: parcel.pickupCode,
+        stationName: parcel.destinationStationName,
+        trackingUrl,
+      });
+      smsResults.push({ bookingReference: parcel.bookingReference, sent });
+    }
+
+    return {
+      busNumber: normalizedBus,
+      parcelCount: updated.length,
+      bookingReferences: updated,
+      sms: smsResults,
+    };
+  }
+
+  async releaseParcel(reference: string, stationId: string, pickupCode: string) {
+    const parcel = await this.parcelModel.findOne({
+      bookingReference: reference.trim().toUpperCase(),
+    });
+    if (!parcel) throw new NotFoundException('Parcel not found');
+
+    if (parcel.destinationStationId !== stationId) {
+      throw new ForbiddenException('Only destination station staff can release parcels');
+    }
+    if (parcel.status !== 'ready_for_collection') {
+      throw new BadRequestException('Parcel is not ready for collection');
+    }
+
+    const normalizedCode = pickupCode.trim().toUpperCase();
+    if (parcel.pickupCode.toUpperCase() !== normalizedCode) {
+      throw new BadRequestException('Pickup code does not match');
+    }
+
+    parcel.status = 'collected';
+    await parcel.save();
+
+    return toStaffParcelDetail(parcel.toObject(), stationId);
   }
 }

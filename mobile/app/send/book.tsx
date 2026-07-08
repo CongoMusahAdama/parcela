@@ -13,6 +13,7 @@ import { formatItemLabel } from "@/lib/bookingItems";
 import {
   ensureStationsLoaded,
   getStationById,
+  didLoadStationsFromApi,
   resolveStationById,
   sortStationsAlphabetically,
 } from "@/lib/stations";
@@ -128,6 +129,15 @@ export default function SendBookScreen() {
     setSubmitting(true);
     setErrors({});
     try {
+      await ensureStationsLoaded();
+      if (!didLoadStationsFromApi()) {
+        setErrors({
+          submit:
+            "Cannot reach the Parcela server from this device. Staff will not see bookings until the API is reachable. Use the same Wi‑Fi as your computer and allow port 3002 through Windows Firewall.",
+        });
+        return;
+      }
+
       const booking = await submitBooking({
         stationId: origin.id,
         destinationStationId: destStation.id,

@@ -3,7 +3,7 @@
 **Product:** Bus Parcel Management Platform  
 **Approach:** Mobile-first web application  
 **Public theme:** Neutral (Teal `#0D9488` + Amber `#F59E0B` accent)  
-**Last updated:** June 30, 2026
+**Last updated:** July 7, 2026
 
 ---
 
@@ -12,7 +12,7 @@
 - Work through phases in order unless a task has no blockers.
 - Update **Status** as work progresses: `Not Started` → `In Progress` → `Done` → `Blocked`
 - Check off sub-tasks with `[x]` when complete.
-- Staff and Bus Manager work starts after Sender + Recipient foundations are in place.
+- Staff, Branch Lead, and HQ Admin work builds on Sender + Recipient + shared API.
 
 **Status legend:** `⬜ Not Started` · `🔄 In Progress` · `✅ Done` · `🚫 Blocked`
 
@@ -37,21 +37,29 @@ flowchart LR
         ST3[Mark arrived · release on pickup code]
     end
 
-    subgraph MGR["Bus Manager — login · operator theme"]
-        M1[Setup stations, buses, staff]
-        M2[Monitor network & reports]
+    subgraph LEAD["Branch Lead — login · operator theme · mobile + desk"]
+        L1[Manage branch staff accounts]
+        L2[Branch analytics & reports]
+    end
+
+    subgraph ADM["HQ Super Admin — login · operator-wide · desk-first"]
+        A1[Manage branches & branch leads]
+        A2[Operator-wide analytics & roles]
     end
 
     S1 -->|booking ref| ST1
     ST1 --> ST2
     ST2 -->|in transit| ST3
     ST3 -->|SMS + pickup code| R1
-    M1 -.->|configures| STAFF
-    M2 -.->|oversees| STAFF
+    L1 -.->|creates staff for one branch| STAFF
+    L2 -.->|reads| STAFF
+    A1 -.->|provisions| LEAD
+    A2 -.->|oversees| LEAD
 
     style PUBLIC fill:#e6f7f5,stroke:#0D9488
     style STAFF fill:#fff7ed,stroke:#F59E0B
-    style MGR fill:#f1f5f9,stroke:#64748B
+    style LEAD fill:#ede9fe,stroke:#7c3aed
+    style ADM fill:#f1f5f9,stroke:#64748B
 ```
 
 ---
@@ -166,7 +174,88 @@ flowchart TD
 
 ---
 
-### 5. Bus Manager flow → screens & tasks
+### 5. Branch Lead flow → screens & tasks
+
+```mermaid
+flowchart TD
+    A([Branch lead login<br/>phone + PIN]) --> B[Branch overview<br/>BL-UI-01/02]
+    B --> C{Today's focus}
+
+    C -->|People| D[Team list — active staff<br/>BL-UI-03]
+    D --> E[Add staff — name, phone, PIN<br/>BL-UI-04 · BL-FN-03]
+    E --> F[SMS invite to new staff<br/>BL-FN-04 · X-05]
+    D --> G[Disable staff who left<br/>BL-FN-05]
+
+    C -->|Numbers| H[Branch analytics<br/>BL-UI-05 · BL-FN-06]
+    H --> I[Pending · in transit · ready · collected<br/>BL-UI-06]
+
+    C -->|Records| J[Branch reports<br/>BL-UI-07 · BL-FN-07]
+    J --> K[Export PDF / Excel<br/>BL-FN-08]
+
+    C -->|Floor help| L[Open counter staff screens<br/>BL-FN-09]
+
+    style A fill:#7c3aed,color:#fff
+    style B fill:#F59E0B,color:#fff
+    style E fill:#0D9488,color:#fff
+```
+
+| Area | Task IDs |
+| ---- | -------- |
+| Login | BL-UI-01, BL-FN-01, BL-FN-02 |
+| Overview | BL-UI-02, BL-FN-06 |
+| Team management | BL-UI-03, BL-UI-04, BL-FN-03–05 |
+| Analytics | BL-UI-05, BL-UI-06, BL-FN-06 |
+| Reports | BL-UI-07, BL-FN-07, BL-FN-08 |
+| Mobile + desk | BL-UI-08, BL-FN-10 |
+| Optional counter access | BL-FN-09 |
+
+**Scope rule:** Branch lead sees **one station only** (e.g. Berekum). Accra HQ does not manage daily staff here.
+
+---
+
+### 6. HQ Super Admin flow → screens & tasks
+
+```mermaid
+flowchart TD
+    A([HQ admin login]) --> B[Operator network overview<br/>ADM-UI-01/02]
+    B --> C{Manage network}
+
+    C -->|Branches| D[All stations list<br/>ADM-UI-03 · ADM-FN-03]
+    D --> E[Assign / create branch lead<br/>ADM-UI-04 · ADM-FN-04]
+
+    C -->|People| F[All leads & roles<br/>ADM-UI-05 · ADM-FN-05]
+    F --> G[Deactivate lead or override staff<br/>ADM-FN-06]
+
+    C -->|Oversight| H[Operator-wide analytics<br/>ADM-UI-06 · ADM-FN-07]
+    H --> I[Cross-branch reports & export<br/>ADM-UI-07 · ADM-FN-08]
+
+    C -->|Platform| J[Parcela super-admin tools<br/>ADM-UI-08 · ADM-FN-09]
+
+    E --> K([Branch lead runs local team])
+    K --> L([Counter staff operate parcels])
+
+    style A fill:#64748B,color:#fff
+    style B fill:#F59E0B,color:#fff
+    style K fill:#ede9fe,stroke:#7c3aed
+```
+
+| Area | Task IDs |
+| ---- | -------- |
+| Login & roles | ADM-UI-01, ADM-FN-01, ADM-FN-02 |
+| Network overview | ADM-UI-02, ADM-FN-07 |
+| Branches | ADM-UI-03, ADM-FN-03 |
+| Branch leads | ADM-UI-04, ADM-FN-04 |
+| Role management | ADM-UI-05, ADM-FN-05, ADM-FN-06 |
+| Analytics & reports | ADM-UI-06, ADM-UI-07, ADM-FN-08 |
+| Parcela platform admin | ADM-UI-08, ADM-FN-09 |
+
+**Build order:** Branch Lead portal first · HQ Super Admin after branch lead is proven in the field.
+
+---
+
+### 7. Bus Manager flow → screens & tasks _(legacy — superseded by Branch Lead + HQ Admin)_
+
+> **Note:** Original “Bus Manager” scope is split into **Phase 4 (Branch Lead)** and **Phase 5 (HQ Super Admin)**. Keep `BM-*` IDs for reference only; new work uses `BL-*` and `ADM-*`.
 
 ```mermaid
 flowchart TD
@@ -206,7 +295,7 @@ flowchart TD
 
 ---
 
-### 6. Parcel status lifecycle
+### 8. Parcel status lifecycle
 
 ```mermaid
 stateDiagram-v2
@@ -235,25 +324,38 @@ stateDiagram-v2
 
 ---
 
-### 7. Implementation roadmap (what to build, in order)
+### 9. Implementation roadmap (what to build, in order)
 
 ```mermaid
 flowchart TD
     P0[Phase 0 — Foundation<br/>P0-01 to P0-07] --> P1[Phase 1 — Sender<br/>S-UI & S-FN]
     P1 --> P2[Phase 2 — Recipient<br/>R-UI & R-FN]
-    P2 --> X[Phase 5 — Shared core<br/>X-01 to X-09]
-    X --> P3[Phase 3 — Staff<br/>ST-UI & ST-FN]
-    P3 --> P4[Phase 4 — Bus Manager<br/>BM-UI & BM-FN]
-    P4 --> X2[Phase 5 — Polish<br/>X-10 to X-14, reports, subscription]
+    P2 --> X[Phase 6 — Shared core<br/>X-01 to X-09]
+    X --> P3[Phase 3 — Counter Staff<br/>ST-UI & ST-FN · web]
+    P3 --> P4[Phase 4 — Branch Lead<br/>BL-UI & BL-FN · mobile + desk]
+    P4 --> P5[Phase 5 — HQ Super Admin<br/>ADM-UI & ADM-FN]
+    P5 --> X2[Phase 6 — Polish<br/>X-10 to X-14, subscription]
 
     style P0 fill:#f1f5f9,stroke:#64748B
     style P1 fill:#0D9488,color:#fff
     style P2 fill:#0D9488,color:#fff
     style P3 fill:#F59E0B,color:#fff
-    style P4 fill:#64748B,color:#fff
+    style P4 fill:#7c3aed,color:#fff
+    style P5 fill:#64748B,color:#fff
 ```
 
-> **You are here:** Backend (NestJS + MongoDB + mNotify) — staff dashboard next
+> **You are here:** Counter staff portal wired to API · Branch Lead portal next · HQ Admin after that
+
+**Role model (Ghana-friendly):**
+
+| Role | Portal | Device | Scope |
+| ---- | ------ | ------ | ----- |
+| Counter staff | `/staff` | Web at terminal | One station · parcel operations |
+| Branch lead | `/lead` (proposed) | Mobile + desktop | One station · team + analytics + reports |
+| HQ super admin | `/admin` (proposed) | Desktop-first | Whole operator (VIP or STC) · all branches |
+| Parcela platform | internal | Desktop | Onboard operators, stations, first HQ user |
+
+**Account creation:** Branch lead creates counter staff for their branch. HQ admin creates branch leads and branches. Parcela onboards the operator initially (no extra public dashboards for VIP/STC at MVP).
 
 ---
 
@@ -267,7 +369,7 @@ flowchart TD
 | P0-04 | Set up database schema (core entities)                       | 🔄 In Progress | MongoDB + Mongoose in `backend/`                 |
 | P0-05 | Set up API layer / server actions                            | 🔄 In Progress | NestJS REST API (`backend/`)                     |
 | P0-06 | Configure environment variables and secrets                  | 🔄 In Progress | `.env.example` + `backend/.env.example`          |
-| P0-07 | Set up authentication (staff + manager only)                 | ⬜ Not Started | Public flows remain no-login                     |
+| P0-07 | Set up authentication (staff, lead, admin)     | 🔄 In Progress | Roles: `station_staff`, `station_lead`, `operator_admin` |
 
 ---
 
@@ -411,15 +513,114 @@ flowchart TD
 
 ---
 
-## Phase 4 — Bus Manager Dashboard
+## Phase 4 — Branch Lead Portal
 
-**Goal:** Bus manager oversees operations across stations, buses, staff activity, and reporting for their operator network.
+**Goal:** Branch lead manages **their station’s** counter staff, sees **branch-only** analytics and reports, on **phone and desktop**. No operator-wide admin UI.
+
+**Access:** Secure login (phone + PIN recommended) · `station_lead` role · single `stationId` + `operator`
+
+**Example:** VIP headquarters is in Accra, but the **Berekum branch lead** adds/removes Berekum counter staff — Accra HQ is not in that daily loop.
+
+> **Flow diagram:** See [Branch Lead flow → screens & tasks](#5-branch-lead-flow--screens--tasks) above.
+
+### 4.1 Design & UI
+
+| ID       | Task                                              | Status         | Notes                                      |
+| -------- | ------------------------------------------------- | -------------- | ------------------------------------------ |
+| BL-UI-01 | Branch lead login screen                          | ⬜ Not Started | Phone + PIN; operator theme                |
+| BL-UI-02 | Branch overview home                              | ⬜ Not Started | Today’s counts, quick actions              |
+| BL-UI-03 | Team list — active counter staff                  | ⬜ Not Started | Name, phone, status, last active           |
+| BL-UI-04 | Add staff form                                    | ⬜ Not Started | Name, phone, PIN; station auto-filled      |
+| BL-UI-05 | Branch analytics dashboard                        | ⬜ Not Started | Charts/cards: volume by status             |
+| BL-UI-06 | Metric cards — pending, in transit, ready, collected | ⬜ Not Started | Reuse staff report metrics, branch-scoped |
+| BL-UI-07 | Branch reports screen                             | ⬜ Not Started | Reuse station records UI, branch-scoped only |
+| BL-UI-08 | Responsive layout — mobile lead home + desk tables | ⬜ Not Started | Same routes; mobile-first summary          |
+
+### 4.2 Functionality
+
+| ID       | Task                                              | Status         | Notes                                       |
+| -------- | ------------------------------------------------- | -------------- | ------------------------------------------- |
+| BL-FN-01 | Branch lead authentication (phone + PIN / token)  | ⬜ Not Started | `station_lead` role in staff collection     |
+| BL-FN-02 | Restrict lead to own `stationId` + `operator`     | ⬜ Not Started | Cannot see other branches                   |
+| BL-FN-03 | Create counter staff account for own branch       | ⬜ Not Started | Role: `station_staff`                       |
+| BL-FN-04 | SMS invite / credentials to new staff (mNotify)   | ⬜ Not Started | Ghana onboarding pattern                    |
+| BL-FN-05 | Disable / re-enable staff at own branch           | ⬜ Not Started | Soft delete; audit who changed              |
+| BL-FN-06 | Branch analytics API — aggregates by status/date  | ⬜ Not Started | Same DB as sender/recipient/staff parcels   |
+| BL-FN-07 | Branch reports — filter parcels for one station   | ⬜ Not Started | Reuse `staff-reports` engine                |
+| BL-FN-08 | Export branch reports PDF / Excel                 | ⬜ Not Started | Lead-only exports                           |
+| BL-FN-09 | Optional: lead can open counter staff screens     | ⬜ Not Started | Same `/staff` UI when short-staffed         |
+| BL-FN-10 | Mobile-optimized API responses for lead summary   | ⬜ Not Started | Lightweight counts for phone                |
+
+### 4.3 Branch Lead acceptance criteria
+
+- [ ] Lead logs in and sees **only their branch** data
+- [ ] Lead can add a counter staff member (phone + PIN) for their station
+- [ ] New staff receives SMS with login instructions
+- [ ] Lead can disable staff who left the branch
+- [ ] Lead sees branch analytics (not other branches)
+- [ ] Lead can generate and export branch reports
+- [ ] UI works on **mobile and desktop**
+- [ ] Lead does **not** need a separate “HR system” — team + numbers + reports in one place
+
+---
+
+## Phase 5 — HQ Super Admin (Operator Admin)
+
+**Goal:** VIP or STC headquarters oversees **all branches** — create stations & branch leads, operator-wide analytics, role control. Built **after** Branch Lead portal is working.
+
+**Access:** Secure login · `operator_admin` role · scoped to one operator (VIP **or** STC, not both)
+
+> **Flow diagram:** See [HQ Super Admin flow → screens & tasks](#6-hq-super-admin-flow--screens--tasks) above.
+
+### 5.1 Design & UI
+
+| ID        | Task                                           | Status         | Notes                                |
+| --------- | ---------------------------------------------- | -------------- | ------------------------------------ |
+| ADM-UI-01 | HQ admin login screen                          | ⬜ Not Started | Desktop-first; operator branding     |
+| ADM-UI-02 | Operator network overview                      | ⬜ Not Started | All branches KPIs, alerts            |
+| ADM-UI-03 | Stations / branches list                       | ⬜ Not Started | Kaneshie, Berekum, Tema, etc.        |
+| ADM-UI-04 | Create / assign branch lead per station        | ⬜ Not Started | Name, phone, station picker          |
+| ADM-UI-05 | Roles directory — leads and staff (read/manage) | ⬜ Not Started | Filter by branch, role, active         |
+| ADM-UI-06 | Operator-wide analytics                        | ⬜ Not Started | Compare branches, trends             |
+| ADM-UI-07 | Cross-branch reports & export                  | ⬜ Not Started | HQ rollups for management            |
+| ADM-UI-08 | Parcela platform panel (internal)              | ⬜ Not Started | Onboard VIP/STC, seed stations       |
+
+### 5.2 Functionality
+
+| ID        | Task                                           | Status         | Notes                                |
+| --------- | ---------------------------------------------- | -------------- | ------------------------------------ |
+| ADM-FN-01 | HQ admin authentication & `operator_admin` role | ⬜ Not Started |                                     |
+| ADM-FN-02 | Restrict admin to one operator (VIP or STC)    | ⬜ Not Started |                                     |
+| ADM-FN-03 | View / manage stations for operator            | ⬜ Not Started | CRUD or activate/deactivate          |
+| ADM-FN-04 | Create & assign branch lead accounts           | ⬜ Not Started | Links lead → `stationId`             |
+| ADM-FN-05 | View all leads and staff across branches       | ⬜ Not Started | Read-focused; leads own daily staff  |
+| ADM-FN-06 | Deactivate branch lead or emergency staff lock | ⬜ Not Started | Audit trail                          |
+| ADM-FN-07 | Operator-wide analytics API                    | ⬜ Not Started | Sum/average across stations          |
+| ADM-FN-08 | Cross-branch report export                     | ⬜ Not Started | PDF / Excel                          |
+| ADM-FN-09 | Parcela super-admin: onboard operator + HQ user | ⬜ Not Started | Internal tooling; not customer-facing |
+
+### 5.3 HQ Super Admin acceptance criteria
+
+- [ ] HQ admin sees all branches for their operator (e.g. all VIP stations)
+- [ ] HQ admin can create a branch and assign a branch lead
+- [ ] HQ admin does **not** micromanage every counter PIN (delegated to leads)
+- [ ] HQ admin can view operator-wide analytics and exports
+- [ ] HQ admin can deactivate a lead or staff account in an emergency
+- [ ] Parcela team can onboard a new operator without building extra VIP/STC dashboards
+
+---
+
+## Phase 6 — Legacy Bus Manager _(reference only)_
+
+> Superseded by **Phase 4 (Branch Lead)** and **Phase 5 (HQ Super Admin)**. Do not build `BM-*` as a third customer-facing product.
+
+**Goal:** _(archived)_ Bus manager oversees operations across stations, buses, staff activity, and reporting for their operator network.
 
 **Access:** Secure login · Operator-level scope (may span multiple stations)
 
-> **Flow diagram:** See [Bus Manager flow → screens & tasks](#5-bus-manager-flow--screens--tasks) above.
+> **Flow diagram:** See [Bus Manager flow → screens & tasks](#7-bus-manager-flow--screens--tasks-legacy--superseded-by-branch-lead--hq-admin) above.
 
-### 4.1 Design & UI
+### 6.1 Design & UI _(legacy BM)_
 
 | ID       | Task                                 | Status         | Notes                           |
 | -------- | ------------------------------------ | -------------- | ------------------------------- |
@@ -434,7 +635,7 @@ flowchart TD
 | BM-UI-09 | Operator theme configuration         | ⬜ Not Started | Colors, logo (VIP, STC, custom) |
 | BM-UI-10 | Subscription / license status view   | ⬜ Not Started | Plan, expiry, renewal           |
 
-### 4.2 Functionality
+### 6.2 Functionality _(legacy BM)_
 
 | ID       | Task                                        | Status         | Notes                        |
 | -------- | ------------------------------------------- | -------------- | ---------------------------- |
@@ -449,7 +650,7 @@ flowchart TD
 | BM-FN-09 | View audit log of staff actions             | ⬜ Not Started |                              |
 | BM-FN-10 | Subscription plan enforcement               | ⬜ Not Started | 1yr / 2yr / 3yr / enterprise |
 
-### 4.3 Bus Manager acceptance criteria
+### 6.3 Bus Manager acceptance criteria _(legacy)_
 
 - [ ] Manager sees network-wide parcel and station overview
 - [ ] Manager can manage stations, buses, and staff
@@ -459,7 +660,7 @@ flowchart TD
 
 ---
 
-## Phase 5 — Shared Systems (Cross-Cutting)
+## Phase 7 — Shared Systems (Cross-Cutting)
 
 These support all roles and should be built alongside or immediately after Phase 1–2.
 
@@ -484,7 +685,7 @@ These support all roles and should be built alongside or immediately after Phase
 
 ## Parcel Status Flow
 
-> **Visual diagram:** See [Parcel status lifecycle](#6-parcel-status-lifecycle) above.
+> **Visual diagram:** See [Parcel status lifecycle](#8-parcel-status-lifecycle) above.
 
 Optional states to add later: `cancelled`, `lost`, `returned_to_sender`
 
@@ -492,17 +693,18 @@ Optional states to add later: `cancelled`, `lost`, `returned_to_sender`
 
 ## Recommended Build Order
 
-> **Visual diagram:** See [Implementation roadmap](#7-implementation-roadmap-what-to-build-in-order) above.
+> **Visual diagram:** See [Implementation roadmap](#9-implementation-roadmap-what-to-build-in-order) above.
 
 | Order | Phase                                         | Why                                       |
 | ----- | --------------------------------------------- | ----------------------------------------- |
 | 1     | Phase 0 — Foundation                          | Design tokens, project setup, data models |
 | 2     | Phase 1 — Sender                              | First public flow; creates pre-bookings   |
 | 3     | Phase 2 — Recipient                           | Tracking UI; can use mock statuses early  |
-| 4     | Phase 5 (partial) — SMS, maps, status machine | Needed before staff go-live               |
-| 5     | Phase 3 — Staff                               | Verifies and logs real parcels            |
-| 6     | Phase 4 — Bus Manager                         | Configuration and oversight               |
-| 7     | Phase 5 (remainder) — Reports, subscription   | Polish and business layer                 |
+| 4     | Phase 7 (partial) — SMS, maps, status machine | Needed before staff go-live               |
+| 5     | Phase 3 — Counter Staff (web)                 | Verifies and logs real parcels            |
+| 6     | Phase 4 — Branch Lead (mobile + desk)         | Local team + branch analytics & reports   |
+| 7     | Phase 5 — HQ Super Admin                      | Operator-wide branches, leads, rollups    |
+| 8     | Phase 7 (remainder) — Polish, subscription    | Reports, audit, platform tooling          |
 
 ---
 
@@ -540,6 +742,7 @@ Optional states to add later: `cancelled`, `lost`, `returned_to_sender`
 
 | Date       | Change                                                               |
 | ---------- | -------------------------------------------------------------------- |
+| 2026-07-07 | Added Phase 4 Branch Lead (`BL-*`) and Phase 5 HQ Super Admin (`ADM-*`); archived legacy Bus Manager as Phase 6 |
 | 2026-06-30 | Initial task tracker created — Sender, Recipient, Staff, Bus Manager |
 | 2026-06-30 | Added user flow diagrams (Mermaid) with task ID mapping per role     |
 | 2026-06-30 | Phase 0 foundation + Phase 1 Sender UI implemented (Next.js app)     |

@@ -12,6 +12,8 @@ import { SendWizardSteps } from "@/components/send/SendWizardSteps";
 import { StationIcon } from "@/components/send/StationIcon";
 import { submitBooking } from "@/lib/booking";
 import { assertSupportedOperator } from "@/lib/operators";
+import { loadOperatorLockStatus } from "@/lib/operator-controls";
+import { showValidationAlert } from "@/lib/sweetalert";
 import type { Station } from "@/types/parcel";
 import {
   ensureStationsLoaded,
@@ -47,6 +49,19 @@ function BookPageForm({ originStation }: { originStation: NonNullable<ReturnType
       assertSupportedOperator(destination.operator);
     } catch {
       return;
+    }
+
+    try {
+      const locks = await loadOperatorLockStatus(originStation.operator);
+      if (locks.bookingsLocked) {
+        await showValidationAlert({
+          title: "Bookings temporarily frozen",
+          text: `${originStation.operator} HQ has paused new public bookings. Please try again later.`,
+        });
+        return;
+      }
+    } catch {
+      // If lock status is unreachable, let the booking API enforce the freeze.
     }
 
     setIsSubmitting(true);

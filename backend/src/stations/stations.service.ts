@@ -59,6 +59,14 @@ export class StationsService {
     return station ? this.toPublic(station) : null;
   }
 
+  async findByCityAndOperator(city: string, operator: 'VIP' | 'STC') {
+    const stations = await this.stationModel
+      .find({ active: true, city: city.trim(), operator })
+      .sort({ name: 1 })
+      .lean();
+    return stations.map((s) => this.toPublic(s));
+  }
+
   private toPublic(station: {
     stationId: string;
     name: string;

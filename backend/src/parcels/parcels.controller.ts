@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, Query } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body } from '@nestjs/common';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { ParcelsService } from './parcels.service';
 
@@ -26,8 +26,4 @@ export class ParcelsController {
     return this.parcelsService.lookupByToken(token);
   }
 
-  @Get('parcels/pending')
-  listPending(@Query('stationId') stationId?: string) {
-    return this.parcelsService.listPendingDropoffs(stationId);
-  }
 }

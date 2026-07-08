@@ -1,0 +1,190 @@
+"use client";
+
+import { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu } from "lucide-react";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { StaffNavProvider, useStaffNav } from "@/components/staff/StaffNavContext";
+import { StaffPreloader } from "@/components/staff/StaffPreloader";
+import { restoreAdminSession, signOutAdmin } from "@/lib/admin-auth";
+import { getAdminNavItem } from "@/lib/admin-nav";
+import { adminThemeStyle } from "@/lib/admin-theme";
+import { prefetchAllAdminViews, prefetchAdminView } from "@/lib/admin-view-prefetch";
+import { ensureStationsLoaded } from "@/lib/stations";
+import { showConfirmDialog, showSuccessAlert } from "@/lib/sweetalert";
+import type { AdminSession } from "@/types/admin";
+
+const AdminSessionContext = createContext<AdminSession | null>(null);
+
+export function useAdminSession() {
+  const session = useContext(AdminSessionContext);
+  if (!session) {
+    throw new Error("useAdminSession must be used within AdminOperatorShell");
+  }
+  return session;
+}
+
+function AdminShellContent({
+  children,
+  session,
+  mobileNavOpen,
+  setMobileNavOpen,
+  onSignOut,
+}: {
+  children: React.ReactNode;
+  session: AdminSession;
+  mobileNavOpen: boolean;
+  setMobileNavOpen: (open: boolean) => void;
+  onSignOut: () => void | Promise<void>;
+}) {
+  const { admin } = session;
+  const { isNavigating, navMessage } = useStaffNav();
+
+  return (
+    <div
+      className="staff-operator-themed admin-portal flex h-dvh overflow-hidden bg-[#eef2f6]"
+      style={adminThemeStyle(admin.operator, admin.operatorConfigured)}
+      data-operator={admin.operator ?? "neutral"}
+    >
+      <AdminSidebar
+        mobileOpen={mobileNavOpen}
+        onMobileClose={() => setMobileNavOpen(false)}
+        onSignOut={onSignOut}
+      />
+
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:ml-[320px]">
+        <header className="z-30 flex shrink-0 items-center gap-3 border-b border-border bg-surface/95 px-4 py-3 backdrop-blur-sm lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            className="rounded-xl border border-border p-2 text-foreground"
+            aria-label="Open menu"
+          >
+            <Menu className="size-5" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="font-display truncate text-sm font-bold text-foreground">
+              {admin.operatorConfigured && admin.operator
+                ? `${admin.operator} HQ`
+                : "HQ command center"}
+            </p>
+            <p className="font-body truncate text-[11px] text-muted">Operator network</p>
+          </div>
+        </header>
+
+        <div className="relative min-h-0 flex-1 overflow-y-auto">
+          {isNavigating && (
+            <StaffPreloader variant="overlay" message={navMessage ?? "Loading page"} />
+          )}
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function AdminOperatorShell({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  // Start empty on server + first client paint so SSR HTML matches (session lives in sessionStorage).
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [ready, setReady] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useLayoutEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const current = await restoreAdminSession();
+        if (cancelled) return;
+        if (!current) {
+          router.replace("/admin/login");
+          return;
+        }
+        setSession(current);
+        setReady(true);
+      } catch {
+        if (cancelled) return;
+        router.replace("/admin/login");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  useEffect(() => {
+    if (!ready) return;
+    // Warm stations cache + view chunks so sidebar clicks feel instant.
+    void ensureStationsLoaded();
+    const prefetch = () => void prefetchAllAdminViews();
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(prefetch);
+    } else {
+      window.setTimeout(prefetch, 0);
+    }
+  }, [ready]);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    prefetchAdminView(pathname);
+  }, [pathname]);
+
+  async function handleSignOut() {
+    if (!session) return;
+
+    const confirmed = await showConfirmDialog({
+      title: "Sign out?",
+      text: "Leave the HQ command center?",
+      confirmText: "Yes, sign out",
+      cancelText: "Stay signed in",
+      confirmButtonColor: "#dc2626",
+      icon: "warning",
+    });
+
+    if (!confirmed) return;
+
+    await signOutAdmin();
+    await showSuccessAlert({
+      title: "Signed out",
+      text: "You have been signed out safely.",
+    });
+    router.push("/admin/login");
+  }
+
+  if (!ready || !session) {
+    const navItem = getAdminNavItem(pathname);
+    const bootMessage = navItem
+      ? `Opening ${navItem.label.toLowerCase()}`
+      : "Loading HQ portal";
+
+    return (
+      <div className="admin-portal flex h-dvh overflow-hidden bg-[#eef2f6] font-body">
+        <div className="hidden w-[320px] shrink-0 bg-slate-300/25 lg:block" aria-hidden />
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <StaffPreloader message={bootMessage} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <AdminSessionContext.Provider value={session}>
+      <StaffNavProvider>
+        <AdminShellContent
+          session={session}
+          mobileNavOpen={mobileNavOpen}
+          setMobileNavOpen={setMobileNavOpen}
+          onSignOut={handleSignOut}
+        >
+          {children}
+        </AdminShellContent>
+      </StaffNavProvider>
+    </AdminSessionContext.Provider>
+  );
+}

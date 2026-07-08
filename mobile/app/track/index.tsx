@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Screen } from "@/components/ui/Screen";
 import { ScreenIllustration } from "@/components/ui/ScreenIllustration";
 import { lookupParcel } from "@/lib/tracking";
+import { goBackOrTrackHome } from "@/lib/track-navigation";
 import { useSweetAlert } from "@/lib/sweetalert";
 import { colors, fonts } from "@/constants/theme";
 
@@ -42,7 +43,7 @@ export default function TrackEntryScreen() {
     <Screen
       footer={<Button label="Track parcel" onPress={handleTrack} disabled={!code.trim()} />}
     >
-      <Pressable onPress={() => router.back()} style={styles.back}>
+      <Pressable onPress={() => goBackOrTrackHome(router)} style={styles.back}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
         <Text style={styles.backText}>Back</Text>
       </Pressable>

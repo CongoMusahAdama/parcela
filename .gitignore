@@ -46,18 +46,32 @@ yarn-error.log*
 .env.production.local
 **/.env
 **/.env.local
+**/.env.*.local
 !.env.example
 !**/.env.example
+
+# credentials / keys
+*.pem
+*.p12
+*.pfx
+*.key
+!*.key.example
+credentials.json
+**/credentials.json
+service-account*.json
+**/secrets/
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-# IDE / OS
+# IDE / OS / local agent tooling
 .idea/
 .vscode/
+.cursor/
 *.swp
 *.swo
 
 # deploy / local tooling
 .netlify/
+.turbo/

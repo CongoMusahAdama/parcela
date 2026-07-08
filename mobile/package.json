@@ -36,6 +36,7 @@
     "typescript": "~5.9.2"
   },
   "scripts": {
+    "dev": "expo start",
     "start": "expo start",
     "start:clear": "expo start -c",
     "android": "expo start --android",

@@ -111,6 +111,162 @@
     font-family: var(--font-display);
   }
 
+  /* Staff + lead portals — Syne (display) + Onest (body), same as mobile app */
+  .staff-portal,
+  .lead-portal,
+  .admin-portal {
+    font-family: var(--font-body);
+  }
+
+  .staff-portal h1,
+  .staff-portal h2,
+  .staff-portal h3,
+  .staff-portal .font-display,
+  .lead-portal h1,
+  .lead-portal h2,
+  .lead-portal h3,
+  .lead-portal .font-display,
+  .admin-portal h1,
+  .admin-portal h2,
+  .admin-portal h3,
+  .admin-portal .font-display {
+    font-family: var(--font-display);
+  }
+
+  .staff-portal input,
+  .staff-portal button,
+  .staff-portal label,
+  .staff-portal p,
+  .staff-portal a,
+  .staff-portal span,
+  .lead-portal input,
+  .lead-portal button,
+  .lead-portal label,
+  .lead-portal p,
+  .lead-portal a,
+  .lead-portal span,
+  .admin-portal input,
+  .admin-portal button,
+  .admin-portal label,
+  .admin-portal p,
+  .admin-portal a,
+  .admin-portal span {
+    font-family: inherit;
+  }
+
+  .staff-portal .staff-field-label,
+  .lead-portal .staff-field-label {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .staff-portal .staff-field-input,
+  .lead-portal .staff-field-input {
+    font-family: var(--font-body);
+  }
+
+  /* Staff dashboard — operator theme (VIP red, STC green) */
+  .staff-operator-themed .staff-sign-out-btn {
+    border-color: var(--staff-accent);
+    color: var(--staff-accent);
+  }
+
+  .staff-operator-themed .staff-sign-out-btn:hover {
+    background: var(--staff-accent-muted);
+  }
+
+  .staff-operator-themed .staff-sidebar .staff-nav-active {
+    background: rgb(255 255 255 / 0.2);
+    color: #fff;
+    box-shadow:
+      inset 3px 0 0 #fff,
+      0 4px 16px -6px rgb(0 0 0 / 0.2);
+  }
+
+  .staff-sidebar-station-card {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .staff-operator-themed[data-operator="STC"] .staff-sidebar-station-card {
+    border-color: rgb(255 255 255 / 0.35);
+    box-shadow:
+      0 10px 28px -10px rgb(0 0 0 / 0.45),
+      inset 0 1px 0 rgb(255 255 255 / 0.2);
+  }
+
+  .staff-operator-themed[data-operator="VIP"] .staff-sidebar-station-card {
+    border-color: rgb(255 255 255 / 0.3);
+  }
+
+  .staff-status-ready {
+    background: var(--staff-accent-muted);
+    color: var(--staff-accent-dark);
+  }
+
+  .staff-collection-tip {
+    border-color: color-mix(in srgb, var(--staff-accent) 28%, transparent);
+    background: color-mix(in srgb, var(--staff-accent) 10%, white);
+  }
+
+  .staff-collection-tip p {
+    color: var(--staff-accent-dark);
+  }
+
+  .staff-operator-themed .staff-sidebar .staff-sidebar-sign-out {
+    border-color: rgb(255 255 255 / 0.45);
+    color: #fff;
+  }
+
+  .staff-operator-themed .staff-sidebar .staff-sidebar-sign-out:hover {
+    background: rgb(255 255 255 / 0.12);
+  }
+
+  .admin-sidebar .admin-nav-section-label {
+    font-family: var(--font-display);
+    margin-bottom: 0.5rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgb(255 255 255 / 0.42);
+  }
+
+  .admin-sidebar .admin-nav-item:focus-visible {
+    outline: 2px solid rgb(255 255 255 / 0.45);
+    outline-offset: 2px;
+  }
+
+  .staff-operator-themed .staff-nav-active {
+    background: var(--staff-accent-muted);
+    color: var(--staff-accent);
+    box-shadow: inset 3px 0 0 var(--staff-accent);
+  }
+
+  .staff-preloader-spin {
+    animation: staff-preloader-spin 0.85s linear infinite;
+  }
+
+  .staff-preloader-bar {
+    animation: staff-preloader-bar 1.15s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .staff-preloader-spin {
+      animation: staff-preloader-pulse 1.2s ease-in-out infinite;
+    }
+
+    .staff-preloader-bar {
+      animation: none;
+      width: 66%;
+      margin-inline: auto;
+    }
+  }
+
   .splash-logo-spin {
     animation: splash-logo-spin 1.6s cubic-bezier(0.45, 0.05, 0.25, 1) infinite;
   }
@@ -199,6 +355,147 @@
   }
 }
 
+@keyframes staff-preloader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes staff-preloader-bar {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+@keyframes staff-preloader-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Staff report print — landscape with branded header */
+@media print {
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #staff-report-print,
+  #staff-report-print *,
+  #admin-report-print,
+  #admin-report-print * {
+    visibility: visible !important;
+  }
+
+  #staff-report-print,
+  #admin-report-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #fff !important;
+    color: #0f172a !important;
+    font-family: var(--font-body), ui-sans-serif, sans-serif !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .staff-report-print-header,
+  .admin-report-print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 2px solid var(--report-accent, #0d9488);
+  }
+
+  .staff-report-print-company,
+  .admin-report-print-company {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--report-accent, #0d9488);
+    margin: 0;
+  }
+
+  .staff-report-print-title,
+  .admin-report-print-title {
+    margin-bottom: 0.75rem;
+  }
+
+  .staff-report-print-title h1,
+  .admin-report-print-title h1 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+  }
+
+  .staff-report-print-title p,
+  .admin-report-print-title p {
+    font-size: 0.72rem;
+    color: #475569;
+    margin: 0;
+  }
+
+  .staff-report-print-table,
+  .admin-report-print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.62rem;
+  }
+
+  .staff-report-print-table th,
+  .staff-report-print-table td,
+  .admin-report-print-table th,
+  .admin-report-print-table td {
+    border: 1px solid #e2e8f0;
+    padding: 0.3rem 0.35rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .staff-report-print-table th,
+  .admin-report-print-table th {
+    background: var(--report-accent, #0d9488) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .staff-report-print-empty,
+  .admin-report-print-empty {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-style: italic;
+  }
+
+  .staff-report-print-footer,
+  .admin-report-print-footer {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.62rem;
+    color: #64748b;
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
 /* SweetAlert2 — Parcela theme */
 .parcela-swal-popup {
   font-family: var(--font-body) !important;
@@ -227,6 +524,72 @@
   border-radius: 0.75rem !important;
   padding: 0.65rem 1.5rem !important;
   box-shadow: none !important;
+}
+
+.parcela-swal-report-card {
+  margin-top: 0.25rem;
+  border-radius: 0.875rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  padding: 0.875rem 1rem;
+  text-align: left;
+}
+
+.parcela-swal-report-card p {
+  margin: 0;
+}
+
+.parcela-swal-report-title {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+.parcela-swal-report-period {
+  margin-top: 0.25rem !important;
+  font-size: 0.75rem !important;
+  color: var(--color-muted) !important;
+}
+
+.parcela-swal-report-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.parcela-swal-report-metric {
+  border-radius: 0.625rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0.5rem 0.625rem;
+}
+
+.parcela-swal-report-metric span {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.parcela-swal-report-metric strong {
+  display: block;
+  margin-top: 0.125rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+.parcela-swal-report-empty {
+  margin-top: 0.75rem !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.45 !important;
+  color: var(--color-muted) !important;
 }
 
 @media print {

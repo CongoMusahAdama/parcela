@@ -7,17 +7,25 @@ export const MOCK_STATIONS: Station[] = GHANA_STATIONS;
 
 let apiStationCache: Station[] | null = null;
 let stationsLoadPromise: Promise<Station[]> | null = null;
+let stationsLoadedFromApi = false;
+
+export function didLoadStationsFromApi(): boolean {
+  return stationsLoadedFromApi;
+}
 
 export function setStationCache(stations: Station[]) {
   apiStationCache = getSupportedStations(stations);
+  stationsLoadedFromApi = true;
 }
 
 async function loadStationsFromApi(): Promise<Station[]> {
   try {
     const stations = await fetchStations();
     apiStationCache = getSupportedStations(stations);
+    stationsLoadedFromApi = true;
     return apiStationCache;
   } catch {
+    stationsLoadedFromApi = false;
     apiStationCache = getSupportedStations(MOCK_STATIONS);
     return apiStationCache;
   }

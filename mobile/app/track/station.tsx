@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,6 +10,7 @@ import { PenaltyNotice } from "@/components/track/PenaltyNotice";
 import { stationDirectionsUrl } from "@/lib/maps";
 import { OPERATOR_ACCENT } from "@/lib/operators";
 import { lookupParcel, resolveStationCoords } from "@/lib/tracking";
+import { goBackOrTrackHome } from "@/lib/track-navigation";
 import type { UserCoords } from "@/lib/sendLocation";
 import type { TrackedParcel } from "@/types/parcel";
 import { colors, fonts, radii, spacing } from "@/constants/theme";
@@ -23,13 +24,15 @@ export default function TrackStationScreen() {
   const [parcel, setParcel] = useState<TrackedParcel | null | undefined>(undefined);
   const [userCoords, setUserCoords] = useState<UserCoords | null>(null);
 
-  useEffect(() => {
-    if (!code) {
-      setParcel(null);
-      return;
-    }
-    lookupParcel(code).then((result) => setParcel(result ?? null));
-  }, [code]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!code) {
+        setParcel(null);
+        return;
+      }
+      void lookupParcel(code, { refresh: true }).then((result) => setParcel(result ?? null));
+    }, [code]),
+  );
 
   if (parcel === undefined) {
     return (
@@ -82,13 +85,15 @@ export default function TrackStationScreen() {
       />
 
       <View style={[styles.floatingHeader, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={() => router.back()} style={styles.backPill}>
+        <Pressable onPress={() => goBackOrTrackHome(router)} style={styles.backPill}>
           <Ionicons name="arrow-back" size={18} color={colors.foreground} />
           <Text style={styles.backText}>Back</Text>
         </Pressable>
 
         <View style={styles.stepPill}>
-          <Text style={styles.stepText}>Step 3 of 4</Text>
+          <Text style={styles.stepText}>
+            {parcel.status === "collected" ? "Complete" : "Step 3 of 4"}
+          </Text>
         </View>
       </View>
 

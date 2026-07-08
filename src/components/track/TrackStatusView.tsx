@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, ChevronRight, Clock, MapPin, Package } from "lucide-react";
@@ -64,16 +64,30 @@ function TrackStatusContent() {
   const [parcel, setParcel] = useState<TrackedParcel | null>(null);
   const [ready, setReady] = useState(false);
 
+  const loadParcel = useCallback(
+    (refresh = false) => {
+      if (!code) {
+        setReady(true);
+        return;
+      }
+      void lookupParcelAsync(code, { refresh }).then((result) => {
+        setParcel(result ?? null);
+        setReady(true);
+      });
+    },
+    [code],
+  );
+
   useEffect(() => {
-    if (!code) {
-      setReady(true);
-      return;
-    }
-    lookupParcelAsync(code).then((result) => {
-      setParcel(result ?? null);
-      setReady(true);
-    });
-  }, [code]);
+    loadParcel(true);
+    const onFocus = () => loadParcel(true);
+    window.addEventListener("focus", onFocus);
+    const interval = window.setInterval(() => loadParcel(true), 30_000);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(interval);
+    };
+  }, [loadParcel]);
 
   if (!ready) {
     return <StatusLoadingShell />;

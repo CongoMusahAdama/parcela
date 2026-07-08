@@ -54,38 +54,54 @@ function findInBookings(normalized: string): TrackedParcel | undefined {
   return undefined;
 }
 
-export async function lookupParcelAsync(query: string): Promise<TrackedParcel | undefined> {
+export async function lookupParcelAsync(
+  query: string,
+  options?: { refresh?: boolean },
+): Promise<TrackedParcel | undefined> {
   const normalized = normalizeTrackQuery(query);
   if (!normalized) return undefined;
 
-  const cached = trackCacheByCode.get(normalized);
-  if (cached) return cached;
+  if (options?.refresh) {
+    trackCacheByCode.delete(normalized);
+  } else {
+    const cached = trackCacheByCode.get(normalized);
+    if (cached) return cached;
+  }
 
   try {
     const parcel = await trackParcelByCodeApi(normalized);
     trackCacheByCode.set(normalized, parcel);
     return parcel;
   } catch (error) {
-    if (error instanceof ApiError) {
-      return findInBookings(normalized);
+    if (error instanceof ApiError && error.status === 404) {
+      return undefined;
     }
+    return findInBookings(normalized);
   }
-
-  return findInBookings(normalized);
 }
 
-export async function lookupParcelByTokenAsync(token: string): Promise<TrackedParcel | undefined> {
+export async function lookupParcelByTokenAsync(
+  token: string,
+  options?: { refresh?: boolean },
+): Promise<TrackedParcel | undefined> {
   const normalized = token.trim().toLowerCase();
   if (!normalized) return undefined;
 
-  const cached = trackCacheByToken.get(normalized);
-  if (cached) return cached;
+  if (options?.refresh) {
+    trackCacheByToken.delete(normalized);
+  } else {
+    const cached = trackCacheByToken.get(normalized);
+    if (cached) return cached;
+  }
 
   try {
     const parcel = await trackParcelByTokenApi(normalized);
     trackCacheByToken.set(normalized, parcel);
     return parcel;
-  } catch {
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return undefined;
+    }
     return lookupParcelByToken(token);
   }
 }

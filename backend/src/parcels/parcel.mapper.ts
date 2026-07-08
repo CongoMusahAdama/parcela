@@ -98,3 +98,75 @@ export function toPreBooking(
     trackingUrl,
   };
 }
+
+export type StaffParcelSummaryDto = {
+  bookingReference: string;
+  pickupCode: string;
+  status: Parcel['status'];
+  senderName: string;
+  senderPhone: string;
+  recipientName: string;
+  recipientPhone: string;
+  originStationName: string;
+  destinationStationName: string;
+  originStationId: string;
+  destinationStationId: string;
+  itemCount: number;
+  direction: 'outgoing' | 'incoming';
+  busNumber?: string;
+  driverName?: string;
+  driverPhone?: string;
+  items: Parcel['items'];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type StaffParcelDetailDto = StaffParcelSummaryDto & {
+  items: Parcel['items'];
+  driverName?: string;
+  driverPhone?: string;
+  expectedArrival?: string;
+  arrivedAt?: string;
+};
+
+export function toStaffParcelSummary(
+  parcel: Parcel & { createdAt?: Date; updatedAt?: Date },
+  stationId: string,
+): StaffParcelSummaryDto {
+  const outgoing = parcel.originStationId === stationId;
+  return {
+    bookingReference: parcel.bookingReference,
+    pickupCode: parcel.pickupCode,
+    status: parcel.status,
+    senderName: parcel.senderName,
+    senderPhone: parcel.senderPhone,
+    recipientName: parcel.recipientName,
+    recipientPhone: parcel.recipientPhone,
+    originStationName: parcel.originStationName,
+    destinationStationName: parcel.destinationStationName,
+    originStationId: parcel.originStationId,
+    destinationStationId: parcel.destinationStationId,
+    itemCount: parcel.items.length,
+    direction: outgoing ? 'outgoing' : 'incoming',
+    busNumber: parcel.busNumber,
+    driverName: parcel.driverName,
+    driverPhone: parcel.driverPhone,
+    items: parcel.items,
+    createdAt: (parcel.createdAt ?? new Date()).toISOString(),
+    updatedAt: (parcel.updatedAt ?? parcel.createdAt ?? new Date()).toISOString(),
+  };
+}
+
+export function toStaffParcelDetail(
+  parcel: Parcel & { createdAt?: Date; updatedAt?: Date },
+  stationId: string,
+): StaffParcelDetailDto {
+  return {
+    ...toStaffParcelSummary(parcel, stationId),
+    items: parcel.items,
+    driverName: parcel.driverName,
+    driverPhone: parcel.driverPhone,
+    expectedArrival: parcel.expectedArrival?.toISOString(),
+    arrivedAt: parcel.arrivedAt?.toISOString(),
+  };
+}

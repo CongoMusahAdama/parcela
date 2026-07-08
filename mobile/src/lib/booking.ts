@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { normalizePreBooking } from "@/lib/bookingItems";
 import { createBookingApi, getBookingApi, type CreateBookingPayload } from "@/lib/api";
+import { ApiError, checkApiHealth } from "@/lib/api-client";
 import { getStationById } from "@/lib/stations";
 import type { Operator, PreBooking } from "@/types/parcel";
 
@@ -12,9 +13,27 @@ export function generateBookingReference(): string {
 }
 
 export async function submitBooking(payload: CreateBookingPayload): Promise<PreBooking> {
+  const apiOk = await checkApiHealth();
+  if (!apiOk) {
+    throw new ApiError(
+      "Cannot reach the Parcela server. Bookings made now would not appear on staff dashboards. " +
+        "Connect your phone to the same Wi‑Fi as your computer and allow port 3002 through Windows Firewall.",
+      0,
+    );
+  }
+
   const booking = await createBookingApi(payload);
-  await cachePreBooking(booking);
-  return booking;
+
+  try {
+    const verified = await getBookingApi(booking.bookingReference);
+    await cachePreBooking(verified);
+    return verified;
+  } catch {
+    throw new ApiError(
+      `Booking ${booking.bookingReference} was not saved on the server. Staff will not see it — check your network and try again.`,
+      500,
+    );
+  }
 }
 
 export async function cachePreBooking(booking: PreBooking): Promise<void> {

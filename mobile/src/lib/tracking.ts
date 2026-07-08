@@ -40,20 +40,28 @@ export function normalizeTrackQuery(query: string): string {
   return query.trim().toUpperCase();
 }
 
-export async function lookupParcel(query: string): Promise<TrackedParcel | undefined> {
+export async function lookupParcel(
+  query: string,
+  options?: { refresh?: boolean },
+): Promise<TrackedParcel | undefined> {
   const normalized = normalizeTrackQuery(query);
   if (!normalized) return undefined;
 
-  const cached = trackCacheByCode.get(normalized);
-  if (cached) return cached;
+  if (options?.refresh) {
+    trackCacheByCode.delete(normalized);
+  } else {
+    const cached = trackCacheByCode.get(normalized);
+    if (cached) return cached;
+  }
 
   try {
     const parcel = await trackParcelByCodeApi(normalized);
     trackCacheByCode.set(normalized, parcel);
     return parcel;
   } catch (error) {
-    if (error instanceof ApiError && error.status !== 404) {
-      // fall through to local bookings on network errors
+    if (error instanceof ApiError) {
+      if (error.status === 404) return undefined;
+      if (error.status === 0) return undefined;
     }
   }
 
@@ -71,19 +79,29 @@ export async function lookupParcel(query: string): Promise<TrackedParcel | undef
   return undefined;
 }
 
-export async function lookupParcelByToken(token: string): Promise<TrackedParcel | undefined> {
+export async function lookupParcelByToken(
+  token: string,
+  options?: { refresh?: boolean },
+): Promise<TrackedParcel | undefined> {
   const normalized = token.trim().toLowerCase();
   if (!normalized) return undefined;
 
-  const cached = trackCacheByToken.get(normalized);
-  if (cached) return cached;
+  if (options?.refresh) {
+    trackCacheByToken.delete(normalized);
+  } else {
+    const cached = trackCacheByToken.get(normalized);
+    if (cached) return cached;
+  }
 
   try {
     const parcel = await trackParcelByTokenApi(normalized);
     trackCacheByToken.set(normalized, parcel);
     return parcel;
-  } catch {
-    // fall through to local bookings
+  } catch (error) {
+    if (error instanceof ApiError) {
+      if (error.status === 404) return undefined;
+      if (error.status === 0) return undefined;
+    }
   }
 
   const bookings = await getPreBookings();
