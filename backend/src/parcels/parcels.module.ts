@@ -1,7 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AdminModule } from '../admin/admin.module';
-import { PlatformModule } from '../platform/platform.module';
 import { SmsModule } from '../sms/sms.module';
 import { StationsModule } from '../stations/stations.module';
 import { ParcelsController } from './parcels.controller';
@@ -14,7 +13,6 @@ import { Parcel, ParcelSchema } from './schemas/parcel.schema';
     StationsModule,
     SmsModule,
     forwardRef(() => AdminModule),
-    forwardRef(() => PlatformModule),
   ],
   controllers: [ParcelsController],
   providers: [ParcelsService],

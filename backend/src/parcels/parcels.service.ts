@@ -21,7 +21,6 @@ import {
 import { SmsService } from '../sms/sms.service';
 import { StationsService } from '../stations/stations.service';
 import { OperatorControlsService } from '../admin/operator-controls.service';
-import { PlatformOperatorsService } from '../platform/services/platform-operators.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { toPreBooking, toStaffParcelDetail, toStaffParcelSummary, toTrackedParcel } from './parcel.mapper';
 import { Parcel, ParcelDocument } from './schemas/parcel.schema';
@@ -36,7 +35,6 @@ export class ParcelsService {
     private readonly smsService: SmsService,
     private readonly config: ConfigService,
     private readonly operatorControls: OperatorControlsService,
-    private readonly platformOperators: PlatformOperatorsService,
   ) {}
 
   private trackingLinks(token: string): TrackingLinks {
@@ -67,7 +65,7 @@ export class ParcelsService {
       throw new ForbiddenException('Bookings are temporarily locked for this operator');
     }
 
-    if (await this.platformOperators.isOperatorSuspended(origin.operator)) {
+    if (await this.operatorControls.isOperatorSuspended(origin.operator)) {
       throw new ForbiddenException('This transport is temporarily suspended on Parcela');
     }
 

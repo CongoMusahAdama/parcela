@@ -3,6 +3,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { randomBytes } from 'crypto';
 import {
+  TransportOperator,
+  TransportOperatorDocument,
+} from '../platform/schemas/transport-operator.schema';
+import {
   OperatorSettings,
   OperatorSettingsDocument,
   OperatorAuditEntry,
@@ -28,6 +32,8 @@ export class OperatorControlsService {
   constructor(
     @InjectModel(OperatorSettings.name)
     private readonly settingsModel: Model<OperatorSettingsDocument>,
+    @InjectModel(TransportOperator.name)
+    private readonly operatorModel: Model<TransportOperatorDocument>,
   ) {}
 
   async getOrCreateSettings(operator: OperatorCode): Promise<OperatorSettingsDocument> {
@@ -61,6 +67,15 @@ export class OperatorControlsService {
   async isBookingsLocked(operator: OperatorCode): Promise<boolean> {
     const settings = await this.getOrCreateSettings(operator);
     return settings.bookingsLocked === true;
+  }
+
+  async isOperatorSuspended(operator: OperatorCode): Promise<boolean> {
+    const doc = await this.operatorModel
+      .findOne({ code: operator.trim().toUpperCase() })
+      .select('status suspended')
+      .lean();
+    if (!doc) return false;
+    return doc.status === 'suspended' || doc.suspended === true;
   }
 
   async isStaffOpsLocked(operator: OperatorCode): Promise<boolean> {
