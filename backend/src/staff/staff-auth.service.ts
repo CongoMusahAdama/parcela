@@ -11,7 +11,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ensureHashedSecret, verifySecret } from '../common/utils/password.util';
 import {
-  buildSeedStaffAccounts,
+  DEMO_STAFF_ACCOUNT_IDS,
   type StaffAccountRecord,
 } from './data/staff-accounts';
 import { normalizeGhanaPhone } from '../common/utils/phone.util';
@@ -54,7 +54,7 @@ export class StaffAuthService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.seedDefaultAccounts();
+    await this.purgeDemoStaffAccounts();
     const docs = await this.staffModel.find().lean();
     for (const doc of docs) {
       this.accounts.push(this.fromDocument(doc));
@@ -272,49 +272,12 @@ export class StaffAuthService implements OnModuleInit {
     return toPublicAccount(match);
   }
 
-  private async seedDefaultAccounts() {
-    const staffPassword = this.config.get<string>('seed.staffPassword')?.trim() ?? '';
-    const staffPin = this.config.get<string>('seed.staffPin')?.trim() ?? '';
-    const leadPassword = this.config.get<string>('seed.leadPassword')?.trim() ?? '';
-    const leadPin = this.config.get<string>('seed.leadPin')?.trim() ?? '';
-    const adminPassword = this.config.get<string>('seed.adminPassword')?.trim() ?? '';
-    const adminPin = this.config.get<string>('seed.adminPin')?.trim() ?? '';
-
-    if (
-      !staffPassword ||
-      !staffPin ||
-      !leadPassword ||
-      !leadPin ||
-      !adminPassword ||
-      !adminPin
-    ) {
-      this.logger.warn(
-        'Skipping demo account seed — set SEED_STAFF_PASSWORD, SEED_STAFF_PIN, SEED_LEAD_PASSWORD, SEED_LEAD_PIN, SEED_ADMIN_PASSWORD, and SEED_ADMIN_PIN in .env.local',
-      );
-      return;
-    }
-
-    const seedAccounts = buildSeedStaffAccounts({
-      staffPassword,
-      staffPin,
-      leadPassword,
-      leadPin,
-      adminPassword,
-      adminPin,
+  private async purgeDemoStaffAccounts() {
+    const result = await this.staffModel.deleteMany({
+      accountId: { $in: DEMO_STAFF_ACCOUNT_IDS },
     });
-
-    for (const account of seedAccounts) {
-      const existing = await this.staffModel.findOne({ accountId: account.id }).lean();
-      if (existing) continue;
-
-      const secured = {
-        ...this.toDocumentFields({
-          ...account,
-          password: ensureHashedSecret(account.password),
-          pin: ensureHashedSecret(account.pin),
-        }),
-      };
-      await this.staffModel.create(secured);
+    if (result.deletedCount > 0) {
+      this.logger.log(`Removed ${result.deletedCount} demo staff account(s) from database`);
     }
   }
 

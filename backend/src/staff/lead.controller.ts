@@ -20,6 +20,7 @@ import {
   setAuthCookie,
 } from '../common/utils/auth-cookie.util';
 import { ParcelsService } from '../parcels/parcels.service';
+import { SmsService } from '../sms/sms.service';
 import { CreateTeamMemberDto } from './dto/create-team-member.dto';
 import { LeadLoginDto } from './dto/lead-login.dto';
 import { UpdateTeamMemberDto } from './dto/update-team-member.dto';
@@ -38,9 +39,10 @@ export class LeadController {
     private readonly parcelsService: ParcelsService,
     private readonly leadTeam: LeadTeamService,
     private readonly operatorControls: OperatorControlsService,
+    private readonly sms: SmsService,
   ) {}
 
-  private async assertLeadOpsUnlocked(operator: 'VIP' | 'STC') {
+  private async assertLeadOpsUnlocked(operator: string) {
     if (await this.operatorControls.isLeadOpsLocked(operator)) {
       throw new ForbiddenException('Lead team operations are temporarily locked by HQ');
     }
@@ -51,6 +53,12 @@ export class LeadController {
   login(@Body() dto: LeadLoginDto, @Res({ passthrough: true }) res: Response) {
     const result = this.staffAuth.loginByPhonePin(dto.phone, dto.pin);
     setAuthCookie(res, LEAD_AUTH_COOKIE, result.token, this.staffAuth.getTokenTtlMs());
+    void this.sms.sendSecureLoginAlert({
+      phone: result.staff.phone,
+      displayName: result.staff.displayName,
+      role: 'lead',
+      stationName: result.staff.stationName,
+    });
     return {
       staff: result.staff,
       signedInAt: result.signedInAt,

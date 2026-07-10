@@ -19,6 +19,7 @@ import {
   STAFF_AUTH_COOKIE,
 } from '../common/utils/auth-cookie.util';
 import { ParcelsService } from '../parcels/parcels.service';
+import { SmsService } from '../sms/sms.service';
 import { ConfirmBusArrivalDto } from './dto/confirm-bus-arrival.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ReleaseParcelDto } from './dto/release-parcel.dto';
@@ -37,9 +38,10 @@ export class StaffController {
     private readonly staffAuth: StaffAuthService,
     private readonly parcelsService: ParcelsService,
     private readonly operatorControls: OperatorControlsService,
+    private readonly sms: SmsService,
   ) {}
 
-  private async assertStaffOpsUnlocked(operator: 'VIP' | 'STC') {
+  private async assertStaffOpsUnlocked(operator: string) {
     if (await this.operatorControls.isStaffOpsLocked(operator)) {
       throw new ForbiddenException('Staff operations are temporarily locked by HQ');
     }
@@ -50,6 +52,12 @@ export class StaffController {
   login(@Body() dto: StaffLoginDto, @Res({ passthrough: true }) res: Response) {
     const result = this.staffAuth.login(dto.email, dto.password);
     setAuthCookie(res, STAFF_AUTH_COOKIE, result.token, this.staffAuth.getTokenTtlMs());
+    void this.sms.sendSecureLoginAlert({
+      phone: result.staff.phone,
+      displayName: result.staff.displayName,
+      role: 'staff',
+      stationName: result.staff.stationName,
+    });
     return {
       staff: result.staff,
       signedInAt: result.signedInAt,

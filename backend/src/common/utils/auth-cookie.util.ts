@@ -3,6 +3,7 @@ import type { CookieOptions, Response } from 'express';
 export const STAFF_AUTH_COOKIE = 'parcela_staff_token';
 export const LEAD_AUTH_COOKIE = 'parcela_lead_token';
 export const ADMIN_AUTH_COOKIE = 'parcela_admin_token';
+export const PLATFORM_AUTH_COOKIE = 'parcela_platform_token';
 
 export function authCookieOptions(maxAgeMs: number): CookieOptions {
   return {

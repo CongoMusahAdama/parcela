@@ -18,30 +18,8 @@ export type DemoAdminLogin = {
   operatorConfigured: boolean;
 };
 
-/** Seeded HQ emails for local/dev quick-fill (password from NEXT_PUBLIC_DEMO_ADMIN_PASSWORD). */
-export const DEMO_ADMIN_LOGINS: DemoAdminLogin[] = [
-  {
-    label: "VIP HQ · setup pending",
-    email: "hq.admin@parcela.app",
-    displayName: "HQ Administrator",
-    operator: "VIP",
-    operatorConfigured: false,
-  },
-  {
-    label: "VIP HQ · configured",
-    email: "hq.vip@parcela.app",
-    displayName: "VIP HQ Admin",
-    operator: "VIP",
-    operatorConfigured: true,
-  },
-  {
-    label: "STC HQ · configured",
-    email: "hq.stc@parcela.app",
-    displayName: "STC HQ Admin",
-    operator: "STC",
-    operatorConfigured: true,
-  },
-];
+/** HQ accounts are created via the platform portal — no demo quick-fill logins. */
+export const DEMO_ADMIN_LOGINS: DemoAdminLogin[] = [];
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -73,7 +51,7 @@ export function getAdminLoginFailureMessage(error?: unknown): string {
     }
     if (error.message) return error.message;
   }
-  return "Invalid email or password. Use a test HQ account below or credentials from Parcela onboarding.";
+  return "Invalid email or password. Use credentials issued by Parcela during operator onboarding.";
 }
 
 export function getAdminSession(): AdminSession | null {

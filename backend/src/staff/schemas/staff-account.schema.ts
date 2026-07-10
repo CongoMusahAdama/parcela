@@ -29,8 +29,8 @@ export class StaffAccount {
   @Prop({ required: true, enum: ['station_staff', 'station_lead', 'operator_admin'] })
   role!: 'station_staff' | 'station_lead' | 'operator_admin';
 
-  @Prop({ required: true, enum: ['VIP', 'STC'] })
-  operator!: 'VIP' | 'STC';
+  @Prop({ required: true, index: true })
+  operator!: string;
 
   @Prop({ required: true, index: true })
   stationId!: string;

@@ -12,6 +12,7 @@ export type StaffAccount = {
   stationId: string;
   stationName: string;
   stationCode: string;
+  location?: string;
   active?: boolean;
   mustChangePassword?: boolean;
 };

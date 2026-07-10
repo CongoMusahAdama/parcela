@@ -1,0 +1,63 @@
+"use client";
+
+import { cn } from "@/lib/utils";
+import { OperatorLogo } from "@/components/brand/OperatorLogo";
+import { isKnownBrandOperator } from "@/lib/platform-demo";
+
+type PlatformOperatorMarkProps = {
+  code: string;
+  name?: string;
+  brandColor?: string;
+  className?: string;
+  size?: "sm" | "md" | "lg";
+};
+
+const SIZE = {
+  sm: "size-10 text-xs",
+  md: "size-12 text-sm",
+  lg: "size-14 text-base",
+} as const;
+
+/** Logo for VIP/STC; initials mark for any other transport. */
+export function PlatformOperatorMark({
+  code,
+  name,
+  brandColor = "#fd7e14",
+  className,
+  size = "sm",
+}: PlatformOperatorMarkProps) {
+  if (isKnownBrandOperator(code)) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center rounded-xl border border-stone-200 bg-white p-1.5",
+          SIZE[size],
+          className,
+        )}
+      >
+        <OperatorLogo operator={code} className="h-6 w-auto max-w-full object-contain" />
+      </div>
+    );
+  }
+
+  const initials = (name ?? code)
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("") || code.slice(0, 2).toUpperCase();
+
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-center rounded-xl font-display font-bold text-white shadow-sm",
+        SIZE[size],
+        className,
+      )}
+      style={{ background: brandColor }}
+      title={name ?? code}
+    >
+      {initials}
+    </div>
+  );
+}

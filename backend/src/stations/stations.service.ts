@@ -13,7 +13,7 @@ export class StationsService {
   ) {}
 
   async findAll(params: {    q?: string;
-    operator?: 'VIP' | 'STC';
+    operator?: string;
     lat?: number;
     lng?: number;
     excludeId?: string;

@@ -48,7 +48,7 @@ type AdminReportModuleViewProps = {
 };
 
 export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) {
-  const module = getAdminReportModule(moduleId);
+  const reportModule = getAdminReportModule(moduleId);
   const { admin } = useAdminSession();
   const operator = getAdminOperator(admin);
   const defaults = getDefaultAdminReportDateRange();
@@ -105,7 +105,7 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
   const periodInvalid = dateFrom > dateTo;
 
   const exportMeta = useMemo(() => {
-    if (!operator || !appliedFilter || !module) return null;
+    if (!operator || !appliedFilter || !reportModule) return null;
     const scopeParts = [
       city === "all" ? "All cities" : city,
       branchId === "all"
@@ -114,7 +114,7 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
     ];
     return buildAdminReportMeta({
       operator,
-      reportTitle: module.label,
+      reportTitle: reportModule.label,
       periodLabel: formatAdminReportPeriod(appliedFilter.dateFrom, appliedFilter.dateTo),
       generatedBy: admin.displayName,
       scopeLabel: scopeParts.join(" · "),
@@ -122,7 +122,7 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
   }, [
     appliedFilter,
     operator,
-    module,
+    reportModule,
     admin.displayName,
     city,
     branchId,
@@ -146,7 +146,7 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
     );
   }
 
-  if (!module) {
+  if (!reportModule) {
     return (
       <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         <p className="font-body text-sm text-muted">Report module not found.</p>
@@ -195,7 +195,7 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
 
       const reportCardHtml = `
       <div class="parcela-swal-report-card">
-        <p class="parcela-swal-report-title">${module!.label}</p>
+        <p class="parcela-swal-report-title">${reportModule!.label}</p>
         <p class="parcela-swal-report-period">${period} · HQ network</p>
         ${
           recordCount === 0
@@ -270,7 +270,7 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
     window.print();
   }
 
-  const Icon = module.icon;
+  const Icon = reportModule.icon;
 
   return (
     <>
@@ -297,9 +297,9 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
               </p>
             </div>
             <h1 className="font-display mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              {module.label}
+              {reportModule.label}
             </h1>
-            <p className="font-body mt-1 max-w-2xl text-sm text-muted">{module.description}</p>
+            <p className="font-body mt-1 max-w-2xl text-sm text-muted">{reportModule.description}</p>
           </div>
         </div>
 
@@ -330,8 +330,8 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
                     boxShadow: "inset 0 0 0 1px var(--staff-accent)",
                   }}
                 >
-                  <p className="font-display text-sm font-bold text-foreground">{module.label}</p>
-                  <p className="font-body mt-1 text-xs text-muted">{module.summary}</p>
+                  <p className="font-display text-sm font-bold text-foreground">{reportModule.label}</p>
+                  <p className="font-body mt-1 text-xs text-muted">{reportModule.summary}</p>
                 </div>
               </div>
 
@@ -436,7 +436,7 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
                 </div>
                 <p className="font-body mt-2 text-sm text-muted">
                   {previewReady && appliedFilter
-                    ? `${module.label} · ${formatAdminReportPeriod(appliedFilter.dateFrom, appliedFilter.dateTo)}`
+                    ? `${reportModule.label} · ${formatAdminReportPeriod(appliedFilter.dateFrom, appliedFilter.dateTo)}`
                     : "Set filters and generate a preview before printing or exporting."}
                 </p>
               </div>

@@ -1,0 +1,222 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import type {
+  PlatformAuditRow,
+  PlatformHqAdminRow,
+  PlatformOperatorRow,
+  PlatformRenewalReminder,
+  PlatformUserRow,
+} from "@/lib/platform-demo";
+import {
+  createTransportOperatorApi,
+  fetchPlatformWorkspace,
+  issueHqCredentialsApi,
+  markOperatorConfiguredApi,
+  recordConfigurationLetterApi,
+  resetHqPasswordApi,
+  resetPlatformUserLoginApi,
+  sendRenewalReminderApi,
+  toggleOperatorSuspendApi,
+  updateHqAdminApi,
+  updatePlatformUserApi,
+  type CreateTransportOperatorPayload,
+  type PlatformCredentialResult,
+  type PlatformWorkspace,
+  type PlatformWorkspaceStats,
+} from "@/lib/platform-api";
+
+type PlatformDataContextValue = {
+  operators: PlatformOperatorRow[];
+  hqAdmins: PlatformHqAdminRow[];
+  users: PlatformUserRow[];
+  audit: PlatformAuditRow[];
+  stats: PlatformWorkspaceStats;
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+  createOperator: (payload: CreateTransportOperatorPayload) => Promise<PlatformOperatorRow & { hqSmsSent?: boolean }>;
+  markConfigured: (operatorId: string) => Promise<PlatformOperatorRow>;
+  toggleSuspend: (operatorId: string) => Promise<PlatformOperatorRow>;
+  sendRenewalReminder: (
+    operatorId: string,
+    reminder: PlatformRenewalReminder,
+  ) => Promise<PlatformOperatorRow & { renewalSmsSent?: boolean }>;
+  recordConfigurationLetter: (
+    operatorId: string,
+    agreementDate?: string,
+  ) => Promise<PlatformOperatorRow & { letterSmsSent?: boolean }>;
+  updateHqAdmin: (
+    accountId: string,
+    payload: Partial<Pick<PlatformHqAdminRow, "displayName" | "email" | "phone" | "status">>,
+  ) => Promise<PlatformHqAdminRow>;
+  issueHqCredentials: (accountId: string) => Promise<PlatformCredentialResult>;
+  resetHqPassword: (accountId: string) => Promise<PlatformCredentialResult>;
+  updateUser: (
+    accountId: string,
+    payload: Partial<Pick<PlatformUserRow, "displayName" | "email" | "phone" | "status">>,
+  ) => Promise<PlatformUserRow>;
+  resetUserLogin: (accountId: string) => Promise<PlatformCredentialResult>;
+  patchOperatorLocal: (
+    operatorId: string,
+    patch: Partial<PlatformOperatorRow>,
+  ) => void;
+};
+
+const EMPTY_STATS: PlatformWorkspaceStats = {
+  operatorsTotal: 0,
+  operatorsConfigured: 0,
+  operatorsConfigure: 0,
+  hqAdminsActive: 0,
+  hqAdminsPending: 0,
+  usersTotal: 0,
+  usersActive: 0,
+  stationsSeeded: 0,
+};
+
+const PlatformDataContext = createContext<PlatformDataContextValue | null>(null);
+
+function applyWorkspace(setters: {
+  setOperators: (rows: PlatformOperatorRow[]) => void;
+  setHqAdmins: (rows: PlatformHqAdminRow[]) => void;
+  setUsers: (rows: PlatformUserRow[]) => void;
+  setAudit: (rows: PlatformAuditRow[]) => void;
+  setStats: (stats: PlatformWorkspaceStats) => void;
+}, workspace: PlatformWorkspace) {
+  setters.setOperators(workspace.operators);
+  setters.setHqAdmins(workspace.hqAdmins);
+  setters.setUsers(workspace.users);
+  setters.setAudit(workspace.audit);
+  setters.setStats(workspace.stats);
+}
+
+export function PlatformDataProvider({ children }: { children: ReactNode }) {
+  const [operators, setOperators] = useState<PlatformOperatorRow[]>([]);
+  const [hqAdmins, setHqAdmins] = useState<PlatformHqAdminRow[]>([]);
+  const [users, setUsers] = useState<PlatformUserRow[]>([]);
+  const [audit, setAudit] = useState<PlatformAuditRow[]>([]);
+  const [stats, setStats] = useState<PlatformWorkspaceStats>(EMPTY_STATS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const workspace = await fetchPlatformWorkspace();
+      applyWorkspace(
+        { setOperators, setHqAdmins, setUsers, setAudit, setStats },
+        workspace,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load platform data");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const afterMutation = useCallback(async () => {
+    await refresh();
+  }, [refresh]);
+
+  const value = useMemo<PlatformDataContextValue>(
+    () => ({
+      operators,
+      hqAdmins,
+      users,
+      audit,
+      stats,
+      loading,
+      error,
+      refresh,
+      async createOperator(payload) {
+        const row = await createTransportOperatorApi(payload);
+        await afterMutation();
+        return row;
+      },
+      async markConfigured(operatorId) {
+        const row = await markOperatorConfiguredApi(operatorId);
+        await afterMutation();
+        return row;
+      },
+      async toggleSuspend(operatorId) {
+        const row = await toggleOperatorSuspendApi(operatorId);
+        await afterMutation();
+        return row;
+      },
+      async sendRenewalReminder(operatorId, reminder) {
+        const row = await sendRenewalReminderApi(operatorId, reminder);
+        await afterMutation();
+        return row;
+      },
+      async recordConfigurationLetter(operatorId, agreementDate) {
+        const row = await recordConfigurationLetterApi(operatorId, agreementDate);
+        await afterMutation();
+        return row;
+      },
+      async updateHqAdmin(accountId, payload) {
+        const row = await updateHqAdminApi(accountId, payload);
+        await afterMutation();
+        return row;
+      },
+      async issueHqCredentials(accountId) {
+        const result = await issueHqCredentialsApi(accountId);
+        await afterMutation();
+        return result;
+      },
+      async resetHqPassword(accountId) {
+        const result = await resetHqPasswordApi(accountId);
+        await afterMutation();
+        return result;
+      },
+      async updateUser(accountId, payload) {
+        const row = await updatePlatformUserApi(accountId, payload);
+        await afterMutation();
+        return row;
+      },
+      async resetUserLogin(accountId) {
+        const result = await resetPlatformUserLoginApi(accountId);
+        await afterMutation();
+        return result;
+      },
+      patchOperatorLocal(operatorId, patch) {
+        setOperators((prev) =>
+          prev.map((row) => (row.id === operatorId ? { ...row, ...patch } : row)),
+        );
+      },
+    }),
+    [
+      operators,
+      hqAdmins,
+      users,
+      audit,
+      stats,
+      loading,
+      error,
+      refresh,
+      afterMutation,
+    ],
+  );
+
+  return <PlatformDataContext.Provider value={value}>{children}</PlatformDataContext.Provider>;
+}
+
+export function usePlatformData() {
+  const context = useContext(PlatformDataContext);
+  if (!context) {
+    throw new Error("usePlatformData must be used within PlatformDataProvider");
+  }
+  return context;
+}

@@ -33,6 +33,10 @@ async function bootstrap() {
     credentials: true,
   });
 
+  if (process.env.NODE_ENV === 'production') {
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  }
+
   const port = config.get<number>('port') ?? 3002;
   await app.listen(port, '0.0.0.0');
   console.log(`Parcela API running on http://localhost:${port}/api`);

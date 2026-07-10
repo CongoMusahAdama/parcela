@@ -43,6 +43,7 @@ export type PreBookingDto = {
   createdAt: string;
   trackingToken: string;
   trackingUrl: string;
+  trackingAppUrl: string;
 };
 
 export function toTrackedParcel(
@@ -75,7 +76,7 @@ export function toTrackedParcel(
 
 export function toPreBooking(
   parcel: Parcel & { createdAt?: Date },
-  trackingUrl: string,
+  tracking: { web: string; app: string },
 ): PreBookingDto {
   return {
     bookingReference: parcel.bookingReference,
@@ -95,7 +96,8 @@ export function toPreBooking(
     items: parcel.items,
     createdAt: (parcel.createdAt ?? new Date()).toISOString(),
     trackingToken: parcel.trackingToken,
-    trackingUrl,
+    trackingUrl: tracking.web,
+    trackingAppUrl: tracking.app,
   };
 }
 

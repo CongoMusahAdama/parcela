@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { randomBytes } from 'crypto';
@@ -8,7 +8,7 @@ import {
   OperatorAuditEntry,
 } from './schemas/operator-settings.schema';
 
-export type OperatorCode = 'VIP' | 'STC';
+export type OperatorCode = string;
 
 export type OperatorLocks = {
   bookingsLocked: boolean;
@@ -24,46 +24,18 @@ export type OperatorControlSettings = {
 };
 
 @Injectable()
-export class OperatorControlsService implements OnModuleInit {
+export class OperatorControlsService {
   constructor(
     @InjectModel(OperatorSettings.name)
     private readonly settingsModel: Model<OperatorSettingsDocument>,
   ) {}
-
-  async onModuleInit() {
-    await this.ensureSeedSettings();
-  }
-
-  private async ensureSeedSettings() {
-    const seeds: Array<{ operator: OperatorCode; configured: boolean }> = [
-      { operator: 'VIP', configured: false },
-      { operator: 'STC', configured: true },
-    ];
-
-    for (const seed of seeds) {
-      const existing = await this.settingsModel.findOne({ operator: seed.operator }).lean();
-      if (existing) continue;
-      await this.settingsModel.create({
-        operator: seed.operator,
-        configured: seed.configured,
-        bookingsLocked: false,
-        staffOpsLocked: false,
-        leadOpsLocked: false,
-        smsAlertsEnabled: true,
-        emailDigestEnabled: true,
-        requireLeadApprovalForStaff: false,
-        maintenanceBanner: '',
-        audit: [],
-      });
-    }
-  }
 
   async getOrCreateSettings(operator: OperatorCode): Promise<OperatorSettingsDocument> {
     let doc = await this.settingsModel.findOne({ operator });
     if (!doc) {
       doc = await this.settingsModel.create({
         operator,
-        configured: operator === 'STC',
+        configured: false,
         bookingsLocked: false,
         staffOpsLocked: false,
         leadOpsLocked: false,

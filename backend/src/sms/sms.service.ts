@@ -78,9 +78,14 @@ export class SmsService {
     bookingReference: string;
     pickupCode: string;
     originStationName: string;
-    trackingUrl: string;
+    trackingAppUrl: string;
   }) {
-    const message = `Hi ${params.senderName}, your Parcela booking ${params.bookingReference} is confirmed. Drop off at ${params.originStationName}. Tracking ID: ${params.pickupCode}. Track: ${params.trackingUrl}`;
+    const message = [
+      `Hi ${params.senderName}, your Parcela booking ${params.bookingReference} is confirmed.`,
+      `Drop off at ${params.originStationName}.`,
+      `Pickup code: ${params.pickupCode}.`,
+      `Open Parcela app: ${params.trackingAppUrl}`,
+    ].join(' ');
     return this.sendSms(params.senderPhone, message);
   }
 
@@ -89,9 +94,151 @@ export class SmsService {
     recipientName: string;
     pickupCode: string;
     stationName: string;
-    trackingUrl: string;
+    trackingAppUrl: string;
   }) {
-    const message = `Hi ${params.recipientName}, your parcel is ready at ${params.stationName}. Pickup code: ${params.pickupCode}. Track: ${params.trackingUrl}`;
+    const message = [
+      `Hi ${params.recipientName}, your parcel is ready at ${params.stationName}.`,
+      `Pickup code: ${params.pickupCode}.`,
+      `Open Parcela app: ${params.trackingAppUrl}`,
+    ].join(' ');
     return this.sendSms(params.recipientPhone, message);
+  }
+
+  private portalUrl(path: string) {
+    const base = (this.config.get<string>('app.publicWebUrl') ?? 'http://localhost:3001').replace(
+      /\/$/,
+      '',
+    );
+    return `${base}${path}`;
+  }
+
+  async sendHqAdminCredentials(params: {
+    phone: string;
+    displayName: string;
+    email: string;
+    temporaryPassword: string;
+    operatorName: string;
+    reason: 'new' | 'issued' | 'reset';
+  }) {
+    const loginUrl = this.portalUrl('/admin/login');
+    const intro =
+      params.reason === 'reset'
+        ? `Parcela HQ password reset for ${params.operatorName}.`
+        : params.reason === 'new'
+          ? `Welcome to Parcela — HQ access for ${params.operatorName} is ready.`
+          : `Parcela HQ login for ${params.operatorName} is ready.`;
+    const message = [
+      intro,
+      `Sign in: ${loginUrl}`,
+      `Email: ${params.email}`,
+      `Temporary password: ${params.temporaryPassword}`,
+      'Sign in with this password, then set a new one from the portal.',
+    ].join(' ');
+    return this.sendSms(params.phone, message);
+  }
+
+  async sendBranchLeadCredentials(params: {
+    phone: string;
+    displayName: string;
+    temporaryPin: string;
+    stationName: string;
+    reason: 'new' | 'reset';
+  }) {
+    const loginUrl = this.portalUrl('/lead/login');
+    const intro =
+      params.reason === 'reset'
+        ? `Parcela branch lead login reset for ${params.stationName}.`
+        : `Parcela branch lead access for ${params.stationName} is ready.`;
+    const message = [
+      intro,
+      `Sign in: ${loginUrl}`,
+      `Phone: ${params.phone}`,
+      `Temporary PIN: ${params.temporaryPin}`,
+      'Sign in with this PIN, then set a new password from the portal.',
+    ].join(' ');
+    return this.sendSms(params.phone, message);
+  }
+
+  async sendCounterStaffCredentials(params: {
+    phone: string;
+    displayName: string;
+    email: string;
+    temporaryPassword: string;
+    stationName: string;
+    reason: 'new' | 'reset';
+  }) {
+    const loginUrl = this.portalUrl('/staff/login');
+    const intro =
+      params.reason === 'reset'
+        ? `Parcela counter staff login reset for ${params.stationName}.`
+        : `Parcela counter staff account for ${params.stationName} is ready.`;
+    const message = [
+      intro,
+      `Sign in: ${loginUrl}`,
+      `Email: ${params.email}`,
+      `Temporary password: ${params.temporaryPassword}`,
+      'Sign in with this password, then set a new one from the portal.',
+    ].join(' ');
+    return this.sendSms(params.phone, message);
+  }
+
+  async sendRenewalReminderNotice(params: {
+    phone: string;
+    operatorName: string;
+    reminderLabel: string;
+    expiresAt?: string | null;
+  }) {
+    const expiry = params.expiresAt ? ` Renewal due ${params.expiresAt}.` : '';
+    const message = `Parcela subscription reminder for ${params.operatorName}: ${params.reminderLabel} countdown.${expiry} Contact Parcela if you need help.`;
+    return this.sendSms(params.phone, message);
+  }
+
+  async sendConfigurationLetterNotice(params: {
+    phone: string;
+    operatorName: string;
+  }) {
+    const message = `Parcela configuration for ${params.operatorName} is complete. Your configuration letter has been prepared — check your email or contact Parcela support.`;
+    return this.sendSms(params.phone, message);
+  }
+
+  private formatLoginTimestamp(at: Date) {
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Accra',
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }).format(at);
+  }
+
+  async sendSecureLoginAlert(params: {
+    phone: string;
+    displayName: string;
+    role: 'platform' | 'hq' | 'lead' | 'staff';
+    stationName?: string;
+    operatorName?: string;
+  }) {
+    const portalLabels: Record<typeof params.role, string> = {
+      platform: 'Platform control portal',
+      hq: 'HQ admin portal',
+      lead: 'Branch lead portal',
+      staff: 'Counter staff portal',
+    };
+    const portal = portalLabels[params.role];
+    const context = params.stationName
+      ? ` at ${params.stationName}`
+      : params.operatorName
+        ? ` for ${params.operatorName}`
+        : '';
+    const when = this.formatLoginTimestamp(new Date());
+    const message = [
+      `Hi ${params.displayName},`,
+      `You signed in to Parcela ${portal}${context} on ${when}.`,
+      `If this wasn't you, contact Parcela support immediately.`,
+    ].join(' ');
+    return this.sendSms(params.phone, message);
   }
 }

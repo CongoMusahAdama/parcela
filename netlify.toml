@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# Optional: set in Netlify UI (Site settings → Environment variables)
+# API_PROXY_TARGET = https://your-api-host.com   (no trailing slash)
+# NEXT_PUBLIC_API_URL = /api
+# Do NOT set NEXT_PUBLIC_API_URL to localhost on Netlify.

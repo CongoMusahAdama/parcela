@@ -14,6 +14,10 @@ import {
   generateBookingItemId,
   generateBookingReference,
 } from '../common/utils/codes.util';
+import {
+  buildTrackingLinks,
+  type TrackingLinks,
+} from '../common/utils/tracking-links.util';
 import { SmsService } from '../sms/sms.service';
 import { StationsService } from '../stations/stations.service';
 import { OperatorControlsService } from '../admin/operator-controls.service';
@@ -33,9 +37,11 @@ export class ParcelsService {
     private readonly operatorControls: OperatorControlsService,
   ) {}
 
-  private trackingUrl(token: string) {
-    const base = this.config.get<string>('app.publicWebUrl') ?? 'http://localhost:3001';
-    return `${base.replace(/\/$/, '')}/track/t/${token}`;
+  private trackingLinks(token: string): TrackingLinks {
+    return buildTrackingLinks(token, {
+      webBaseUrl: this.config.get<string>('app.publicWebUrl') ?? 'http://localhost:3001',
+      mobileScheme: this.config.get<string>('app.mobileDeepLinkScheme') ?? 'parcela',
+    });
   }
 
   private async uniqueBookingReference(): Promise<string> {
@@ -94,7 +100,7 @@ export class ParcelsService {
       })),
     });
 
-    const url = this.trackingUrl(trackingToken);
+    const links = this.trackingLinks(trackingToken);
     void this.smsService
       .sendBookingConfirmation({
         senderPhone: parcel.senderPhone,
@@ -102,11 +108,11 @@ export class ParcelsService {
         bookingReference: parcel.bookingReference,
         pickupCode: parcel.pickupCode,
         originStationName: parcel.originStationName,
-        trackingUrl: url,
+        trackingAppUrl: links.app,
       })
       .catch((err) => this.logger.warn(`Booking SMS failed: ${String(err)}`));
 
-    return toPreBooking(parcel.toObject(), url);
+    return toPreBooking(parcel.toObject(), links);
   }
 
   async getByBookingReference(ref: string) {
@@ -115,7 +121,7 @@ export class ParcelsService {
     });
     if (!parcel) throw new NotFoundException('Booking not found');
     const destination = await this.stationsService.findByStationId(parcel.destinationStationId);
-    return toPreBooking(parcel.toObject(), this.trackingUrl(parcel.trackingToken));
+    return toPreBooking(parcel.toObject(), this.trackingLinks(parcel.trackingToken));
   }
 
   async lookupByQuery(query: string) {
@@ -273,13 +279,13 @@ export class ParcelsService {
       await parcel.save();
       updated.push(parcel.bookingReference);
 
-      const trackingUrl = this.trackingUrl(parcel.trackingToken);
+      const links = this.trackingLinks(parcel.trackingToken);
       const sent = await this.smsService.sendArrivalNotification({
         recipientPhone: parcel.recipientPhone,
         recipientName: parcel.recipientName,
         pickupCode: parcel.pickupCode,
         stationName: parcel.destinationStationName,
-        trackingUrl,
+        trackingAppUrl: links.app,
       });
       smsResults.push({ bookingReference: parcel.bookingReference, sent });
     }

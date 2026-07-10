@@ -8,6 +8,7 @@ import { getEnvFilePaths } from './config/env-paths';
 import { AdminModule } from './admin/admin.module';
 import { HealthController } from './health/health.controller';
 import { ParcelsModule } from './parcels/parcels.module';
+import { PlatformModule } from './platform/platform.module';
 import { SeedModule } from './seed/seed.module';
 import { SmsModule } from './sms/sms.module';
 import { StaffModule } from './staff/staff.module';
@@ -43,6 +44,7 @@ import { StationsModule } from './stations/stations.module';
     ParcelsModule,
     StaffModule,
     AdminModule,
+    PlatformModule,
     SmsModule,
   ],
   controllers: [HealthController],

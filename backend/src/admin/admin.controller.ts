@@ -19,6 +19,7 @@ import {
   setAuthCookie,
 } from '../common/utils/auth-cookie.util';
 import { StaffAuthService } from '../staff/staff-auth.service';
+import { SmsService } from '../sms/sms.service';
 import { AdminAuthGuard } from './admin-auth.guard';
 import { AdminService } from './admin.service';
 import { AdminLoginDto } from './dto/admin-login.dto';
@@ -37,6 +38,7 @@ export class AdminController {
   constructor(
     private readonly staffAuth: StaffAuthService,
     private readonly adminService: AdminService,
+    private readonly sms: SmsService,
   ) {}
 
   @Post('login')
@@ -44,6 +46,12 @@ export class AdminController {
   async login(@Body() dto: AdminLoginDto, @Res({ passthrough: true }) res: Response) {
     const result = this.staffAuth.loginAdmin(dto.email, dto.password);
     setAuthCookie(res, ADMIN_AUTH_COOKIE, result.token, this.staffAuth.getTokenTtlMs());
+    void this.sms.sendSecureLoginAlert({
+      phone: result.staff.phone,
+      displayName: result.staff.displayName,
+      role: 'hq',
+      operatorName: result.staff.operator,
+    });
     return this.adminService.getSessionPayload(result.staff, result.signedInAt);
   }
 

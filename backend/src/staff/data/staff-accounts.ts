@@ -9,7 +9,7 @@ export type StaffAccountRecord = {
   pin: string;
   active: boolean;
   role: StaffRole;
-  operator: 'VIP' | 'STC';
+  operator: string;
   stationId: string;
   stationName: string;
   stationCode: string;
@@ -182,25 +182,5 @@ const SEED_ACCOUNT_TEMPLATES: SeedAccountTemplate[] = [
   },
 ];
 
-export type SeedCredentialBundle = {
-  staffPassword: string;
-  staffPin: string;
-  leadPassword: string;
-  leadPin: string;
-  adminPassword: string;
-  adminPin: string;
-};
-
-/** Build seed accounts with credentials from env (via StaffAuthService). */
-export function buildSeedStaffAccounts(creds: SeedCredentialBundle): StaffAccountRecord[] {
-  return SEED_ACCOUNT_TEMPLATES.map((template) => {
-    const { credential, ...rest } = template;
-    if (credential === 'lead') {
-      return { ...rest, password: creds.leadPassword, pin: creds.leadPin };
-    }
-    if (credential === 'admin') {
-      return { ...rest, password: creds.adminPassword, pin: creds.adminPin };
-    }
-    return { ...rest, password: creds.staffPassword, pin: creds.staffPin };
-  });
-}
+/** Legacy demo account IDs — purged on startup; never re-seeded. */
+export const DEMO_STAFF_ACCOUNT_IDS = SEED_ACCOUNT_TEMPLATES.map((template) => template.id);

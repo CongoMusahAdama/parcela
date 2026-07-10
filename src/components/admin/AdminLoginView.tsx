@@ -7,7 +7,6 @@ import { AdminAuthBrandPanel } from "@/components/admin/AdminAuthBrandPanel";
 import { AdminAuthField } from "@/components/admin/AdminAuthField";
 import { Logo } from "@/components/brand/Logo";
 import {
-  DEMO_ADMIN_LOGINS,
   formatAdminServerDate,
   getAdminLoginFailureMessage,
   signInAdmin,
@@ -141,37 +140,6 @@ export function AdminLoginView() {
               Forgot password? Contact Parcela support.
               <br />© {new Date().getFullYear()} Parcela · HQ dashboard
             </p>
-
-            {process.env.NODE_ENV === "development" && (
-              <div className="mt-4 rounded-xl border border-dashed border-white/20 bg-white/5 px-3 py-3">
-                <p className="font-display text-center text-[10px] font-bold uppercase tracking-wider text-white/70">
-                  Test HQ logins
-                </p>
-                <ul className="mt-2 space-y-1.5">
-                  {DEMO_ADMIN_LOGINS.map((account) => (
-                    <li key={account.email}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEmail(account.email);
-                          const demoPassword = process.env.NEXT_PUBLIC_DEMO_ADMIN_PASSWORD?.trim() ?? "";
-                          if (demoPassword) setPassword(demoPassword);
-                        }}
-                        className="font-body w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-left text-[10px] text-white/75 transition-colors hover:border-white/25 hover:bg-white/10 hover:text-white"
-                      >
-                        <span className="font-semibold text-white">{account.label}</span>
-                        <span className="mt-0.5 block font-mono text-white/60">
-                          {account.email}
-                          {process.env.NEXT_PUBLIC_DEMO_ADMIN_PASSWORD
-                            ? " · (password from env)"
-                            : " · set NEXT_PUBLIC_DEMO_ADMIN_PASSWORD"}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         </section>
       </div>

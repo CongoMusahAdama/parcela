@@ -23,7 +23,7 @@ function isDemoLeadToken(token?: string): boolean {
   return Boolean(token?.startsWith("demo-lead-"));
 }
 
-function useDemoLeadData(demoToken?: string): boolean {
+function shouldUseDemoLeadData(demoToken?: string): boolean {
   return LEAD_USE_DEMO_DATA || isDemoLeadToken(demoToken);
 }
 
@@ -55,7 +55,7 @@ export async function fetchLeadSession(): Promise<LeadSession> {
 }
 
 export async function fetchLeadSummary(demoToken?: string): Promise<BranchSummary> {
-  if (useDemoLeadData(demoToken)) {
+  if (shouldUseDemoLeadData(demoToken)) {
     if (!demoToken) throw new Error("Demo session required");
     return demoFetchLeadSummary(demoToken);
   }
@@ -63,7 +63,7 @@ export async function fetchLeadSummary(demoToken?: string): Promise<BranchSummar
 }
 
 export async function fetchLeadParcels(demoToken?: string): Promise<StaffParcelSummary[]> {
-  if (useDemoLeadData(demoToken)) {
+  if (shouldUseDemoLeadData(demoToken)) {
     if (!demoToken) throw new Error("Demo session required");
     return demoFetchLeadParcels(demoToken);
   }
@@ -71,7 +71,7 @@ export async function fetchLeadParcels(demoToken?: string): Promise<StaffParcelS
 }
 
 export async function fetchLeadTeam(demoToken?: string): Promise<LeadTeamMember[]> {
-  if (useDemoLeadData(demoToken)) {
+  if (shouldUseDemoLeadData(demoToken)) {
     if (!demoToken) throw new Error("Demo session required");
     return demoFetchLeadTeam(demoToken);
   }
@@ -79,7 +79,7 @@ export async function fetchLeadTeam(demoToken?: string): Promise<LeadTeamMember[
 }
 
 export async function fetchLeadBranchStations(demoToken?: string): Promise<LeadBranchStations> {
-  if (useDemoLeadData(demoToken)) {
+  if (shouldUseDemoLeadData(demoToken)) {
     if (!demoToken) throw new Error("Demo session required");
     return demoFetchLeadBranchStations(demoToken);
   }
@@ -90,7 +90,7 @@ export async function createLeadTeamMemberApi(
   body: { displayName: string; email: string; phone: string; stationId?: string },
   demoToken?: string,
 ): Promise<CreateTeamMemberResult> {
-  if (useDemoLeadData(demoToken)) {
+  if (shouldUseDemoLeadData(demoToken)) {
     if (!demoToken) throw new Error("Demo session required");
     return demoCreateLeadTeamMemberApi(demoToken, body);
   }
@@ -112,7 +112,7 @@ export async function updateLeadTeamMemberApi(
   body: UpdateTeamMemberBody,
   demoToken?: string,
 ): Promise<LeadTeamMember> {
-  if (useDemoLeadData(demoToken)) {
+  if (shouldUseDemoLeadData(demoToken)) {
     if (!demoToken) throw new Error("Demo session required");
     return demoUpdateLeadTeamMemberApi(demoToken, memberId, body);
   }
@@ -126,7 +126,7 @@ export async function deleteLeadTeamMemberApi(
   memberId: string,
   demoToken?: string,
 ): Promise<{ ok: boolean; deletedId: string }> {
-  if (useDemoLeadData(demoToken)) {
+  if (shouldUseDemoLeadData(demoToken)) {
     if (!demoToken) throw new Error("Demo session required");
     return demoDeleteLeadTeamMemberApi(demoToken, memberId);
   }

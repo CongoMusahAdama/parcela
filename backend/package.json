@@ -15,6 +15,7 @@
     "start:prod": "node dist/main",
     "seed": "ts-node -r tsconfig-paths/register src/seed/run-seed.ts",
     "seed:reset": "ts-node -r tsconfig-paths/register src/seed/run-seed.ts --reset",
+    "workspace:reset": "ts-node -r tsconfig-paths/register src/seed/run-workspace-reset.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",

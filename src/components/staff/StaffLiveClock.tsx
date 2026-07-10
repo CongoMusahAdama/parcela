@@ -7,10 +7,15 @@ export function StaffLiveClock({
   className,
   variant = "dark",
   compact = false,
+  timeFirst = false,
+  showDate = true,
 }: {
   className?: string;
   variant?: "dark" | "light";
   compact?: boolean;
+  /** Show the live time above the date label (e.g. hero header widgets). */
+  timeFirst?: boolean;
+  showDate?: boolean;
 }) {
   const [now, setNow] = useState(() => new Date());
 
@@ -29,10 +34,22 @@ export function StaffLiveClock({
     ? "font-display mt-0.5 text-xl font-bold tabular-nums tracking-tight text-[var(--staff-accent)] sm:mt-1 sm:text-3xl"
     : "font-display mt-1 text-2xl font-bold tabular-nums tracking-tight text-[var(--staff-accent)] sm:text-3xl";
 
+  const dateLine = showDate ? <p className={dateClass}>{formatStaffLiveDate(now)}</p> : null;
+  const timeLine = <p className={timeClass}>{formatStaffLiveTime(now)}</p>;
+
   return (
     <div className={className} aria-live="polite" aria-atomic="true">
-      <p className={dateClass}>{formatStaffLiveDate(now)}</p>
-      <p className={timeClass}>{formatStaffLiveTime(now)}</p>
+      {timeFirst ? (
+        <>
+          {timeLine}
+          {dateLine}
+        </>
+      ) : (
+        <>
+          {dateLine}
+          {timeLine}
+        </>
+      )}
     </div>
   );
 }

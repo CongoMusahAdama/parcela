@@ -1,9 +1,13 @@
 import type { NextConfig } from "next";
 
-const apiProxyTarget = (process.env.API_PROXY_TARGET ?? "http://127.0.0.1:3002").replace(
-  /\/$/,
-  "",
-);
+function resolveApiProxyTarget(): string {
+  const configured = process.env.API_PROXY_TARGET?.trim();
+  if (configured) return configured.replace(/\/$/, "");
+  if (process.env.NODE_ENV !== "production") return "http://127.0.0.1:3002";
+  return "";
+}
+
+const apiProxyTarget = resolveApiProxyTarget();
 
 const securityHeaders = [
   { key: "X-DNS-Prefetch-Control", value: "on" },
@@ -19,6 +23,14 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async rewrites() {
+    if (!apiProxyTarget) {
+      if (process.env.NODE_ENV === "production") {
+        console.warn(
+          "[parcela] API_PROXY_TARGET is not set — /api routes will not proxy to your NestJS backend.",
+        );
+      }
+      return [];
+    }
     return [
       {
         source: "/api/:path*",

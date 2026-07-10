@@ -28,8 +28,8 @@ export const OperatorAuditEntrySchema = SchemaFactory.createForClass(OperatorAud
 
 @Schema({ collection: 'operator_settings', timestamps: true })
 export class OperatorSettings {
-  @Prop({ required: true, unique: true, enum: ['VIP', 'STC'], index: true })
-  operator!: 'VIP' | 'STC';
+  @Prop({ required: true, unique: true, index: true })
+  operator!: string;
 
   @Prop({ default: false })
   configured!: boolean;

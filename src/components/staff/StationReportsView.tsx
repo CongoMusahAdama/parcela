@@ -30,13 +30,13 @@ import {
 } from "@/lib/staff-reports";
 import { showInfoAlert, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import type { StaffAccount } from "@/types/staff";
-import type { Parcel } from "@/types/parcel";
+import type { StaffParcelSummary } from "@/types/staff-parcel";
 
 const PREVIEW_PAGE_SIZE = 8;
 
 type StationReportsViewProps = {
   staff: StaffAccount;
-  parcels: Parcel[];
+  parcels: StaffParcelSummary[];
   loading?: boolean;
   title?: string;
   description?: string;
