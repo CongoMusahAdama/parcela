@@ -13,6 +13,7 @@ import {
   PauseCircle,
   PlayCircle,
   Plus,
+  Upload,
   X,
 } from "lucide-react";
 import { PlatformConfigurationLetterModal } from "@/components/platform/PlatformConfigurationLetterModal";
@@ -34,6 +35,9 @@ import { platformCredentialSuccessText, platformOnboardSmsText } from "@/lib/pla
 import { platformRowNumber, usePlatformPagination } from "@/lib/platform-pagination";
 import { showConfirmDialog, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import { PLATFORM_THEME } from "@/lib/platform-theme";
+import { readOperatorLogoFile } from "@/lib/operator-logo-upload";
+import { isValidEmail } from "@/lib/email-validation";
+import { ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | PlatformOperatorStatus;
@@ -159,6 +163,12 @@ const BRAND_COLORS: { name: string; hex: string }[] = [
   { name: "Silver", hex: "#9ca3af" },
 ];
 
+type OnboardTerminal = {
+  id: string;
+  name: string;
+  city: string;
+};
+
 type OnboardDraft = {
   name: string;
   code: string;
@@ -167,8 +177,11 @@ type OnboardDraft = {
   contactPhone: string;
   agreementDate: string;
   brandColor: string;
+  logoDataUrl: string | null;
+  logoFileName: string;
   cityCount: string;
   stationCount: string;
+  terminals: OnboardTerminal[];
   notes: string;
   hqName: string;
   hqEmail: string;
@@ -184,8 +197,11 @@ const EMPTY_DRAFT: OnboardDraft = {
   contactPhone: "",
   agreementDate: "",
   brandColor: "#fd7e14",
+  logoDataUrl: null,
+  logoFileName: "",
   cityCount: "",
   stationCount: "",
+  terminals: [],
   notes: "",
   hqName: "",
   hqEmail: "",
@@ -214,6 +230,9 @@ export function PlatformOperatorsView() {
   const [saving, setSaving] = useState(false);
   const [colorDropOpen, setColorDropOpen] = useState(false);
   const colorDropRef = useRef<HTMLDivElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [terminalDraft, setTerminalDraft] = useState({ name: "", city: "" });
   const [letterOperatorId, setLetterOperatorId] = useState<string | null>(null);
   const [letterAgreementDate, setLetterAgreementDate] = useState("");
 
@@ -311,12 +330,26 @@ export function PlatformOperatorsView() {
     }
     if (step === 3) {
       const stations = Number(draft.stationCount);
-      if (!draft.stationCount.trim() || Number.isNaN(stations) || stations < 1) {
+      const hasTerminalList = draft.terminals.length > 0;
+      if (
+        !hasTerminalList &&
+        (!draft.stationCount.trim() || Number.isNaN(stations) || stations < 1)
+      ) {
         await showValidationAlert({
           title: "Network size required",
-          text: "Enter how many stations / terminals this transport will run.",
+          text: "Enter station/city numbers or add at least one terminal below.",
         });
         return false;
+      }
+      if (!hasTerminalList) {
+        const cities = Number(draft.cityCount);
+        if (!draft.cityCount.trim() || Number.isNaN(cities) || cities < 1) {
+          await showValidationAlert({
+            title: "Cities required",
+            text: "Enter how many cities / corridors this transport covers.",
+          });
+          return false;
+        }
       }
     }
     if (step === 4) {
@@ -324,6 +357,13 @@ export function PlatformOperatorsView() {
         await showValidationAlert({
           title: "HQ admin required",
           text: "Add the HQ admin name and email. You will hand them login after configuration.",
+        });
+        return false;
+      }
+      if (!isValidEmail(draft.hqEmail)) {
+        await showValidationAlert({
+          title: "HQ email invalid",
+          text: "Enter a valid work email for the HQ admin (e.g. hq@company.com).",
         });
         return false;
       }
@@ -411,12 +451,72 @@ export function PlatformOperatorsView() {
     });
   }
 
+  function syncNetworkCounts(terminals: OnboardTerminal[]) {
+    const cities = new Set(terminals.map((terminal) => terminal.city.trim().toLowerCase()).filter(Boolean));
+    return {
+      stationCount: terminals.length > 0 ? String(terminals.length) : "",
+      cityCount: cities.size > 0 ? String(cities.size) : "",
+    };
+  }
+
+  async function addTerminal() {
+    const name = terminalDraft.name.trim();
+    const city = terminalDraft.city.trim();
+    if (!name || !city) {
+      await showValidationAlert({
+        title: "Terminal details required",
+        text: "Enter both the terminal name and city before adding.",
+      });
+      return;
+    }
+
+    setDraft((current) => {
+      const terminals = [...current.terminals, { id: crypto.randomUUID(), name, city }];
+      return { ...current, terminals, ...syncNetworkCounts(terminals) };
+    });
+    setTerminalDraft({ name: "", city: "" });
+  }
+
+  function removeTerminal(terminalId: string) {
+    setDraft((current) => {
+      const terminals = current.terminals.filter((terminal) => terminal.id !== terminalId);
+      return { ...current, terminals, ...syncNetworkCounts(terminals) };
+    });
+  }
+
+  async function handleLogoPick(file: File | null) {
+    if (!file) return;
+    setLogoUploading(true);
+    try {
+      const result = await readOperatorLogoFile(file);
+      setDraft((d) => ({
+        ...d,
+        logoDataUrl: result.dataUrl,
+        logoFileName: result.fileName,
+      }));
+    } catch (error) {
+      await showValidationAlert({
+        title: "Logo not accepted",
+        text: error instanceof Error ? error.message : "Could not use that image.",
+      });
+    } finally {
+      setLogoUploading(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
+    }
+  }
+
   async function submitOnboard() {
-    const ok = await validateStep(4);
-    if (!ok) return;
+    for (const step of [1, 3, 4] as const) {
+      const ok = await validateStep(step);
+      if (!ok) return;
+    }
 
     setSaving(true);
     try {
+      const terminals = draft.terminals.map((terminal) => ({
+        name: terminal.name.trim(),
+        city: terminal.city.trim(),
+      }));
       const next = await createOperator({
         name: draft.name.trim(),
         code: draft.code.trim(),
@@ -424,8 +524,18 @@ export function PlatformOperatorsView() {
         contactEmail: draft.contactEmail.trim() || undefined,
         contactPhone: draft.contactPhone.trim() || undefined,
         brandColor: draft.brandColor || "#fd7e14",
-        cityCount: Math.max(1, Number(draft.cityCount) || 1),
-        stationCount: Math.max(1, Number(draft.stationCount) || 1),
+        logoDataUrl: draft.logoDataUrl ?? undefined,
+        cityCount: Math.max(
+          1,
+          terminals.length > 0
+            ? new Set(terminals.map((terminal) => terminal.city.toLowerCase())).size
+            : Number(draft.cityCount) || 1,
+        ),
+        stationCount: Math.max(
+          1,
+          terminals.length > 0 ? terminals.length : Number(draft.stationCount) || 1,
+        ),
+        terminals: terminals.length > 0 ? terminals : undefined,
         notes: draft.notes.trim() || undefined,
         agreementDate: draft.agreementDate,
         hqName: draft.hqName.trim(),
@@ -443,6 +553,14 @@ export function PlatformOperatorsView() {
           next.primaryAdminEmail ?? draft.hqEmail,
         )}`,
         confirmButtonColor: "#fd7e14",
+      });
+    } catch (error) {
+      await showValidationAlert({
+        title: "Could not onboard transport",
+        text:
+          error instanceof ApiError
+            ? error.message
+            : "Something went wrong while creating this transport. Try again.",
       });
     } finally {
       setSaving(false);
@@ -566,6 +684,7 @@ export function PlatformOperatorsView() {
                               code={row.code}
                               name={row.name}
                               brandColor={row.brandColor}
+                              logoDataUrl={row.logoDataUrl}
                             />
                             <div>
                               <p className="font-display text-sm font-bold text-stone-900">
@@ -629,6 +748,7 @@ export function PlatformOperatorsView() {
                     code={selected.code}
                     name={selected.name}
                     brandColor={selected.brandColor}
+                    logoDataUrl={selected.logoDataUrl}
                     size="md"
                   />
                   <div>
@@ -944,8 +1064,7 @@ export function PlatformOperatorsView() {
                 <div className="space-y-5">
                   <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
                     <p className="font-body text-sm leading-relaxed text-stone-600">
-                      Brand colour for their HQ portal later. Logo upload can be added when we wire
-                      storage.
+                      Brand colour and logo for their HQ portal. PNG, JPEG, or WebP up to 400 KB.
                     </p>
                   </div>
 
@@ -957,6 +1076,7 @@ export function PlatformOperatorsView() {
                         code={draft.code || "NEW"}
                         name={draft.name || "New transport"}
                         brandColor={draft.brandColor}
+                        logoDataUrl={draft.logoDataUrl}
                         size="lg"
                       />
                       <span
@@ -1062,11 +1182,47 @@ export function PlatformOperatorsView() {
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 px-4 py-6 text-center">
-                    <p className="font-display text-sm font-semibold text-stone-700">Logo upload</p>
-                    <p className="font-body mt-1 text-xs text-stone-500">
-                      Coming with file storage. For now the colour + initials mark the brand.
-                    </p>
+                  <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 px-4 py-5">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="font-display text-sm font-semibold text-stone-700">Operator logo</p>
+                        <p className="font-body mt-1 text-xs text-stone-500">
+                          {draft.logoFileName
+                            ? `Selected: ${draft.logoFileName}`
+                            : "Optional — shown on platform views and configuration letters."}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          ref={logoInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          onChange={(e) => void handleLogoPick(e.target.files?.[0] ?? null)}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => logoInputRef.current?.click()}
+                          disabled={logoUploading}
+                          className="font-display inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold uppercase tracking-wide text-stone-700 shadow-sm transition-colors hover:border-stone-300 disabled:opacity-60"
+                        >
+                          <Upload className="size-3.5" />
+                          {logoUploading ? "Reading…" : draft.logoDataUrl ? "Replace logo" : "Upload logo"}
+                        </button>
+                        {draft.logoDataUrl ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setDraft((d) => ({ ...d, logoDataUrl: null, logoFileName: "" }))
+                            }
+                            className="font-display inline-flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-wide text-stone-500 hover:text-red-600"
+                          >
+                            <X className="size-3.5" />
+                            Remove
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1075,7 +1231,8 @@ export function PlatformOperatorsView() {
                 <div className="space-y-5">
                   <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
                     <p className="font-body text-sm leading-relaxed text-stone-600">
-                      How big is this network? You (or they) will refine stations after HQ is live.
+                      Enter network size numbers, or add each terminal below. Counts update automatically
+                      when you add terminals — HQ can refine station details after go-live.
                     </p>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -1091,6 +1248,7 @@ export function PlatformOperatorsView() {
                         value={draft.cityCount}
                         onChange={(e) => setDraft((d) => ({ ...d, cityCount: e.target.value }))}
                         placeholder="e.g. 6"
+                        readOnly={draft.terminals.length > 0}
                       />
                     </div>
                     <div>
@@ -1105,9 +1263,87 @@ export function PlatformOperatorsView() {
                         value={draft.stationCount}
                         onChange={(e) => setDraft((d) => ({ ...d, stationCount: e.target.value }))}
                         placeholder="e.g. 12"
+                        readOnly={draft.terminals.length > 0}
                       />
                     </div>
                   </div>
+
+                  <div className="rounded-xl border border-stone-200 bg-white p-4">
+                    <p className="font-display text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                      Add terminals
+                    </p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                      <div>
+                        <label htmlFor="terminal-name" className={labelClass}>
+                          Terminal name
+                        </label>
+                        <input
+                          id="terminal-name"
+                          className={inputClass}
+                          value={terminalDraft.name}
+                          onChange={(e) =>
+                            setTerminalDraft((current) => ({ ...current, name: e.target.value }))
+                          }
+                          placeholder="e.g. Circle Terminal"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="terminal-city" className={labelClass}>
+                          City
+                        </label>
+                        <input
+                          id="terminal-city"
+                          className={inputClass}
+                          value={terminalDraft.city}
+                          onChange={(e) =>
+                            setTerminalDraft((current) => ({ ...current, city: e.target.value }))
+                          }
+                          placeholder="e.g. Accra"
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <button
+                          type="button"
+                          onClick={() => void addTerminal()}
+                          className="font-display inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white sm:w-auto"
+                          style={{ background: "var(--platform-orange)" }}
+                        >
+                          <Plus className="size-3.5" />
+                          Add
+                        </button>
+                      </div>
+                    </div>
+
+                    {draft.terminals.length > 0 ? (
+                      <ul className="mt-4 space-y-2">
+                        {draft.terminals.map((terminal, index) => (
+                          <li
+                            key={terminal.id}
+                            className="flex items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-display truncate text-sm font-semibold text-stone-900">
+                                {index + 1}. {terminal.name}
+                              </p>
+                              <p className="font-body text-xs text-stone-500">{terminal.city}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeTerminal(terminal.id)}
+                              className="font-display shrink-0 text-[11px] font-bold uppercase tracking-wide text-stone-500 hover:text-red-600"
+                            >
+                              Remove
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="font-body mt-3 text-xs text-stone-500">
+                        No terminals added yet. You can still continue with numbers only.
+                      </p>
+                    )}
+                  </div>
+
                   <div>
                     <label htmlFor="op-notes" className={labelClass}>
                       Setup notes
@@ -1202,6 +1438,7 @@ export function PlatformOperatorsView() {
                         code={draft.code || "NEW"}
                         name={draft.name}
                         brandColor={draft.brandColor}
+                        logoDataUrl={draft.logoDataUrl}
                         size="md"
                       />
                       <div>
@@ -1220,8 +1457,23 @@ export function PlatformOperatorsView() {
                         </dt>
                         <dd className="font-body text-stone-800">
                           {draft.stationCount || "—"} stations · {draft.cityCount || "—"} cities
+                          {draft.terminals.length > 0
+                            ? ` (${draft.terminals.length} terminal${draft.terminals.length === 1 ? "" : "s"} listed)`
+                            : ""}
                         </dd>
                       </div>
+                      {draft.terminals.length > 0 ? (
+                        <div className="sm:col-span-2">
+                          <dt className="font-display text-[10px] font-bold uppercase text-stone-400">
+                            Terminals
+                          </dt>
+                          <dd className="font-body text-stone-800">
+                            {draft.terminals
+                              .map((terminal) => `${terminal.name} (${terminal.city})`)
+                              .join(" · ")}
+                          </dd>
+                        </div>
+                      ) : null}
                       <div>
                         <dt className="font-display text-[10px] font-bold uppercase text-stone-400">
                           Company contact

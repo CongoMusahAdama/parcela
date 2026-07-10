@@ -367,6 +367,7 @@ export function PlatformAuditView() {
                               code={operator.code}
                               name={operator.name}
                               brandColor={operator.brandColor}
+                              logoDataUrl={operator.logoDataUrl}
                               size="sm"
                             />
                             <span className="font-display text-xs font-bold text-stone-700">
@@ -411,6 +412,7 @@ export function PlatformAuditView() {
                 code={selectedOperator.code}
                 name={selectedOperator.name}
                 brandColor={selectedOperator.brandColor}
+                logoDataUrl={selectedOperator.logoDataUrl}
                 size="md"
               />
             ) : (

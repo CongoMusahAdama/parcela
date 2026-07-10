@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SmsModule } from '../sms/sms.module';
 import { StaffModule } from '../staff/staff.module';
+import { StationsModule } from '../stations/stations.module';
 import { PlatformAuthController } from './controllers/platform-auth.controller';
 import { PlatformOperatorsController } from './controllers/platform-operators.controller';
 import { PlatformPeopleController } from './controllers/platform-people.controller';
@@ -27,6 +28,7 @@ import { PlatformWorkspaceService } from './services/platform-workspace.service'
     ]),
     StaffModule,
     SmsModule,
+    StationsModule,
   ],
   controllers: [PlatformAuthController, PlatformOperatorsController, PlatformPeopleController],
   providers: [

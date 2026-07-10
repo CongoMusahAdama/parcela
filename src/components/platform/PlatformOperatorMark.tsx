@@ -8,6 +8,7 @@ type PlatformOperatorMarkProps = {
   code: string;
   name?: string;
   brandColor?: string;
+  logoDataUrl?: string | null;
   className?: string;
   size?: "sm" | "md" | "lg";
 };
@@ -23,9 +24,29 @@ export function PlatformOperatorMark({
   code,
   name,
   brandColor = "#fd7e14",
+  logoDataUrl,
   className,
   size = "sm",
 }: PlatformOperatorMarkProps) {
+  if (logoDataUrl) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center overflow-hidden rounded-xl border border-stone-200 bg-white p-1.5",
+          SIZE[size],
+          className,
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={logoDataUrl}
+          alt={name ?? code}
+          className="h-full w-full object-contain"
+        />
+      </div>
+    );
+  }
+
   if (isKnownBrandOperator(code)) {
     return (
       <div

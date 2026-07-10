@@ -22,6 +22,7 @@ export type PlatformOperatorRow = {
   name: string;
   status: PlatformOperatorStatus;
   brandColor: string;
+  logoDataUrl: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
   region: string;
@@ -141,6 +142,7 @@ export const PLATFORM_OPERATORS: PlatformOperatorRow[] = [
     name: "VIP Transport",
     status: "configure",
     brandColor: "#c8102e",
+    logoDataUrl: null,
     contactEmail: "ops@viptransport.gh",
     contactPhone: "0302 000 111",
     region: "Nationwide",
@@ -166,6 +168,7 @@ export const PLATFORM_OPERATORS: PlatformOperatorRow[] = [
     name: "STC Transport",
     status: "configured",
     brandColor: "#0b6e4f",
+    logoDataUrl: null,
     contactEmail: "hq@stc.gov.gh",
     contactPhone: "0302 000 222",
     region: "Nationwide",

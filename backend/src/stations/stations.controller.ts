@@ -8,7 +8,7 @@ export class StationsController {
   @Get()
   findAll(
     @Query('q') q?: string,
-    @Query('operator') operator?: 'VIP' | 'STC',
+    @Query('operator') operator?: string,
     @Query('lat') lat?: string,
     @Query('lng') lng?: string,
     @Query('excludeId') excludeId?: string,

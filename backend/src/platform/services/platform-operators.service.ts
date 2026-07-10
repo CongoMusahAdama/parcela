@@ -6,8 +6,10 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { generateTemporaryPassword } from '../../common/utils/temp-password.util';
+import { normalizeOperatorLogoDataUrl } from '../../common/utils/operator-logo.util';
 import { isProvisionedPhone } from '../../common/utils/phone.util';
 import { SmsService } from '../../sms/sms.service';
+import { StationsService } from '../../stations/stations.service';
 import { StaffAuthService } from '../../staff/staff-auth.service';
 import type { StaffAccountRecord } from '../../staff/data/staff-accounts';
 import {
@@ -31,6 +33,7 @@ export class PlatformOperatorsService {
     private readonly staffAuth: StaffAuthService,
     private readonly audit: PlatformAuditService,
     private readonly sms: SmsService,
+    private readonly stations: StationsService,
   ) {}
 
   async list(actorEmail?: string) {
@@ -52,6 +55,18 @@ export class PlatformOperatorsService {
 
     const operatorId = `op-${code.toLowerCase()}-${Date.now()}`;
     const hqEmail = dto.hqEmail.trim().toLowerCase();
+    const terminals = (dto.terminals ?? [])
+      .map((terminal) => ({
+        name: terminal.name.trim(),
+        city: terminal.city.trim(),
+      }))
+      .filter((terminal) => terminal.name && terminal.city);
+    const stationCount =
+      terminals.length > 0 ? terminals.length : dto.stationCount;
+    const cityCount =
+      terminals.length > 0
+        ? new Set(terminals.map((terminal) => terminal.city.toLowerCase())).size
+        : dto.cityCount;
 
     const operator = await this.operatorModel.create({
       operatorId,
@@ -59,11 +74,12 @@ export class PlatformOperatorsService {
       name: dto.name.trim(),
       status: 'configure',
       brandColor: dto.brandColor ?? '#fd7e14',
+      logoDataUrl: normalizeOperatorLogoDataUrl(dto.logoDataUrl),
       contactEmail: dto.contactEmail?.trim() || undefined,
       contactPhone: dto.contactPhone?.trim() || undefined,
       region: dto.region.trim() || 'Ghana',
-      cityCount: dto.cityCount,
-      stationCount: dto.stationCount,
+      cityCount,
+      stationCount,
       hqConfigured: false,
       primaryAdminEmail: hqEmail,
       primaryAdminName: dto.hqName.trim(),
@@ -133,6 +149,10 @@ export class PlatformOperatorsService {
       }
     }
 
+    if (terminals.length > 0) {
+      await this.stations.seedOperatorTerminals(code, terminals);
+    }
+
     await this.audit.record({
       action: 'Transport onboarded',
       detail: `${dto.name.trim()} (${code})`,
@@ -152,6 +172,12 @@ export class PlatformOperatorsService {
     if (dto.hqConfigured !== undefined) doc.hqConfigured = dto.hqConfigured;
     if (dto.agreementDate !== undefined) doc.agreementDate = dto.agreementDate;
     if (dto.notes !== undefined) doc.notes = dto.notes;
+    if (dto.brandColor !== undefined) doc.brandColor = dto.brandColor;
+    if (dto.logoDataUrl !== undefined) {
+      doc.logoDataUrl = dto.logoDataUrl
+        ? normalizeOperatorLogoDataUrl(dto.logoDataUrl)
+        : undefined;
+    }
     if (dto.subscriptionPlan !== undefined) doc.subscriptionPlan = dto.subscriptionPlan;
     if (dto.subscriptionPaidAt !== undefined) {
       doc.subscriptionPaidAt = dto.subscriptionPaidAt

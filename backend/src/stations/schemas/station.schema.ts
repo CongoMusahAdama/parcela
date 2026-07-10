@@ -29,8 +29,8 @@ export class Station {
   @Prop({ required: true })
   lng!: number;
 
-  @Prop({ required: true, enum: ['VIP', 'STC'] })
-  operator!: 'VIP' | 'STC';
+  @Prop({ required: true, index: true })
+  operator!: string;
 
   @Prop({ default: true })
   active!: boolean;

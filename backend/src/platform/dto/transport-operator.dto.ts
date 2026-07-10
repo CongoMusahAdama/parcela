@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsEmail,
   IsIn,
@@ -9,7 +10,21 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class OperatorTerminalDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  name!: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(80)
+  city!: string;
+}
 
 export class CreateTransportOperatorDto {
   @IsString()
@@ -41,6 +56,10 @@ export class CreateTransportOperatorDto {
   @Matches(/^#[0-9A-Fa-f]{6}$/)
   brandColor?: string;
 
+  @IsOptional()
+  @IsString()
+  logoDataUrl?: string;
+
   @IsInt()
   @Min(1)
   cityCount!: number;
@@ -48,6 +67,12 @@ export class CreateTransportOperatorDto {
   @IsInt()
   @Min(1)
   stationCount!: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OperatorTerminalDto)
+  terminals?: OperatorTerminalDto[];
 
   @IsOptional()
   @IsString()
@@ -90,6 +115,15 @@ export class UpdateTransportOperatorDto {
   @IsString()
   @MaxLength(1000)
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^#[0-9A-Fa-f]{6}$/)
+  brandColor?: string;
+
+  @IsOptional()
+  @IsString()
+  logoDataUrl?: string | null;
 
   @IsOptional()
   @IsIn(['annual', 'trial'])

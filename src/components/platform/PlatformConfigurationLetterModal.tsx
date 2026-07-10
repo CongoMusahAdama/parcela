@@ -166,6 +166,7 @@ export function PlatformConfigurationLetterModal({
                 code={operator.code}
                 name={operator.name}
                 brandColor={operator.brandColor}
+                logoDataUrl={operator.logoDataUrl}
                 size="lg"
               />
             </header>

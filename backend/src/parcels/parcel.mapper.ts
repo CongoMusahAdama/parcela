@@ -11,7 +11,7 @@ export type TrackedParcelDto = {
   destinationStationName: string;
   destinationStationAddress: string;
   destinationStationHours: string;
-  destinationOperator?: 'VIP' | 'STC';
+  destinationOperator?: string;
   recipientName: string;
   recipientPhoneMasked: string;
   items: Parcel['items'];
@@ -31,8 +31,8 @@ export type PreBookingDto = {
   stationId: string;
   stationName: string;
   stationCode: string;
-  operator?: 'VIP' | 'STC';
-  destinationOperator?: 'VIP' | 'STC';
+  operator?: string;
+  destinationOperator?: string;
   senderName: string;
   senderPhone: string;
   recipientName: string;

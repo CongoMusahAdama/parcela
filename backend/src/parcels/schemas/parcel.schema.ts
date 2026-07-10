@@ -62,8 +62,8 @@ export class Parcel {
   @Prop({ required: true })
   originStationCode!: string;
 
-  @Prop({ required: true, enum: ['VIP', 'STC'] })
-  operator!: 'VIP' | 'STC';
+  @Prop({ required: true, index: true })
+  operator!: string;
 
   @Prop({ required: true })
   destinationStationId!: string;
@@ -71,8 +71,8 @@ export class Parcel {
   @Prop({ required: true })
   destinationStationName!: string;
 
-  @Prop({ enum: ['VIP', 'STC'] })
-  destinationOperator?: 'VIP' | 'STC';
+  @Prop({ index: true })
+  destinationOperator?: string;
 
   @Prop({ required: true })
   senderName!: string;

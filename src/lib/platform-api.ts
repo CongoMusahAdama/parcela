@@ -46,6 +46,11 @@ export type OperatorLetterResult = PlatformOperatorRow & {
   letterSmsSent?: boolean;
 };
 
+export type OperatorTerminalInput = {
+  name: string;
+  city: string;
+};
+
 export type CreateTransportOperatorPayload = {
   name: string;
   code: string;
@@ -53,8 +58,10 @@ export type CreateTransportOperatorPayload = {
   contactEmail?: string;
   contactPhone?: string;
   brandColor?: string;
+  logoDataUrl?: string | null;
   cityCount: number;
   stationCount: number;
+  terminals?: OperatorTerminalInput[];
   notes?: string;
   agreementDate: string;
   hqName: string;

@@ -379,6 +379,7 @@ export function PlatformHqAdminsView() {
                 code={network.operator.code}
                 name={network.operator.name}
                 brandColor={network.operator.brandColor}
+                logoDataUrl={network.operator.logoDataUrl}
                 size="md"
               />
             ) : undefined

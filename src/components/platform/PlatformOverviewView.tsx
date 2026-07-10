@@ -110,6 +110,7 @@ function OperatorRow({ row, serialNumber }: { row: PlatformOperatorRow; serialNu
             code={row.code}
             name={row.name}
             brandColor={row.brandColor}
+            logoDataUrl={row.logoDataUrl}
           />
           <div className="min-w-0">
             <p className="font-display text-sm font-bold text-stone-900">{row.name}</p>
@@ -366,6 +367,7 @@ export function PlatformOverviewView() {
                         code={operator.code}
                         name={operator.name}
                         brandColor={operator.brandColor}
+                        logoDataUrl={operator.logoDataUrl}
                         size="sm"
                       />
                       <div className="min-w-0 flex-1">
@@ -749,6 +751,7 @@ function OverviewTabPanel({
                             code={row.code}
                             name={row.name}
                             brandColor={row.brandColor}
+                            logoDataUrl={row.logoDataUrl}
                             size="sm"
                           />
                           <div>

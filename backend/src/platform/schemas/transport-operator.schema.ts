@@ -29,6 +29,9 @@ export class TransportOperator {
   brandColor!: string;
 
   @Prop()
+  logoDataUrl?: string;
+
+  @Prop()
   contactEmail?: string;
 
   @Prop()

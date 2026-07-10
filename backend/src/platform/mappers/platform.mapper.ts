@@ -7,6 +7,7 @@ export type PlatformOperatorApiRow = {
   name: string;
   status: 'configure' | 'configured' | 'suspended' | 'draft';
   brandColor: string;
+  logoDataUrl: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
   region: string;
@@ -37,6 +38,7 @@ export function toOperatorApiRow(
     name: doc.name,
     status: doc.status,
     brandColor: doc.brandColor,
+    logoDataUrl: doc.logoDataUrl ?? null,
     contactEmail: doc.contactEmail ?? null,
     contactPhone: doc.contactPhone ?? null,
     region: doc.region,

@@ -60,8 +60,9 @@ function formatLetterDate(value: string | Date) {
   }).format(date);
 }
 
-function operatorLogoSrc(code: string): string | null {
-  if (isKnownBrandOperator(code)) return OPERATOR_LOGOS[code];
+function operatorLogoSrc(operator: PlatformOperatorRow): string | null {
+  if (operator.logoDataUrl) return operator.logoDataUrl;
+  if (isKnownBrandOperator(operator.code)) return OPERATOR_LOGOS[operator.code];
   return null;
 }
 
@@ -91,7 +92,7 @@ export function buildConfigurationLetterData(
     contactPhone: operator.contactPhone,
     subscriptionSummary: subscriptionSummary(operator),
     brandColor: operator.brandColor,
-    operatorLogoSrc: operatorLogoSrc(operator.code),
+    operatorLogoSrc: operatorLogoSrc(operator),
   };
 }
 
