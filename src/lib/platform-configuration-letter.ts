@@ -280,8 +280,8 @@ function addBulletList(
   doc: LetterPdf,
   items: readonly string[],
   y: number,
-  indent = 14,
-  startX = PDF_LAYOUT.margin,
+  indent: number = 14,
+  startX: number = PDF_LAYOUT.margin,
   maxWidth?: number,
 ) {
   const { contentWidth } = pageMetrics(doc);

@@ -1460,6 +1460,7 @@ export function PlatformOperatorsView() {
                         </label>
                         <GhanaCitySelect
                           id="terminal-city"
+                          className={inputClass}
                           value={terminalDraft.city}
                           onChange={(city) =>
                             setTerminalDraft((current) => ({ ...current, city }))
