@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { GHANA_STATIONS } from '../data/ghana-stations';
+import { GHANA_CITIES, mergeGhanaCities } from '../data/ghana-cities';
 import { haversineKm } from '../common/utils/geo.util';
 import { Station, StationDocument } from './schemas/station.schema';
 
@@ -109,6 +110,11 @@ export class StationsService {
       this.logger.log(`Seeded ${created} terminal(s) for operator ${code}`);
     }
     return created;
+  }
+
+  async listGhanaCities() {
+    const fromDb = await this.stationModel.distinct('city');
+    return mergeGhanaCities(GHANA_CITIES, fromDb);
   }
 
   private coordsForCity(city: string) {

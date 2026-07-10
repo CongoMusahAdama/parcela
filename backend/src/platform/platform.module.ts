@@ -6,6 +6,7 @@ import { StationsModule } from '../stations/stations.module';
 import { PlatformAuthController } from './controllers/platform-auth.controller';
 import { PlatformOperatorsController } from './controllers/platform-operators.controller';
 import { PlatformPeopleController } from './controllers/platform-people.controller';
+import { PublicOperatorsController } from './controllers/public-operators.controller';
 import { PlatformAuthGuard } from './guards/platform-auth.guard';
 import { PlatformAdmin, PlatformAdminSchema } from './schemas/platform-admin.schema';
 import { PlatformAuditEntry, PlatformAuditEntrySchema } from './schemas/platform-audit.schema';
@@ -30,7 +31,12 @@ import { PlatformWorkspaceService } from './services/platform-workspace.service'
     SmsModule,
     StationsModule,
   ],
-  controllers: [PlatformAuthController, PlatformOperatorsController, PlatformPeopleController],
+  controllers: [
+    PlatformAuthController,
+    PlatformOperatorsController,
+    PlatformPeopleController,
+    PublicOperatorsController,
+  ],
   providers: [
     PlatformAuthService,
     PlatformAuthGuard,

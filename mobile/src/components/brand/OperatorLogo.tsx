@@ -1,7 +1,8 @@
-import { Image } from "expo-image";
-import { StyleSheet, View } from "react-native";
+import { Image, type ImageSource } from "expo-image";
+import { StyleSheet, Text, View } from "react-native";
 import type { Operator } from "@/types/parcel";
-import { OPERATOR_LOGOS } from "@/lib/operators";
+import { APP_ACCENT, getOperatorLabel, getOperatorLogoSource } from "@/lib/operators";
+import { colors, fonts } from "@/constants/theme";
 
 type OperatorLogoProps = {
   operator: Operator;
@@ -9,18 +10,55 @@ type OperatorLogoProps = {
   height?: number;
 };
 
+function OperatorInitialsMark({ operator, height }: { operator: string; height: number }) {
+  const initials = getOperatorLabel(operator)
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || operator.slice(0, 2).toUpperCase();
+
+  return (
+    <View
+      style={[
+        styles.initials,
+        {
+          height,
+          minWidth: height * 1.6,
+          backgroundColor: APP_ACCENT,
+        },
+      ]}
+    >
+      <Text style={[styles.initialsText, { fontSize: height * 0.38 }]}>{initials}</Text>
+    </View>
+  );
+}
+
 export function OperatorLogo({
   operator,
   variant = "inline",
   height = 36,
 }: OperatorLogoProps) {
-  const source = OPERATOR_LOGOS[operator];
+  const source = getOperatorLogoSource(operator);
+
+  if (!source) {
+    if (variant === "watermark") {
+      return (
+        <View style={styles.watermarkWrap} pointerEvents="none">
+          <OperatorInitialsMark operator={operator} height={120} />
+        </View>
+      );
+    }
+    return <OperatorInitialsMark operator={operator} height={height} />;
+  }
+
+  const imageSource = source as ImageSource;
 
   if (variant === "watermark") {
     return (
       <View style={styles.watermarkWrap} pointerEvents="none">
         <Image
-          source={source}
+          source={imageSource}
           style={styles.watermark}
           contentFit="contain"
           transition={0}
@@ -32,7 +70,7 @@ export function OperatorLogo({
 
   return (
     <Image
-      source={source}
+      source={imageSource}
       style={{ height, width: height * 2.8, maxWidth: 160 }}
       contentFit="contain"
       transition={0}
@@ -51,6 +89,18 @@ const styles = StyleSheet.create({
   watermark: {
     width: "88%",
     height: 168,
-    opacity: 0.28,
+    opacity: 0.22,
+  },
+  initials: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    opacity: 0.22,
+  },
+  initialsText: {
+    fontFamily: fonts.display,
+    fontWeight: "800",
+    color: "#fff",
   },
 });

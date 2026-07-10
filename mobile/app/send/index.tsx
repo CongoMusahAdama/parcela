@@ -11,11 +11,12 @@ import type { UserCoords } from "@/lib/sendLocation";
 import {
   ensureStationsLoaded,
   filterStationsByOperator,
+  listStationOperatorCodes,
   searchStations,
   sortStationsAlphabetically,
   sortStationsByDistance,
 } from "@/lib/stations";
-import { OPERATOR_ACCENT, SUPPORTED_OPERATORS } from "@/lib/operators";
+import { ensureOperatorBrandingLoaded, getOperatorLabel, listOperatorFilterOptions } from "@/lib/operators";
 import type { Operator, Station } from "@/types/parcel";
 import { colors, fonts, radii, spacing } from "@/constants/theme";
 
@@ -31,7 +32,7 @@ function StationRow({
 }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.stationCard, pressed && styles.pressed]}>
-      <View style={[styles.operatorDot, { backgroundColor: OPERATOR_ACCENT[station.operator] }]} />
+      <View style={[styles.operatorDot, { backgroundColor: colors.primary }]} />
       <View style={styles.stationBody}>
         <View style={styles.stationTitleRow}>
           <Text style={styles.stationName}>{station.name}</Text>
@@ -40,7 +41,7 @@ function StationRow({
           )}
         </View>
         <Text style={styles.stationMeta}>
-          {station.city} · {station.code} · {station.operator}
+          {station.city} · {station.code} · {getOperatorLabel(station.operator)}
         </Text>
         <Text style={styles.stationAddr} numberOfLines={1}>
           {station.address}
@@ -61,8 +62,8 @@ export default function SendStationsScreen() {
   const [loadingStations, setLoadingStations] = useState(true);
 
   useEffect(() => {
-    ensureStationsLoaded()
-      .then(setBaseStations)
+    void Promise.all([ensureStationsLoaded(), ensureOperatorBrandingLoaded()])
+      .then(([stations]) => setBaseStations(stations))
       .finally(() => setLoadingStations(false));
   }, []);
 
@@ -76,6 +77,11 @@ export default function SendStationsScreen() {
       if (coords) setUserCoords(coords);
     });
   }, [viewMode, userCoords]);
+
+  const operatorFilters = useMemo(
+    () => listOperatorFilterOptions(listStationOperatorCodes(baseStations)),
+    [baseStations],
+  );
 
   const stations = useMemo((): StationWithDistance[] => {
     const filtered = filterStationsByOperator(baseStations, operator);
@@ -111,7 +117,7 @@ export default function SendStationsScreen() {
 
         <Text style={styles.step}>Step 1 of 3</Text>
         <Text style={styles.title}>Choose drop-off station</Text>
-        <Text style={styles.subtitle}>VIP & STC drop-off stations across Ghana</Text>
+        <Text style={styles.subtitle}>Parcela drop-off stations across Ghana</Text>
 
         <TextInput
           value={query}
@@ -122,14 +128,22 @@ export default function SendStationsScreen() {
         />
 
         <View style={styles.filters}>
-          {(["all", ...SUPPORTED_OPERATORS] as const).map((op) => (
+          <Pressable
+            onPress={() => setOperator("all")}
+            style={[styles.filterChip, operator === "all" && styles.filterChipActive]}
+          >
+            <Text style={[styles.filterText, operator === "all" && styles.filterTextActive]}>
+              All
+            </Text>
+          </Pressable>
+          {operatorFilters.map(({ code, label }) => (
             <Pressable
-              key={op}
-              onPress={() => setOperator(op)}
-              style={[styles.filterChip, operator === op && styles.filterChipActive]}
+              key={code}
+              onPress={() => setOperator(code)}
+              style={[styles.filterChip, operator === code && styles.filterChipActive]}
             >
-              <Text style={[styles.filterText, operator === op && styles.filterTextActive]}>
-                {op === "all" ? "All" : op}
+              <Text style={[styles.filterText, operator === code && styles.filterTextActive]}>
+                {label}
               </Text>
             </Pressable>
           ))}

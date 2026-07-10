@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { stationDirectionsUrl } from "@/lib/maps";
-import { OPERATOR_ACCENT } from "@/lib/operators";
 import { formatDistance } from "@/lib/format";
 import { haversineKm } from "@/lib/stations";
 import { getSendLocation, requestSendLocation, type UserCoords } from "@/lib/sendLocation";
@@ -30,7 +29,7 @@ export function CollectionStationMap({
   onUserCoords,
   hideDirectionsButton = false,
 }: CollectionStationMapProps) {
-  const accent = operator ? OPERATOR_ACCENT[operator] : colors.primary;
+  const accent = colors.primary;
   const distanceKm = userCoords ? haversineKm(userCoords.lat, userCoords.lng, lat, lng) : null;
 
   useEffect(() => {

@@ -1,6 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { OPERATOR_ACCENT } from "@/lib/operators";
 import type { Operator } from "@/types/parcel";
 import { colors, fonts, radii } from "@/constants/theme";
 
@@ -12,7 +11,7 @@ type DestinationStationMapProps = {
 };
 
 export function DestinationStationMap({ lat, lng, name, operator }: DestinationStationMapProps) {
-  const accent = operator ? OPERATOR_ACCENT[operator] : colors.primary;
+  const accent = colors.primary;
 
   return (
     <View style={styles.wrap}>

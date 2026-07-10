@@ -22,6 +22,11 @@ export class StationsController {
     });
   }
 
+  @Get('cities/list')
+  listCities() {
+    return this.stationsService.listGhanaCities();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.stationsService.findByStationId(id);

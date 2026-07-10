@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { formatDistance } from "@/lib/format";
 import { BOLT_LIKE_MAP_STYLE } from "@/lib/mapStyle";
-import { OPERATOR_ACCENT } from "@/lib/operators";
+import { getOperatorLabel } from "@/lib/operators";
 import type { UserCoords } from "@/lib/sendLocation";
 import type { Station } from "@/types/parcel";
 import { colors, fonts, radii, spacing } from "@/constants/theme";
@@ -91,15 +91,13 @@ function YouAreHereMarker() {
 const NEARBY_LINE_COUNT = 3;
 
 function StationPin({
-  operator,
   selected,
   isNearest,
 }: {
-  operator: Station["operator"];
   selected: boolean;
   isNearest?: boolean;
 }) {
-  const accent = OPERATOR_ACCENT[operator];
+  const accent = colors.primary;
   return (
     <View style={[styles.pinWrap, selected && styles.pinWrapSelected]}>
       {isNearest ? (
@@ -126,6 +124,12 @@ export function StationMapView({ stations, userCoords }: StationMapViewProps) {
   const router = useRouter();
   const mapRef = useRef<MapView>(null);
   const [selected, setSelected] = useState<StationWithDistance | null>(null);
+
+  const operatorLegend = useMemo(
+    () =>
+      Array.from(new Set(stations.map((station) => station.operator.trim().toUpperCase()).filter(Boolean))).sort(),
+    [stations],
+  );
 
   const nearestStations = useMemo(() => {
     if (!userCoords) return [] as StationWithDistance[];
@@ -289,11 +293,7 @@ export function StationMapView({ stations, userCoords }: StationMapViewProps) {
               onPress={() => selectStation(station)}
               tracksViewChanges={isSelected || isNearest}
             >
-              <StationPin
-                operator={station.operator}
-                selected={isSelected}
-                isNearest={isNearest}
-              />
+              <StationPin selected={isSelected} isNearest={isNearest} />
             </Marker>
           );
         })}
@@ -308,10 +308,10 @@ export function StationMapView({ stations, userCoords }: StationMapViewProps) {
             <Text style={styles.legendText}>You</Text>
           </View>
         ) : null}
-        {(["VIP", "STC"] as const).map((op) => (
+        {operatorLegend.map((op) => (
           <View key={op} style={styles.legendChip}>
-            <View style={[styles.legendDot, { backgroundColor: OPERATOR_ACCENT[op] }]} />
-            <Text style={styles.legendText}>{op}</Text>
+            <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
+            <Text style={styles.legendText}>{getOperatorLabel(op)}</Text>
           </View>
         ))}
       </View>
@@ -330,19 +330,9 @@ export function StationMapView({ stations, userCoords }: StationMapViewProps) {
         <View style={styles.sheet}>
           <View style={styles.sheetHandle} />
           <View style={styles.sheetHeader}>
-            <View
-              style={[
-                styles.sheetBadge,
-                { backgroundColor: OPERATOR_ACCENT[selected.operator] + "18" },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.sheetBadgeText,
-                  { color: OPERATOR_ACCENT[selected.operator] },
-                ]}
-              >
-                {selected.operator}
+            <View style={[styles.sheetBadge, { backgroundColor: colors.primary + "18" }]}>
+              <Text style={[styles.sheetBadgeText, { color: colors.primaryDark }]}>
+                {getOperatorLabel(selected.operator)}
               </Text>
             </View>
             {selected.distanceKm !== undefined ? (

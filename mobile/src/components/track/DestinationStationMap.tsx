@@ -1,6 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import { OPERATOR_ACCENT } from "@/lib/operators";
 import type { Operator } from "@/types/parcel";
 import { colors, fonts, radii } from "@/constants/theme";
 import { BOLT_LIKE_MAP_STYLE } from "@/lib/mapStyle";
@@ -13,7 +12,7 @@ type DestinationStationMapProps = {
 };
 
 export function DestinationStationMap({ lat, lng, name, operator }: DestinationStationMapProps) {
-  const accent = operator ? OPERATOR_ACCENT[operator] : colors.primary;
+  const accent = colors.primary;
 
   return (
     <View style={styles.wrap}>

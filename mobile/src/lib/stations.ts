@@ -1,7 +1,6 @@
 import { GHANA_STATIONS } from "../../../data/ghana-stations";
 import { fetchStationById, fetchStations } from "@/lib/api";
 import type { Operator, Station } from "@/types/parcel";
-import { isSupportedOperator } from "@/lib/operators";
 
 export const MOCK_STATIONS: Station[] = GHANA_STATIONS;
 
@@ -13,20 +12,24 @@ export function didLoadStationsFromApi(): boolean {
   return stationsLoadedFromApi;
 }
 
+function normalizeStations(stations: Station[]): Station[] {
+  return stations.filter((station) => Boolean(station.id?.trim() && station.name?.trim()));
+}
+
 export function setStationCache(stations: Station[]) {
-  apiStationCache = getSupportedStations(stations);
+  apiStationCache = normalizeStations(stations);
   stationsLoadedFromApi = true;
 }
 
 async function loadStationsFromApi(): Promise<Station[]> {
   try {
     const stations = await fetchStations();
-    apiStationCache = getSupportedStations(stations);
+    apiStationCache = normalizeStations(stations);
     stationsLoadedFromApi = true;
     return apiStationCache;
   } catch {
     stationsLoadedFromApi = false;
-    apiStationCache = getSupportedStations(MOCK_STATIONS);
+    apiStationCache = normalizeStations(MOCK_STATIONS);
     return apiStationCache;
   }
 }
@@ -47,7 +50,7 @@ export async function resolveStationById(id: string): Promise<Station | undefine
 
   try {
     const station = await fetchStationById(id);
-    if (!station || !isSupportedOperator(station.operator)) return undefined;
+    if (!station) return undefined;
     if (apiStationCache && !apiStationCache.some((s) => s.id === station.id)) {
       apiStationCache = [...apiStationCache, station];
     }
@@ -58,14 +61,18 @@ export async function resolveStationById(id: string): Promise<Station | undefine
 }
 
 export function getSupportedStations(stations: Station[] = apiStationCache ?? MOCK_STATIONS): Station[] {
-  return stations.filter((s) => isSupportedOperator(s.operator));
+  return normalizeStations(stations);
 }
 
 export function getStationById(id: string): Station | undefined {
   const pool = apiStationCache ?? MOCK_STATIONS;
-  const station = pool.find((s) => s.id === id);
-  if (!station || !isSupportedOperator(station.operator)) return undefined;
-  return station;
+  return pool.find((s) => s.id === id);
+}
+
+export function listStationOperatorCodes(stations: Station[] = getSupportedStations()): string[] {
+  return Array.from(
+    new Set(stations.map((station) => station.operator.trim().toUpperCase()).filter(Boolean)),
+  ).sort();
 }
 
 export function filterStationsByOperator(
@@ -73,7 +80,8 @@ export function filterStationsByOperator(
   operator: Operator | "all"
 ): Station[] {
   if (operator === "all") return stations;
-  return stations.filter((s) => s.operator === operator);
+  const code = operator.trim().toUpperCase();
+  return stations.filter((s) => s.operator.trim().toUpperCase() === code);
 }
 
 export function searchStations(query: string, stations: Station[] = getSupportedStations()): Station[] {
@@ -84,7 +92,8 @@ export function searchStations(query: string, stations: Station[] = getSupported
       s.name.toLowerCase().includes(q) ||
       s.city.toLowerCase().includes(q) ||
       s.code.toLowerCase().includes(q) ||
-      s.address.toLowerCase().includes(q)
+      s.address.toLowerCase().includes(q) ||
+      s.operator.toLowerCase().includes(q)
   );
 }
 

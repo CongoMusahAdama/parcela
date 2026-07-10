@@ -8,7 +8,6 @@ import { Screen } from "@/components/ui/Screen";
 import { CollectionStationMap } from "@/components/track/CollectionStationMap";
 import { PenaltyNotice } from "@/components/track/PenaltyNotice";
 import { stationDirectionsUrl } from "@/lib/maps";
-import { OPERATOR_ACCENT } from "@/lib/operators";
 import { lookupParcel, resolveStationCoords } from "@/lib/tracking";
 import { goBackOrTrackHome } from "@/lib/track-navigation";
 import type { UserCoords } from "@/lib/sendLocation";
@@ -53,9 +52,7 @@ export default function TrackStationScreen() {
   const coords = resolveStationCoords(parcel);
   const canCollect =
     parcel.status === "ready_for_collection" || parcel.status === "arrived";
-  const accent = parcel.destinationOperator
-    ? OPERATOR_ACCENT[parcel.destinationOperator]
-    : colors.primary;
+  const accent = colors.primary;
 
   if (!coords) {
     return (

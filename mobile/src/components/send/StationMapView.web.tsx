@@ -3,7 +3,6 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { formatDistance } from "@/lib/format";
-import { OPERATOR_ACCENT } from "@/lib/operators";
 import type { UserCoords } from "@/lib/sendLocation";
 import type { Station } from "@/types/parcel";
 import { colors, fonts, radii, spacing } from "@/constants/theme";
@@ -46,7 +45,7 @@ export function StationMapView({ stations, userCoords }: StationMapViewProps) {
               onPress={() => setSelected(station)}
               style={[styles.card, isSelected && styles.cardSelected]}
             >
-              <View style={[styles.dot, { backgroundColor: OPERATOR_ACCENT[station.operator] }]} />
+              <View style={[styles.dot, { backgroundColor: colors.primary }]} />
               <View style={styles.cardBody}>
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>{station.name}</Text>

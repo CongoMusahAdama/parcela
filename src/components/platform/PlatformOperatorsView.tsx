@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { PlatformConfigurationLetterModal } from "@/components/platform/PlatformConfigurationLetterModal";
+import { GhanaCitySelect } from "@/components/platform/GhanaCitySelect";
 import { usePlatformData } from "@/components/platform/PlatformDataContext";
 import { PlatformOperatorMark } from "@/components/platform/PlatformOperatorMark";
 import {
@@ -38,7 +39,6 @@ import { showConfirmDialog, showSuccessAlert, showValidationAlert } from "@/lib/
 import { PLATFORM_THEME } from "@/lib/platform-theme";
 import { readOperatorLogoFile } from "@/lib/operator-logo-upload";
 import { isValidEmail } from "@/lib/email-validation";
-import { GHANA_CITIES } from "@/lib/ghana-cities";
 import {
   computeSubscriptionExpiresAt,
   defaultLicenceDuration,
@@ -249,7 +249,7 @@ export function PlatformOperatorsView() {
   const colorDropRef = useRef<HTMLDivElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [logoUploading, setLogoUploading] = useState(false);
-  const [terminalDraft, setTerminalDraft] = useState({ name: "", city: GHANA_CITIES[0] ?? "Accra" });
+  const [terminalDraft, setTerminalDraft] = useState({ name: "", city: "" });
   const [letterOperatorId, setLetterOperatorId] = useState<string | null>(null);
   const [letterAgreementDate, setLetterAgreementDate] = useState("");
   const [suspendBusyId, setSuspendBusyId] = useState<string | null>(null);
@@ -519,7 +519,7 @@ export function PlatformOperatorsView() {
     if (!name || !city) {
       await showValidationAlert({
         title: "Terminal details required",
-        text: "Enter both the terminal name and city before adding.",
+        text: "Enter the terminal name and choose a city from the list before adding.",
       });
       return;
     }
@@ -528,7 +528,7 @@ export function PlatformOperatorsView() {
       const terminals = [...current.terminals, { id: crypto.randomUUID(), name, city }];
       return { ...current, terminals, ...syncNetworkCounts(terminals) };
     });
-    setTerminalDraft({ name: "", city: GHANA_CITIES[0] ?? "Accra" });
+    setTerminalDraft({ name: "", city: "" });
   }
 
   function removeTerminal(terminalId: string) {
@@ -1458,20 +1458,13 @@ export function PlatformOperatorsView() {
                         <label htmlFor="terminal-city" className={labelClass}>
                           City
                         </label>
-                        <select
+                        <GhanaCitySelect
                           id="terminal-city"
-                          className={inputClass}
                           value={terminalDraft.city}
-                          onChange={(e) =>
-                            setTerminalDraft((current) => ({ ...current, city: e.target.value }))
+                          onChange={(city) =>
+                            setTerminalDraft((current) => ({ ...current, city }))
                           }
-                        >
-                          {GHANA_CITIES.map((city) => (
-                            <option key={city} value={city}>
-                              {city}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       </div>
                       <div className="flex items-end">
                         <button
@@ -1511,7 +1504,8 @@ export function PlatformOperatorsView() {
                       </ul>
                     ) : (
                       <p className="font-body mt-3 text-xs text-stone-500">
-                        No terminals added yet. You can still continue with numbers only.
+                        Choose a city from the list, then type each terminal name (e.g. Circle Terminal).
+                        You can still continue with city/station counts only if you prefer.
                       </p>
                     )}
                   </div>

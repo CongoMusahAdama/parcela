@@ -10,8 +10,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { OPERATOR_ACCENT, SUPPORTED_OPERATORS } from "@/lib/operators";
-import { filterStationsByOperator, searchStations } from "@/lib/stations";
+import { getOperatorLabel, listOperatorFilterOptions } from "@/lib/operators";
+import { filterStationsByOperator, listStationOperatorCodes, searchStations } from "@/lib/stations";
 import type { Operator, Station } from "@/types/parcel";
 import { colors, fonts, radii, spacing } from "@/constants/theme";
 
@@ -23,7 +23,7 @@ type DestinationStationPickerProps = {
 };
 
 function stationLabel(station: Station) {
-  return `${station.name}, ${station.city} · ${station.operator}`;
+  return `${station.name}, ${station.city} · ${getOperatorLabel(station.operator)}`;
 }
 
 export function DestinationStationPicker({
@@ -38,6 +38,11 @@ export function DestinationStationPicker({
   const [operator, setOperator] = useState<Operator | "all">("all");
 
   const selected = stations.find((s) => s.id === value);
+
+  const operatorFilters = useMemo(
+    () => listOperatorFilterOptions(listStationOperatorCodes(stations)),
+    [stations],
+  );
 
   const filtered = useMemo(() => {
     const byOperator = filterStationsByOperator(stations, operator);
@@ -72,12 +77,7 @@ export function DestinationStationPicker({
         <View style={styles.triggerBody}>
           {selected ? (
             <>
-              <View
-                style={[
-                  styles.operatorDot,
-                  { backgroundColor: OPERATOR_ACCENT[selected.operator] },
-                ]}
-              />
+              <View style={[styles.operatorDot, { backgroundColor: colors.primary }]} />
               <Text style={styles.triggerText} numberOfLines={2}>
                 {stationLabel(selected)}
               </Text>
@@ -120,14 +120,22 @@ export function DestinationStationPicker({
           </View>
 
           <View style={styles.filters}>
-            {(["all", ...SUPPORTED_OPERATORS] as const).map((op) => (
+            <Pressable
+              onPress={() => setOperator("all")}
+              style={[styles.filterChip, operator === "all" && styles.filterChipActive]}
+            >
+              <Text style={[styles.filterText, operator === "all" && styles.filterTextActive]}>
+                All
+              </Text>
+            </Pressable>
+            {operatorFilters.map(({ code, label }) => (
               <Pressable
-                key={op}
-                onPress={() => setOperator(op)}
-                style={[styles.filterChip, operator === op && styles.filterChipActive]}
+                key={code}
+                onPress={() => setOperator(code)}
+                style={[styles.filterChip, operator === code && styles.filterChipActive]}
               >
-                <Text style={[styles.filterText, operator === op && styles.filterTextActive]}>
-                  {op === "all" ? "All" : op}
+                <Text style={[styles.filterText, operator === code && styles.filterTextActive]}>
+                  {label}
                 </Text>
               </Pressable>
             ))}
@@ -158,18 +166,13 @@ export function DestinationStationPicker({
                   onPress={() => pickStation(item.id)}
                   style={[styles.row, isSelected && styles.rowSelected]}
                 >
-                  <View
-                    style={[
-                      styles.operatorDot,
-                      { backgroundColor: OPERATOR_ACCENT[item.operator] },
-                    ]}
-                  />
+                  <View style={[styles.operatorDot, { backgroundColor: colors.primary }]} />
                   <View style={styles.rowText}>
                     <Text style={[styles.rowTitle, isSelected && styles.rowTitleSelected]}>
                       {item.name}
                     </Text>
                     <Text style={styles.rowMeta}>
-                      {item.city} · {item.operator}
+                      {item.city} · {getOperatorLabel(item.operator)}
                     </Text>
                   </View>
                   {isSelected ? (

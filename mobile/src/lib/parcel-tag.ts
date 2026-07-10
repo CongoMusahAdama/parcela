@@ -1,4 +1,5 @@
 import { GHANA_STATIONS } from "../../../data/ghana-stations";
+import { getStationById } from "@/lib/stations";
 import type { Operator, ParcelType } from "@/types/parcel";
 
 export type ParcelTagItem = {
@@ -35,12 +36,12 @@ const PARCEL_TYPE_CODES: Record<ParcelType, string> = {
 };
 
 export function resolveStationCode(stationId: string): string {
-  const station = GHANA_STATIONS.find((s) => s.id === stationId);
+  const station = getStationById(stationId) ?? GHANA_STATIONS.find((s) => s.id === stationId);
   return station?.code ?? "PCL";
 }
 
 export function resolveStationCity(stationId: string, fallbackName: string): string {
-  const station = GHANA_STATIONS.find((s) => s.id === stationId);
+  const station = getStationById(stationId) ?? GHANA_STATIONS.find((s) => s.id === stationId);
   return (station?.city ?? fallbackName).toUpperCase();
 }
 

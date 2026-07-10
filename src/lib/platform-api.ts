@@ -93,6 +93,10 @@ export async function fetchPlatformWorkspace(): Promise<PlatformWorkspace> {
   return apiFetch<PlatformWorkspace>("/platform/workspace");
 }
 
+export async function fetchGhanaCitiesApi(): Promise<string[]> {
+  return apiFetch<string[]>("/stations/cities/list");
+}
+
 export async function createTransportOperatorApi(
   payload: CreateTransportOperatorPayload,
 ): Promise<CreateTransportOperatorResult> {

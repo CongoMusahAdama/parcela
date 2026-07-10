@@ -38,7 +38,7 @@ function emptyItem(): ItemDraft {
 export default function SendBookScreen() {
   const router = useRouter();
   const { stationId } = useLocalSearchParams<{ stationId: string }>();
-  const [origin, setOrigin] = useState<ReturnType<typeof getStationById>>(undefined);
+  const [origin, setOrigin] = useState<Station | undefined | null>(undefined);
   const [destinations, setDestinations] = useState<Station[]>([]);
 
   const [step, setStep] = useState(0);

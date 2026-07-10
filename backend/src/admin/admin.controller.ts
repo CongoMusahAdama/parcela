@@ -175,7 +175,7 @@ export class AdminController {
   @Get('operator-controls/status')
   @SkipThrottle({ auth: true })
   async getLockStatus(@Query('operator') operator: string | undefined) {
-    const code = operator === 'STC' ? 'STC' : operator === 'VIP' ? 'VIP' : null;
+    const code = operator?.trim().toUpperCase();
     if (!code) {
       return {
         operator: null,

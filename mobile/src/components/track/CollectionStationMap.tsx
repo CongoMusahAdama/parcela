@@ -13,7 +13,6 @@ import MapView, { Circle, Marker, Polyline } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { BOLT_LIKE_MAP_STYLE } from "@/lib/mapStyle";
 import { stationDirectionsUrl } from "@/lib/maps";
-import { OPERATOR_ACCENT } from "@/lib/operators";
 import { formatDistance } from "@/lib/format";
 import { haversineKm } from "@/lib/stations";
 import { getSendLocation, requestSendLocation, type UserCoords } from "@/lib/sendLocation";
@@ -99,7 +98,7 @@ export function CollectionStationMap({
   topInset = 12,
 }: CollectionStationMapProps) {
   const mapRef = useRef<MapView>(null);
-  const accent = operator ? OPERATOR_ACCENT[operator] : colors.primary;
+  const accent = colors.primary;
   const distanceKm = userCoords ? haversineKm(userCoords.lat, userCoords.lng, lat, lng) : null;
 
   useEffect(() => {

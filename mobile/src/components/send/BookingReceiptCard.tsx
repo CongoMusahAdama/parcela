@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { OperatorLogo } from "@/components/brand/OperatorLogo";
 import { resolveBookingOperator } from "@/lib/booking";
 import { buildParcelTagFields, type ParcelTagFields } from "@/lib/parcel-tag";
-import { OPERATOR_LABELS } from "@/lib/operators";
+import { getOperatorLabel } from "@/lib/operators";
 import type { PreBooking } from "@/types/parcel";
 import { colors, fonts } from "@/constants/theme";
 
@@ -46,7 +46,7 @@ function ParcelTagReceiptCard({ tag, variant = "pre-booking" }: ParcelTagReceipt
           <View style={styles.headerLeft}>
             <OperatorLogo operator={tag.operator} height={28} />
             <Text style={styles.headerSub}>
-              {OPERATOR_LABELS[tag.operator]} · Parcel tag
+              {getOperatorLabel(tag.operator)} · Parcel tag
             </Text>
           </View>
           <View style={styles.headerRight}>
@@ -101,7 +101,7 @@ function ParcelTagReceiptCard({ tag, variant = "pre-booking" }: ParcelTagReceipt
           {isCounter && tag.busNumber ? (
             <TagField label="Bus no." value={tag.busNumber} mono />
           ) : (
-            <TagField label="Transport" value={OPERATOR_LABELS[tag.operator]} />
+            <TagField label="Transport" value={getOperatorLabel(tag.operator)} />
           )}
         </View>
 

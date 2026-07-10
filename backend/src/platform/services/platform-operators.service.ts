@@ -342,4 +342,30 @@ export class PlatformOperatorsService {
   private async withHqCount(doc: TransportOperator & { operatorId: string; updatedAt?: Date }) {
     return toOperatorApiRow(doc, this.hqAdminCount(doc.code));
   }
+
+  /** Public sender/mobile branding — no auth required. */
+  async listPublicBranding() {
+    const docs = await this.operatorModel
+      .find({ status: { $ne: 'suspended' } })
+      .sort({ name: 1 })
+      .select('code name brandColor logoDataUrl status')
+      .lean();
+
+    return docs.map((doc) => ({
+      code: doc.code,
+      name: doc.name,
+      brandColor: doc.brandColor ?? '#fd7e14',
+      logoDataUrl: doc.logoDataUrl ?? null,
+      active: doc.status !== 'suspended',
+    }));
+  }
+
+  async isOperatorSuspended(code: string): Promise<boolean> {
+    const doc = await this.operatorModel
+      .findOne({ code: code.trim().toUpperCase() })
+      .select('status suspended')
+      .lean();
+    if (!doc) return false;
+    return doc.status === 'suspended' || doc.suspended === true;
+  }
 }

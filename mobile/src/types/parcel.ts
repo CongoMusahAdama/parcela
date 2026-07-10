@@ -1,4 +1,4 @@
-export type Operator = "VIP" | "STC";
+export type Operator = string;
 
 export type Station = {
   id: string;

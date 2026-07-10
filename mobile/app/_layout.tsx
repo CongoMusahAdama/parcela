@@ -8,11 +8,13 @@ import { SweetAlertProvider } from "@/components/ui/SweetAlertProvider";
 import { SplashGateProvider } from "@/contexts/SplashGate";
 import { TypographyReadyProvider } from "@/contexts/TypographyReady";
 import { useAppFonts } from "@/hooks/useAppFonts";
+import { ensureOperatorBrandingLoaded } from "@/lib/operators";
 import { setupGlobalFonts } from "@/lib/setupGlobalFonts";
 
 export default function RootLayout() {
   const [fontsLoaded] = useAppFonts();
   const [typographyReady, setTypographyReady] = useState(false);
+  const [brandingReady, setBrandingReady] = useState(false);
 
   useLayoutEffect(() => {
     if (!fontsLoaded) {
@@ -23,7 +25,17 @@ export default function RootLayout() {
     setTypographyReady(true);
   }, [fontsLoaded]);
 
-  const appReady = fontsLoaded && typographyReady;
+  useLayoutEffect(() => {
+    if (!typographyReady) {
+      setBrandingReady(false);
+      return;
+    }
+    void ensureOperatorBrandingLoaded()
+      .then(() => setBrandingReady(true))
+      .catch(() => setBrandingReady(true));
+  }, [typographyReady]);
+
+  const appReady = fontsLoaded && typographyReady && brandingReady;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

@@ -1,6 +1,14 @@
 import type { PreBooking, Station, TrackedParcel } from '@/types/parcel';
 import { apiFetch } from './api-client';
 
+export type PublicOperatorBranding = {
+  code: string;
+  name: string;
+  brandColor: string;
+  logoDataUrl: string | null;
+  active: boolean;
+};
+
 export type CreateBookingPayload = {
   stationId: string;
   destinationStationId: string;
@@ -14,6 +22,10 @@ export type CreateBookingPayload = {
     fragile: boolean;
   }>;
 };
+
+export async function fetchPublicOperatorBrandingApi(): Promise<PublicOperatorBranding[]> {
+  return apiFetch<PublicOperatorBranding[]>('/operators/branding');
+}
 
 export async function fetchStationById(id: string): Promise<Station | null> {
   return apiFetch<Station | null>(`/stations/${encodeURIComponent(id)}`);
