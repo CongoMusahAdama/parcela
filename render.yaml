@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: parcela-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: STAFF_TOKEN_SECRET
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://parcella.netlify.app
+      - key: PUBLIC_WEB_URL
+        value: https://parcella.netlify.app
+      - key: MOBILE_DEEP_LINK_SCHEME
+        value: parcela
+      - key: SEED_ON_STARTUP
+        value: "true"
+      - key: SEED_RESET
+        value: "false"
+      - key: MNOTIFY_ENABLED
+        value: "true"
+      - key: MNOTIFY_API_KEY
+        sync: false
+      - key: MNOTIFY_SENDER_ID
+        value: Parcela
+      - key: PLATFORM_ADMIN_EMAIL
+        sync: false
+      - key: SEED_PLATFORM_PASSWORD
+        sync: false
+      - key: PLATFORM_ADMIN_PHONE
+        sync: false

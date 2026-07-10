@@ -7,8 +7,6 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
-
-# Optional: set in Netlify UI (Site settings → Environment variables)
-# API_PROXY_TARGET = https://your-api-host.com   (no trailing slash)
-# NEXT_PUBLIC_API_URL = /api
-# Do NOT set NEXT_PUBLIC_API_URL to localhost on Netlify.
+  # Same-origin proxy — browser calls /api on Netlify; Netlify forwards to Render.
+  NEXT_PUBLIC_API_URL = "/api"
+  API_PROXY_TARGET = "https://parcela-9lhg.onrender.com"
