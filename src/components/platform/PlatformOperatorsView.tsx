@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   FileText,
   KeyRound,
+  Loader2,
   MapPin,
   PauseCircle,
   PlayCircle,
@@ -37,6 +38,14 @@ import { showConfirmDialog, showSuccessAlert, showValidationAlert } from "@/lib/
 import { PLATFORM_THEME } from "@/lib/platform-theme";
 import { readOperatorLogoFile } from "@/lib/operator-logo-upload";
 import { isValidEmail } from "@/lib/email-validation";
+import { GHANA_CITIES } from "@/lib/ghana-cities";
+import {
+  computeSubscriptionExpiresAt,
+  defaultLicenceDuration,
+  formatLicenceExpiryLabel,
+  licenceDurationOptions,
+  type SubscriptionPlan,
+} from "@/lib/subscription-term";
 import { ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
@@ -187,6 +196,10 @@ type OnboardDraft = {
   hqEmail: string;
   hqPhone: string;
   issueLoginsNow: boolean;
+  subscriptionPlan: SubscriptionPlan;
+  subscriptionDuration: string;
+  subscriptionPaidAt: string;
+  subscriptionAmountGhs: string;
 };
 
 const EMPTY_DRAFT: OnboardDraft = {
@@ -207,6 +220,10 @@ const EMPTY_DRAFT: OnboardDraft = {
   hqEmail: "",
   hqPhone: "",
   issueLoginsNow: true,
+  subscriptionPlan: "annual",
+  subscriptionDuration: "12",
+  subscriptionPaidAt: "",
+  subscriptionAmountGhs: "",
 };
 
 export function PlatformOperatorsView() {
@@ -232,9 +249,10 @@ export function PlatformOperatorsView() {
   const colorDropRef = useRef<HTMLDivElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [logoUploading, setLogoUploading] = useState(false);
-  const [terminalDraft, setTerminalDraft] = useState({ name: "", city: "" });
+  const [terminalDraft, setTerminalDraft] = useState({ name: "", city: GHANA_CITIES[0] ?? "Accra" });
   const [letterOperatorId, setLetterOperatorId] = useState<string | null>(null);
   const [letterAgreementDate, setLetterAgreementDate] = useState("");
+  const [suspendBusyId, setSuspendBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedId && operators[0]?.id) setSelectedId(operators[0].id);
@@ -316,6 +334,26 @@ export function PlatformOperatorsView() {
         await showValidationAlert({
           title: "Agreement date required",
           text: "Enter the date the platform agreement was signed before onboarding.",
+        });
+        return false;
+      }
+      const paidOn = draft.subscriptionPaidAt.trim() || draft.agreementDate.trim();
+      if (!paidOn) {
+        await showValidationAlert({
+          title: "Licence start date required",
+          text: "Enter when the software purchase was paid, or use the agreement date.",
+        });
+        return false;
+      }
+      const expiresAt = computeSubscriptionExpiresAt(
+        paidOn,
+        draft.subscriptionPlan,
+        draft.subscriptionDuration,
+      );
+      if (!expiresAt) {
+        await showValidationAlert({
+          title: "Licence duration required",
+          text: "Choose a valid software licence plan and duration.",
         });
         return false;
       }
@@ -441,14 +479,30 @@ export function PlatformOperatorsView() {
       confirmButtonColor: suspending ? "#dc2626" : "#fd7e14",
     });
     if (!confirmed) return;
-    await toggleSuspend(row.id);
-    await showSuccessAlert({
-      title: suspending ? "Suspended" : "Resumed",
-      text: suspending
-        ? `${row.name} is suspended in this UI preview.`
-        : `${row.name} is active again.`,
-      confirmButtonColor: "#fd7e14",
-    });
+
+    setSuspendBusyId(row.id);
+    try {
+      await toggleSuspend(row.id);
+      await showSuccessAlert({
+        title: suspending ? "Suspended" : "Resumed",
+        text: suspending
+          ? `${row.name} is suspended. HQ and branch access can be blocked until you resume.`
+          : `${row.name} is active again.`,
+        confirmButtonColor: "#fd7e14",
+      });
+    } catch (error) {
+      await showValidationAlert({
+        title: "Could not update transport",
+        text:
+          error instanceof ApiError
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : "Something went wrong. Check the API is running and try again.",
+      });
+    } finally {
+      setSuspendBusyId(null);
+    }
   }
 
   function syncNetworkCounts(terminals: OnboardTerminal[]) {
@@ -474,7 +528,7 @@ export function PlatformOperatorsView() {
       const terminals = [...current.terminals, { id: crypto.randomUUID(), name, city }];
       return { ...current, terminals, ...syncNetworkCounts(terminals) };
     });
-    setTerminalDraft({ name: "", city: "" });
+    setTerminalDraft({ name: "", city: GHANA_CITIES[0] ?? "Accra" });
   }
 
   function removeTerminal(terminalId: string) {
@@ -542,6 +596,12 @@ export function PlatformOperatorsView() {
         hqEmail: draft.hqEmail.trim().toLowerCase(),
         hqPhone: draft.hqPhone.trim() || undefined,
         issueLoginsNow: draft.issueLoginsNow,
+        subscriptionPlan: draft.subscriptionPlan,
+        subscriptionDuration: draft.subscriptionDuration,
+        subscriptionPaidAt: draft.subscriptionPaidAt.trim() || draft.agreementDate,
+        subscriptionAmountGhs: draft.subscriptionAmountGhs.trim()
+          ? Number(draft.subscriptionAmountGhs)
+          : undefined,
       });
       setSelectedId(next.id);
       closeOnboard();
@@ -885,10 +945,19 @@ export function PlatformOperatorsView() {
                 </button>
                 <button
                   type="button"
+                  disabled={suspendBusyId === selected.id}
                   onClick={() => void handleToggleSuspend(selected)}
-                  className="font-display inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 hover:bg-stone-50"
+                  className={cn(
+                    "font-display inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 hover:bg-stone-50",
+                    suspendBusyId === selected.id && "cursor-wait opacity-70",
+                  )}
                 >
-                  {selected.status === "suspended" ? (
+                  {suspendBusyId === selected.id ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      {selected.status === "suspended" ? "Resuming…" : "Suspending…"}
+                    </>
+                  ) : selected.status === "suspended" ? (
                     <>
                       <PlayCircle className="size-3.5" />
                       Resume transport
@@ -1050,11 +1119,109 @@ export function PlatformOperatorsView() {
                       type="date"
                       className={inputClass}
                       value={draft.agreementDate}
-                      onChange={(e) => setDraft((d) => ({ ...d, agreementDate: e.target.value }))}
+                      onChange={(e) => {
+                        const agreementDate = e.target.value;
+                        setDraft((d) => ({
+                          ...d,
+                          agreementDate,
+                          subscriptionPaidAt: d.subscriptionPaidAt || agreementDate,
+                        }));
+                      }}
                     />
                     <p className="font-body mt-1.5 text-[11px] text-stone-500">
                       Commercial terms are agreed before onboarding. A configuration letter is auto-generated
                       when setup is complete.
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                    <p className="font-display text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                      Software licence (for renewal countdown)
+                    </p>
+                    <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="op-licence-plan" className={labelClass}>
+                          Licence type
+                        </label>
+                        <select
+                          id="op-licence-plan"
+                          className={inputClass}
+                          value={draft.subscriptionPlan}
+                          onChange={(e) => {
+                            const subscriptionPlan = e.target.value as SubscriptionPlan;
+                            setDraft((d) => ({
+                              ...d,
+                              subscriptionPlan,
+                              subscriptionDuration: defaultLicenceDuration(subscriptionPlan),
+                            }));
+                          }}
+                        >
+                          <option value="annual">Annual licence</option>
+                          <option value="trial">Trial</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="op-licence-duration" className={labelClass}>
+                          Duration
+                        </label>
+                        <select
+                          id="op-licence-duration"
+                          className={inputClass}
+                          value={draft.subscriptionDuration}
+                          onChange={(e) =>
+                            setDraft((d) => ({ ...d, subscriptionDuration: e.target.value }))
+                          }
+                        >
+                          {licenceDurationOptions(draft.subscriptionPlan).map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="op-licence-paid" className={labelClass}>
+                          Paid on
+                        </label>
+                        <input
+                          id="op-licence-paid"
+                          type="date"
+                          className={inputClass}
+                          value={draft.subscriptionPaidAt || draft.agreementDate}
+                          onChange={(e) =>
+                            setDraft((d) => ({ ...d, subscriptionPaidAt: e.target.value }))
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="op-licence-amount" className={labelClass}>
+                          Amount (GHS)
+                        </label>
+                        <input
+                          id="op-licence-amount"
+                          type="number"
+                          min={0}
+                          className={inputClass}
+                          value={draft.subscriptionAmountGhs}
+                          onChange={(e) =>
+                            setDraft((d) => ({ ...d, subscriptionAmountGhs: e.target.value }))
+                          }
+                          placeholder="e.g. 12000"
+                        />
+                      </div>
+                    </div>
+                    <p className="font-body mt-3 text-xs text-stone-600">
+                      Renews on{" "}
+                      <strong>
+                        {formatLicenceExpiryLabel(
+                          computeSubscriptionExpiresAt(
+                            draft.subscriptionPaidAt || draft.agreementDate,
+                            draft.subscriptionPlan,
+                            draft.subscriptionDuration,
+                          ),
+                        )}
+                      </strong>
+                      . This powers the subscription countdown and renewal reminders.
                     </p>
                   </div>
                 </div>
@@ -1291,15 +1458,20 @@ export function PlatformOperatorsView() {
                         <label htmlFor="terminal-city" className={labelClass}>
                           City
                         </label>
-                        <input
+                        <select
                           id="terminal-city"
                           className={inputClass}
                           value={terminalDraft.city}
                           onChange={(e) =>
                             setTerminalDraft((current) => ({ ...current, city: e.target.value }))
                           }
-                          placeholder="e.g. Accra"
-                        />
+                        >
+                          {GHANA_CITIES.map((city) => (
+                            <option key={city} value={city}>
+                              {city}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="flex items-end">
                         <button
@@ -1489,6 +1661,36 @@ export function PlatformOperatorsView() {
                         </dt>
                         <dd className="font-body text-stone-800">
                           {draft.agreementDate || "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-display text-[10px] font-bold uppercase text-stone-400">
+                          Software licence
+                        </dt>
+                        <dd className="font-body text-stone-800">
+                          {draft.subscriptionPlan === "trial" ? "Trial" : "Annual"} ·{" "}
+                          {
+                            licenceDurationOptions(draft.subscriptionPlan).find(
+                              (option) => option.value === draft.subscriptionDuration,
+                            )?.label ?? draft.subscriptionDuration
+                          }
+                          {draft.subscriptionAmountGhs
+                            ? ` · GHS ${Number(draft.subscriptionAmountGhs).toLocaleString()}`
+                            : ""}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-display text-[10px] font-bold uppercase text-stone-400">
+                          Renews on
+                        </dt>
+                        <dd className="font-body text-stone-800">
+                          {formatLicenceExpiryLabel(
+                            computeSubscriptionExpiresAt(
+                              draft.subscriptionPaidAt || draft.agreementDate,
+                              draft.subscriptionPlan,
+                              draft.subscriptionDuration,
+                            ),
+                          )}
                         </dd>
                       </div>
                       <div className="sm:col-span-2">

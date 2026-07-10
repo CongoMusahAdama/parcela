@@ -12,9 +12,10 @@ import {
   X,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { OperatorLogo } from "@/components/brand/OperatorLogo";
+import { PlatformOperatorMark } from "@/components/platform/PlatformOperatorMark";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
 import { useStaffNav } from "@/components/staff/StaffNavContext";
+import { getAdminOperatorName } from "@/lib/admin-operator";
 import { ADMIN_NAV_ITEMS, ADMIN_NAV_SECTIONS } from "@/lib/admin-nav";
 import type { AdminNavItem, AdminNavSection } from "@/lib/admin-nav";
 import { prefetchAdminView } from "@/lib/admin-view-prefetch";
@@ -63,8 +64,8 @@ export function AdminSidebar({ mobileOpen, onMobileClose, onSignOut }: AdminSide
     }
   }, [pathname]);
 
-  const operatorLabel =
-    admin.operatorConfigured && admin.operator ? `${admin.operator} Transport` : "HQ command center";
+  const operatorLabel = getAdminOperatorName(admin);
+  const operatorCode = admin.operator ?? "HQ";
 
   const visibleSections = ADMIN_NAV_SECTIONS.filter(
     (section) => !section.hideWhenConfigured || !admin.operatorConfigured,
@@ -237,31 +238,52 @@ export function AdminSidebar({ mobileOpen, onMobileClose, onSignOut }: AdminSide
           </button>
         </div>
 
-        <div className="mt-4 flex items-center gap-3 rounded-xl border border-white/12 bg-white/6 px-3 py-2.5">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white p-1.5 shadow-sm">
-            {admin.operatorConfigured && admin.operator ? (
-              <OperatorLogo operator={admin.operator} className="h-6 w-auto object-contain" />
-            ) : (
-              <Network className="size-5 text-[#0f172a]" strokeWidth={2.25} />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-display truncate text-sm font-bold leading-tight text-white">
-              {operatorLabel}
-            </p>
-            <p className="font-body mt-0.5 flex items-center gap-1.5 text-[11px] text-white/65">
-              {!admin.operatorConfigured ? (
-                <>
-                  <span className="size-1.5 shrink-0 rounded-full bg-amber-300" />
-                  Setup pending
-                </>
-              ) : (
-                <>
-                  <span className="size-1.5 shrink-0 rounded-full bg-emerald-300" />
-                  Network active
-                </>
-              )}
-            </p>
+        <div className="admin-sidebar-operator mt-4">
+          <div className="relative overflow-hidden rounded-2xl border border-white/25 bg-gradient-to-br from-white/16 via-white/10 to-white/5 p-3.5 shadow-[0_10px_28px_-10px_rgb(0_0_0_/_0.45)] backdrop-blur-md">
+            <div className="relative flex items-center gap-3">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-sm">
+                {admin.operatorConfigured && admin.operator ? (
+                  <PlatformOperatorMark
+                    code={operatorCode}
+                    name={operatorLabel}
+                    brandColor={admin.brandColor ?? "#fd7e14"}
+                    logoDataUrl={admin.logoDataUrl}
+                    size="md"
+                    className="size-full rounded-lg border-0 bg-transparent p-0"
+                  />
+                ) : (
+                  <Network className="size-5 text-[#0f172a]" strokeWidth={2.25} />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-body text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70">
+                  Your transport
+                </p>
+                <p className="font-display truncate text-sm font-bold leading-tight text-white">
+                  {operatorLabel}
+                </p>
+                {admin.operatorConfigured && admin.operator ? (
+                  <div className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-white/15 px-2 py-0.5">
+                    <span className="font-mono text-[10px] font-semibold text-white">
+                      {admin.operator}
+                    </span>
+                  </div>
+                ) : null}
+                <p className="font-body mt-1.5 flex items-center gap-1.5 text-[11px] text-white/65">
+                  {!admin.operatorConfigured ? (
+                    <>
+                      <span className="size-1.5 shrink-0 rounded-full bg-amber-300" />
+                      Setup pending
+                    </>
+                  ) : (
+                    <>
+                      <span className="size-1.5 shrink-0 rounded-full bg-emerald-300" />
+                      Network active
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

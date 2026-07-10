@@ -96,6 +96,21 @@ export class CreateTransportOperatorDto {
   @IsOptional()
   @IsBoolean()
   issueLoginsNow?: boolean;
+
+  @IsIn(['annual', 'trial'])
+  subscriptionPlan!: 'annual' | 'trial';
+
+  @IsString()
+  subscriptionDuration!: string;
+
+  @IsOptional()
+  @IsString()
+  subscriptionPaidAt?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  subscriptionAmountGhs?: number;
 }
 
 export class UpdateTransportOperatorDto {

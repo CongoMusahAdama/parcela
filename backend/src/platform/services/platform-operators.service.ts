@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { generateTemporaryPassword } from '../../common/utils/temp-password.util';
 import { normalizeOperatorLogoDataUrl } from '../../common/utils/operator-logo.util';
+import { resolveSubscriptionTerm } from '../../common/utils/subscription-term.util';
 import { isProvisionedPhone } from '../../common/utils/phone.util';
 import { SmsService } from '../../sms/sms.service';
 import { StationsService } from '../../stations/stations.service';
@@ -68,6 +69,13 @@ export class PlatformOperatorsService {
         ? new Set(terminals.map((terminal) => terminal.city.toLowerCase())).size
         : dto.cityCount;
 
+    const subscription = resolveSubscriptionTerm(
+      dto.subscriptionPlan,
+      dto.subscriptionDuration,
+      dto.subscriptionPaidAt,
+      dto.agreementDate,
+    );
+
     const operator = await this.operatorModel.create({
       operatorId,
       code,
@@ -87,6 +95,10 @@ export class PlatformOperatorsService {
         dto.notes?.trim() ||
         'Newly onboarded — finish configuration, then issue HQ logins.',
       agreementDate: dto.agreementDate,
+      subscriptionPlan: subscription.subscriptionPlan,
+      subscriptionPaidAt: subscription.subscriptionPaidAt,
+      subscriptionExpiresAt: subscription.subscriptionExpiresAt,
+      subscriptionAmountGhs: dto.subscriptionAmountGhs,
       renewalRemindersSent: [],
     });
 

@@ -23,6 +23,10 @@ import {
   type OperatorControlSettings,
   type OperatorLocks,
 } from './operator-controls.service';
+import {
+  TransportOperator,
+  TransportOperatorDocument,
+} from '../platform/schemas/transport-operator.schema';
 
 type AdminBranchStatus = 'healthy' | 'attention' | 'offline';
 
@@ -46,7 +50,22 @@ export class AdminService {
     private readonly operatorControls: OperatorControlsService,
     private readonly config: ConfigService,
     @InjectModel(Parcel.name) private readonly parcelModel: Model<ParcelDocument>,
+    @InjectModel(TransportOperator.name)
+    private readonly transportOperatorModel: Model<TransportOperatorDocument>,
   ) {}
+
+  private async getOperatorBranding(operatorCode: string | null | undefined) {
+    if (!operatorCode?.trim()) return null;
+    const doc = await this.transportOperatorModel
+      .findOne({ code: operatorCode.trim().toUpperCase() })
+      .lean();
+    if (!doc) return null;
+    return {
+      operatorName: doc.name,
+      brandColor: doc.brandColor ?? '#fd7e14',
+      logoDataUrl: doc.logoDataUrl ?? null,
+    };
+  }
 
   getOrCreateSettings(operator: OperatorCode) {
     return this.operatorControls.getOrCreateSettings(operator);
@@ -58,6 +77,7 @@ export class AdminService {
     // other HQ admins treat the operator as already onboarded.
     const isPendingSetupAdmin = staff.email.toLowerCase() === 'hq.admin@parcela.app';
     const operatorConfigured = isPendingSetupAdmin ? settings.configured : true;
+    const branding = await this.getOperatorBranding(staff.operator);
 
     return {
       admin: {
@@ -66,6 +86,9 @@ export class AdminService {
         displayName: staff.displayName,
         operator: staff.operator,
         operatorConfigured,
+        operatorName: branding?.operatorName ?? null,
+        brandColor: branding?.brandColor ?? null,
+        logoDataUrl: branding?.logoDataUrl ?? null,
       },
       signedInAt,
     };
@@ -88,6 +111,7 @@ export class AdminService {
   }
 
   async getOverview(operator: OperatorCode) {
+    const branding = await this.getOperatorBranding(operator);
     const { stations, match: parcelMatch } = await this.operatorParcelMatch(operator);
     const accounts = this.staffAuth
       .getAccounts()
@@ -203,7 +227,7 @@ export class AdminService {
     );
 
     return {
-      operatorLabel: `${operator} Transport`,
+      operatorLabel: branding?.operatorName ?? `${operator} Transport`,
       branchCount: stations.length,
       activeLeads: leads.length,
       activeStaff: staff.filter((a) => a.active).length,

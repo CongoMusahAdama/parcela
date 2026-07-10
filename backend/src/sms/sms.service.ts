@@ -133,6 +133,7 @@ export class SmsService {
       `Email: ${params.email}`,
       `Temporary password: ${params.temporaryPassword}`,
       'Sign in with this password, then set a new one from the portal.',
+      'Do not share this password with anyone.',
     ].join(' ');
     return this.sendSms(params.phone, message);
   }

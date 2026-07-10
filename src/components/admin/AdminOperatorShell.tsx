@@ -7,6 +7,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { StaffNavProvider, useStaffNav } from "@/components/staff/StaffNavContext";
 import { StaffPreloader } from "@/components/staff/StaffPreloader";
 import { restoreAdminSession, signOutAdmin } from "@/lib/admin-auth";
+import { getAdminOperatorName } from "@/lib/admin-operator";
 import { getAdminNavItem } from "@/lib/admin-nav";
 import { adminThemeStyle } from "@/lib/admin-theme";
 import { prefetchAllAdminViews, prefetchAdminView } from "@/lib/admin-view-prefetch";
@@ -43,7 +44,7 @@ function AdminShellContent({
   return (
     <div
       className="staff-operator-themed admin-portal flex h-dvh overflow-hidden bg-[#eef2f6]"
-      style={adminThemeStyle(admin.operator, admin.operatorConfigured)}
+      style={adminThemeStyle(admin.operator, admin.operatorConfigured, admin.brandColor)}
       data-operator={admin.operator ?? "neutral"}
     >
       <AdminSidebar
@@ -64,11 +65,11 @@ function AdminShellContent({
           </button>
           <div className="min-w-0 flex-1">
             <p className="font-display truncate text-sm font-bold text-foreground">
-              {admin.operatorConfigured && admin.operator
-                ? `${admin.operator} HQ`
-                : "HQ command center"}
+              {getAdminOperatorName(admin)}
             </p>
-            <p className="font-body truncate text-[11px] text-muted">Operator network</p>
+            <p className="font-body truncate text-[11px] text-muted">
+              {admin.operator ? `${admin.operator} HQ` : "Operator network"}
+            </p>
           </div>
         </header>
 

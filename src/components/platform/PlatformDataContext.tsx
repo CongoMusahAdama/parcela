@@ -41,8 +41,9 @@ type PlatformDataContextValue = {
   audit: PlatformAuditRow[];
   stats: PlatformWorkspaceStats;
   loading: boolean;
+  refreshing: boolean;
   error: string | null;
-  refresh: () => Promise<void>;
+  refresh: (options?: { silent?: boolean }) => Promise<void>;
   createOperator: (payload: CreateTransportOperatorPayload) => Promise<PlatformOperatorRow & { hqSmsSent?: boolean }>;
   markConfigured: (operatorId: string) => Promise<PlatformOperatorRow>;
   toggleSuspend: (operatorId: string) => Promise<PlatformOperatorRow>;
@@ -105,11 +106,17 @@ export function PlatformDataProvider({ children }: { children: ReactNode }) {
   const [audit, setAudit] = useState<PlatformAuditRow[]>([]);
   const [stats, setStats] = useState<PlatformWorkspaceStats>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const refresh = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (silent) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const workspace = await fetchPlatformWorkspace();
       applyWorkspace(
@@ -117,9 +124,15 @@ export function PlatformDataProvider({ children }: { children: ReactNode }) {
         workspace,
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load platform data");
+      if (!silent) {
+        setError(err instanceof Error ? err.message : "Failed to load platform data");
+      }
     } finally {
-      setLoading(false);
+      if (silent) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -127,9 +140,17 @@ export function PlatformDataProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  const afterMutation = useCallback(async () => {
-    await refresh();
-  }, [refresh]);
+  const afterMutation = useCallback(
+    (updatedOperator?: PlatformOperatorRow) => {
+      if (updatedOperator) {
+        setOperators((prev) =>
+          prev.map((row) => (row.id === updatedOperator.id ? updatedOperator : row)),
+        );
+      }
+      void refresh({ silent: true });
+    },
+    [refresh],
+  );
 
   const value = useMemo<PlatformDataContextValue>(
     () => ({
@@ -139,56 +160,57 @@ export function PlatformDataProvider({ children }: { children: ReactNode }) {
       audit,
       stats,
       loading,
+      refreshing,
       error,
       refresh,
       async createOperator(payload) {
         const row = await createTransportOperatorApi(payload);
-        await afterMutation();
+        afterMutation(row);
         return row;
       },
       async markConfigured(operatorId) {
         const row = await markOperatorConfiguredApi(operatorId);
-        await afterMutation();
+        afterMutation(row);
         return row;
       },
       async toggleSuspend(operatorId) {
         const row = await toggleOperatorSuspendApi(operatorId);
-        await afterMutation();
+        afterMutation(row);
         return row;
       },
       async sendRenewalReminder(operatorId, reminder) {
         const row = await sendRenewalReminderApi(operatorId, reminder);
-        await afterMutation();
+        afterMutation(row);
         return row;
       },
       async recordConfigurationLetter(operatorId, agreementDate) {
         const row = await recordConfigurationLetterApi(operatorId, agreementDate);
-        await afterMutation();
+        afterMutation(row);
         return row;
       },
       async updateHqAdmin(accountId, payload) {
         const row = await updateHqAdminApi(accountId, payload);
-        await afterMutation();
+        void refresh({ silent: true });
         return row;
       },
       async issueHqCredentials(accountId) {
         const result = await issueHqCredentialsApi(accountId);
-        await afterMutation();
+        void refresh({ silent: true });
         return result;
       },
       async resetHqPassword(accountId) {
         const result = await resetHqPasswordApi(accountId);
-        await afterMutation();
+        void refresh({ silent: true });
         return result;
       },
       async updateUser(accountId, payload) {
         const row = await updatePlatformUserApi(accountId, payload);
-        await afterMutation();
+        void refresh({ silent: true });
         return row;
       },
       async resetUserLogin(accountId) {
         const result = await resetPlatformUserLoginApi(accountId);
-        await afterMutation();
+        void refresh({ silent: true });
         return result;
       },
       patchOperatorLocal(operatorId, patch) {
@@ -204,6 +226,7 @@ export function PlatformDataProvider({ children }: { children: ReactNode }) {
       audit,
       stats,
       loading,
+      refreshing,
       error,
       refresh,
       afterMutation,

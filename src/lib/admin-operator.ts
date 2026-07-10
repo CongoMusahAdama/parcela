@@ -16,3 +16,10 @@ export function requireAdminOperator(admin: AdminAccount): Operator {
   }
   return operator;
 }
+
+/** Display name for HQ transport — prefers onboarded legal name over short code. */
+export function getAdminOperatorName(admin: AdminAccount): string {
+  if (admin.operatorName?.trim()) return admin.operatorName.trim();
+  if (admin.operatorConfigured && admin.operator) return `${admin.operator} Transport`;
+  return "HQ command center";
+}

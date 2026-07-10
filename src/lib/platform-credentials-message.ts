@@ -2,9 +2,9 @@ import type { PlatformCredentialResult } from "@/lib/platform-api";
 
 export function platformCredentialSuccessText(result: PlatformCredentialResult): string {
   if (result.smsSent) {
-    return `Temporary login details were sent by SMS to the phone on file for ${result.email}.`;
+    return `Temporary login details were sent by SMS to the phone on file for ${result.email}. They were reminded not to share the password with anyone.`;
   }
-  return `SMS could not be sent. Share this temporary password with ${result.email}: ${result.temporaryPassword}`;
+  return `SMS could not be sent. Share this temporary password with ${result.email}: ${result.temporaryPassword}. Tell them not to share it with anyone.`;
 }
 
 export function platformOnboardSmsText(

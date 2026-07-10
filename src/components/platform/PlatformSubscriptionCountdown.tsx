@@ -65,7 +65,7 @@ export function PlatformSubscriptionCountdown({
             />
           </div>
           <p className="font-body mt-1 text-[11px] text-stone-500">
-            {snapshot.progressPercent}% of annual term used · expires {snapshot.expiresLabel}
+            {snapshot.progressPercent}% of licence term used · expires {snapshot.expiresLabel}
           </p>
         </div>
       ) : null}

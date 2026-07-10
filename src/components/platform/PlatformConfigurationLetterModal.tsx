@@ -159,28 +159,41 @@ export function PlatformConfigurationLetterModal({
             </p>
           </div>
 
-          <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
-            <header className="flex items-center justify-between gap-4 border-b border-stone-200 pb-5">
-              <Logo size="lg" showWordmark />
-              <PlatformOperatorMark
-                code={operator.code}
-                name={operator.name}
-                brandColor={operator.brandColor}
-                logoDataUrl={operator.logoDataUrl}
-                size="lg"
-              />
-            </header>
-
-            <div className="mt-6 text-center">
-              <h3 className="font-display text-lg font-bold text-stone-900">
-                Configuration Completion Letter
-              </h3>
-              <p className="font-body mt-1 text-sm text-stone-500">
-                {letterData?.letterDateLabel ?? "—"}
-              </p>
+          <article
+            className="relative mx-auto w-full max-w-[210mm] overflow-hidden rounded-sm border border-stone-200/90 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.08),0_1px_3px_rgba(15,23,42,0.06)] print:shadow-none"
+            style={{ minHeight: "min(297mm, 72dvh)" }}
+          >
+            <div className="flex h-2">
+              <div className="flex-1" style={{ backgroundColor: operator.brandColor }} />
+              <div className="w-1/3" style={{ backgroundColor: PLATFORM_THEME.orange }} />
             </div>
 
-            <div className="font-body mt-8 space-y-4 text-sm leading-relaxed text-stone-700">
+            <div className="px-6 py-7 sm:px-10 sm:py-9">
+              <header className="flex items-center justify-between gap-4 border-b border-stone-200 pb-5">
+                <Logo size="lg" showWordmark />
+                <PlatformOperatorMark
+                  code={operator.code}
+                  name={operator.name}
+                  brandColor={operator.brandColor}
+                  logoDataUrl={operator.logoDataUrl}
+                  size="lg"
+                />
+              </header>
+
+              <p className="font-body mt-5 text-[11px] uppercase tracking-[0.12em] text-stone-400">
+                Ref: {operator.code} · Configuration completion
+              </p>
+
+              <div className="mt-5 text-center">
+                <h3 className="font-display text-xl font-bold tracking-tight text-stone-900">
+                  Configuration Completion Letter
+                </h3>
+                <p className="font-body mt-1.5 text-sm text-stone-500">
+                  {letterData?.letterDateLabel ?? "—"}
+                </p>
+              </div>
+
+              <div className="font-body mt-8 space-y-5 text-[15px] leading-[1.7] text-stone-700">
               <p>Dear {operator.name},</p>
               <p>
                 This letter confirms that your transport service has been{" "}
@@ -190,24 +203,42 @@ export function PlatformConfigurationLetterModal({
                 <LetterHighlight>{letterData?.agreementDateLabel ?? "—"}</LetterHighlight>.
               </p>
 
-              <div className="rounded-xl bg-stone-50 px-4 py-3">
-                <p className="font-display text-[11px] font-bold uppercase tracking-wide text-[var(--platform-orange-dark)]">
+              <div className="rounded-xl border border-stone-200 bg-stone-50/90 px-5 py-4">
+                <p className="font-display text-[11px] font-bold uppercase tracking-[0.14em] text-[#10367D]">
                   Configuration summary
                 </p>
-                <ul className="mt-2 space-y-1.5 text-sm text-stone-800">
-                  <li>Operator code: {operator.code}</li>
-                  <li>Operating region: {operator.region}</li>
-                  <li>
-                    Network: {operator.stationCount} stations across {operator.cityCount} cities /
-                    corridors
+                <ul className="mt-3 space-y-2 text-[14px] text-stone-800">
+                  <li className="flex gap-2">
+                    <span className="text-stone-400">•</span>
+                    <span>Operator code: {operator.code}</span>
                   </li>
-                  <li>Configuration completed: {letterData?.configuredDateLabel ?? "Today"}</li>
-                  <li>
-                    Primary HQ contact: {operator.primaryAdminName ?? "—"} (
-                    {operator.primaryAdminEmail ?? "—"})
+                  <li className="flex gap-2">
+                    <span className="text-stone-400">•</span>
+                    <span>Operating region: {operator.region}</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-stone-400">•</span>
+                    <span>
+                      Network: {operator.stationCount} stations across {operator.cityCount} cities /
+                      corridors
+                    </span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-stone-400">•</span>
+                    <span>Configuration completed: {letterData?.configuredDateLabel ?? "Today"}</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-stone-400">•</span>
+                    <span>
+                      Primary HQ contact: {operator.primaryAdminName ?? "—"} (
+                      {operator.primaryAdminEmail ?? "—"})
+                    </span>
                   </li>
                   {letterData?.subscriptionSummary ? (
-                    <li>Platform licence: {letterData.subscriptionSummary}</li>
+                    <li className="flex gap-2">
+                      <span className="text-stone-400">•</span>
+                      <span>Platform licence: {letterData.subscriptionSummary}</span>
+                    </li>
                   ) : null}
                 </ul>
               </div>
@@ -239,26 +270,34 @@ export function PlatformConfigurationLetterModal({
                 leads. For any assistance, contact the Parcela platform team using the details below.
               </p>
 
-              <p className="rounded-xl border border-stone-200 bg-stone-50/80 px-4 py-3 italic text-stone-600">
+              <p className="rounded-xl border border-stone-200 bg-stone-50/80 px-5 py-4 italic leading-relaxed text-stone-600">
                 {configurationLetterThankYou(operator.name)}
               </p>
 
-              <p className="font-display font-semibold text-stone-900">
+              <p className="font-display text-[15px] font-semibold text-stone-900">
                 We look forward to a <LetterHighlight>long and successful partnership</LetterHighlight>.
               </p>
             </div>
 
-            <footer className="mt-8 border-t border-stone-200 pt-5">
+            <footer className="mt-10 pt-5">
+              <div
+                className="mb-4 h-0.5 w-16 rounded-full"
+                style={{ backgroundColor: operator.brandColor }}
+              />
               <p className="font-display text-sm font-bold text-stone-900">
                 {PARCELA_PLATFORM_CONTACT.teamName}
               </p>
-              <p className="font-body mt-1 text-sm text-stone-600">
+              <p className="font-body mt-1 text-xs uppercase tracking-wide text-stone-400">
+                Authorised platform correspondence
+              </p>
+              <p className="font-body mt-2 text-sm text-stone-600">
                 Phone: {PARCELA_PLATFORM_CONTACT.phone}
               </p>
               <p className="font-body text-sm text-stone-600">
                 Email: {PARCELA_PLATFORM_CONTACT.email}
               </p>
             </footer>
+            </div>
           </article>
         </div>
 

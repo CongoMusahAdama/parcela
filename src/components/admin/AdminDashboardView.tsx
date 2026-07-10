@@ -17,11 +17,12 @@ import {
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { OperatorLogo } from "@/components/brand/OperatorLogo";
+import { PlatformOperatorMark } from "@/components/platform/PlatformOperatorMark";
 import { AdminDemoWalkthrough } from "@/components/admin/AdminDemoWalkthrough";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
 import { fetchAdminOverview, fetchAdminParcels } from "@/lib/admin-api";
-import { getAdminOperator } from "@/lib/admin-operator";
+import { getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
+import { brandColorHeroGradient } from "@/lib/brand-color-theme";
 import { OPERATOR_WELCOME_BG } from "@/lib/operators";
 import { StaffLiveClock } from "@/components/staff/StaffLiveClock";
 import type {
@@ -290,6 +291,8 @@ const EMPTY_OVERVIEW: AdminNetworkOverview = {
 export function AdminDashboardView() {
   const { admin } = useAdminSession();
   const operator = getAdminOperator(admin);
+  const operatorDisplayName = getAdminOperatorName(admin);
+  const customBranding = Boolean(admin.brandColor || admin.logoDataUrl || admin.operatorName);
   const [overview, setOverview] = useState<AdminNetworkOverview>(EMPTY_OVERVIEW);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -414,7 +417,7 @@ export function AdminDashboardView() {
             !admin.operatorConfigured && "bg-[#0f172a]",
           )}
         >
-          {admin.operatorConfigured && admin.operator && (
+          {admin.operatorConfigured && admin.operator && !customBranding && (
             <div className="absolute inset-y-0 right-0 flex w-[72%] items-start justify-end sm:w-[68%] lg:w-[62%]">
               <Image
                 src={OPERATOR_WELCOME_BG[admin.operator]}
@@ -426,11 +429,20 @@ export function AdminDashboardView() {
               />
             </div>
           )}
+          {customBranding && admin.brandColor && (
+            <div
+              className="absolute inset-0 opacity-95"
+              style={{ background: brandColorHeroGradient(admin.brandColor) }}
+              aria-hidden
+            />
+          )}
           <div
             className="absolute inset-0"
             style={{
               background: admin.operatorConfigured
-                ? "linear-gradient(90deg, rgb(0 0 0 / 0.82) 0%, rgb(0 0 0 / 0.5) 32%, rgb(0 0 0 / 0.08) 58%, transparent 100%), linear-gradient(180deg, transparent 60%, rgb(0 0 0 / 0.2) 100%)"
+                ? customBranding
+                  ? "linear-gradient(90deg, rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.45) 38%, rgb(0 0 0 / 0.12) 62%, transparent 100%), linear-gradient(180deg, transparent 60%, rgb(0 0 0 / 0.22) 100%)"
+                  : "linear-gradient(90deg, rgb(0 0 0 / 0.82) 0%, rgb(0 0 0 / 0.5) 32%, rgb(0 0 0 / 0.08) 58%, transparent 100%), linear-gradient(180deg, transparent 60%, rgb(0 0 0 / 0.2) 100%)"
                 : "linear-gradient(155deg, #0f172a 0%, #1e293b 48%, #0f172a 100%)",
             }}
             aria-hidden
@@ -438,7 +450,14 @@ export function AdminDashboardView() {
           {admin.operatorConfigured && admin.operator && (
             <div className="pointer-events-none absolute right-4 top-4 z-10 sm:right-5 sm:top-5">
               <div className="rounded-xl bg-white/95 p-2 shadow-sm">
-                <OperatorLogo operator={admin.operator} className="h-7 w-auto" />
+                <PlatformOperatorMark
+                  code={admin.operator}
+                  name={operatorDisplayName}
+                  brandColor={admin.brandColor ?? "#fd7e14"}
+                  logoDataUrl={admin.logoDataUrl}
+                  size="md"
+                  className="size-12 rounded-lg border-0 bg-transparent p-0"
+                />
               </div>
             </div>
           )}

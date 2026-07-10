@@ -68,6 +68,10 @@ export type CreateTransportOperatorPayload = {
   hqEmail: string;
   hqPhone?: string;
   issueLoginsNow?: boolean;
+  subscriptionPlan: 'annual' | 'trial';
+  subscriptionDuration: string;
+  subscriptionPaidAt?: string;
+  subscriptionAmountGhs?: number;
 };
 
 export async function platformLoginApi(email: string, password: string): Promise<PlatformSession> {

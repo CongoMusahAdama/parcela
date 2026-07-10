@@ -13,6 +13,10 @@ import {
   OperatorSettings,
   OperatorSettingsSchema,
 } from './schemas/operator-settings.schema';
+import {
+  TransportOperator,
+  TransportOperatorSchema,
+} from '../platform/schemas/transport-operator.schema';
 
 @Module({
   imports: [
@@ -20,6 +24,7 @@ import {
       { name: OperatorSettings.name, schema: OperatorSettingsSchema },
       { name: StaffAccount.name, schema: StaffAccountSchema },
       { name: Parcel.name, schema: ParcelSchema },
+      { name: TransportOperator.name, schema: TransportOperatorSchema },
     ]),
     forwardRef(() => StaffModule),
     StationsModule,

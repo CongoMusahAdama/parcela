@@ -281,10 +281,12 @@ function addBulletList(
   items: readonly string[],
   y: number,
   indent = 14,
+  startX = PDF_LAYOUT.margin,
+  maxWidth?: number,
 ) {
   const { contentWidth } = pageMetrics(doc);
-  const bulletX = PDF_LAYOUT.margin + indent;
-  const textWidth = contentWidth - indent - 8;
+  const bulletX = startX + indent;
+  const textWidth = (maxWidth ?? contentWidth) - indent - 8;
   const lh = lineHeightFor(PDF_FONT.body.size);
 
   items.forEach((item) => {
@@ -302,11 +304,55 @@ function addBulletList(
   return y + PDF_LAYOUT.paragraphGap;
 }
 
+function addTintedPanel(
+  doc: LetterPdf,
+  y: number,
+  title: string,
+  items: readonly string[],
+  fill: [number, number, number],
+  titleColor: [number, number, number],
+) {
+  const { contentWidth } = pageMetrics(doc);
+  const panelX = PDF_LAYOUT.margin;
+  const panelWidth = contentWidth;
+  const titleHeight = lineHeightFor(PDF_FONT.section.size) + PDF_LAYOUT.bulletGap;
+  const itemLineHeight = lineHeightFor(PDF_FONT.body.size);
+  let itemsHeight = 0;
+  items.forEach((item) => {
+    applyPdfFont(doc, PDF_FONT.body);
+    const lines = doc.splitTextToSize(`• ${item}`, panelWidth - 36) as string[];
+    itemsHeight += lines.length * itemLineHeight + PDF_LAYOUT.bulletGap;
+  });
+  const panelHeight = titleHeight + itemsHeight + 20;
+  y = ensureSpace(doc, y, panelHeight + PDF_LAYOUT.sectionGap);
+
+  doc.setFillColor(...fill);
+  doc.setDrawColor(...PDF_COLOR.rule);
+  doc.setLineWidth(0.75);
+  doc.roundedRect(panelX, y, panelWidth, panelHeight, 10, 10, "FD");
+
+  let innerY = y + 14;
+  applyPdfFont(doc, PDF_FONT.section);
+  doc.setTextColor(...titleColor);
+  doc.text(title, panelX + 16, innerY + PDF_FONT.section.size * 0.85);
+  innerY += titleHeight;
+
+  innerY = addBulletList(doc, items, innerY, 14, panelX + 2, panelWidth - 4);
+  return innerY + PDF_LAYOUT.bulletGap;
+}
+
 export async function downloadConfigurationLetterPdf(data: ConfigurationLetterData) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
   const { width: pageWidth, contentWidth } = pageMetrics(doc);
   let y: number = PDF_LAYOUT.margin;
+
+  const [brandR, brandG, brandB] = hexToRgb(data.brandColor);
+  doc.setFillColor(brandR, brandG, brandB);
+  doc.rect(0, 0, pageWidth, 6, "F");
+  doc.setFillColor(253, 126, 20);
+  doc.rect(0, 6, pageWidth, 3, "F");
+  y += 10;
 
   try {
     const parcelaLogo = await loadImageDataUrl(BRAND_LOGO_SRC);
@@ -318,16 +364,18 @@ export async function downloadConfigurationLetterPdf(data: ConfigurationLetterDa
   }
 
   const operatorBoxX = pageWidth - PDF_LAYOUT.margin - 64;
+  let operatorMarkDrawn = false;
   if (data.operatorLogoSrc) {
     try {
       const operatorLogo = await loadImageDataUrl(data.operatorLogoSrc);
       doc.addImage(operatorLogo, imageFormat(data.operatorLogoSrc), operatorBoxX, y + 4, 64, 40);
+      operatorMarkDrawn = true;
     } catch {
-      // fall through to initials mark
+      operatorMarkDrawn = false;
     }
   }
 
-  if (!data.operatorLogoSrc) {
+  if (!operatorMarkDrawn) {
     const [r, g, b] = hexToRgb(data.brandColor);
     doc.setFillColor(r, g, b);
     doc.roundedRect(operatorBoxX, y + 4, 64, 40, 8, 8, "F");
@@ -340,9 +388,18 @@ export async function downloadConfigurationLetterPdf(data: ConfigurationLetterDa
 
   y += 58;
   doc.setDrawColor(...PDF_COLOR.rule);
-  doc.setLineWidth(0.75);
+  doc.setLineWidth(1);
   doc.line(PDF_LAYOUT.margin, y, pageWidth - PDF_LAYOUT.margin, y);
-  y += PDF_LAYOUT.headerGap;
+  y += 10;
+
+  applyPdfFont(doc, PDF_FONT.subtitle);
+  doc.setTextColor(...PDF_COLOR.muted);
+  doc.text(
+    `Ref: ${data.operatorCode} · Configuration completion`,
+    PDF_LAYOUT.margin,
+    y + PDF_FONT.subtitle.size * 0.85,
+  );
+  y += lineHeightFor(PDF_FONT.subtitle.size) + 8;
 
   applyPdfFont(doc, PDF_FONT.title);
   doc.setTextColor(...PDF_COLOR.title);
@@ -378,36 +435,50 @@ export async function downloadConfigurationLetterPdf(data: ConfigurationLetterDa
     PDF_COLOR.body,
   );
 
-  y = addSectionHeading(doc, "Configuration summary", y, PDF_COLOR.navy);
-  y = addBulletList(
-    doc,
-    [
-      `Operator code: ${data.operatorCode}`,
-      `Operating region: ${data.region}`,
-      `Network: ${data.stationCount} stations across ${data.cityCount} cities / corridors`,
-      `Configuration completed: ${data.configuredDateLabel}`,
-      `Primary HQ contact: ${data.hqAdminName ?? "—"} (${data.hqAdminEmail ?? "—"})`,
-      ...(data.subscriptionSummary ? [`Platform licence: ${data.subscriptionSummary}`] : []),
-    ],
-    y,
-  );
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(...PDF_COLOR.rule);
+  const summaryItems = [
+    `Operator code: ${data.operatorCode}`,
+    `Operating region: ${data.region}`,
+    `Network: ${data.stationCount} stations across ${data.cityCount} cities / corridors`,
+    `Configuration completed: ${data.configuredDateLabel}`,
+    `Primary HQ contact: ${data.hqAdminName ?? "—"} (${data.hqAdminEmail ?? "—"})`,
+    ...(data.subscriptionSummary ? [`Platform licence: ${data.subscriptionSummary}`] : []),
+  ];
+  const summaryTitleHeight = lineHeightFor(PDF_FONT.section.size) + PDF_LAYOUT.bulletGap;
+  const summaryItemsHeight = summaryItems.reduce((total, item) => {
+    applyPdfFont(doc, PDF_FONT.body);
+    const lines = doc.splitTextToSize(`• ${item}`, contentWidth - 36) as string[];
+    return total + lines.length * lineHeightFor(PDF_FONT.body.size) + PDF_LAYOUT.bulletGap;
+  }, 0);
+  const summaryHeight = summaryTitleHeight + summaryItemsHeight + 28;
+  y = ensureSpace(doc, y, summaryHeight + PDF_LAYOUT.sectionGap);
+  doc.roundedRect(PDF_LAYOUT.margin, y, contentWidth, summaryHeight, 10, 10, "FD");
 
+  applyPdfFont(doc, PDF_FONT.section);
+  doc.setTextColor(...PDF_COLOR.navy);
+  doc.text("Configuration summary", PDF_LAYOUT.margin + 16, y + 22);
+
+  y = addBulletList(doc, summaryItems, y + summaryTitleHeight + 8, 14);
   y += PDF_LAYOUT.bulletGap;
-  y = addSectionHeading(
+
+  y = addTintedPanel(
     doc,
-    "Monthly maintenance — our commitment to you",
     y,
+    "Monthly maintenance — our commitment to you",
+    CONFIGURATION_LETTER_MONTHLY_MAINTENANCE,
+    [255, 251, 235],
     PDF_COLOR.amber,
   );
-  y = addBulletList(doc, CONFIGURATION_LETTER_MONTHLY_MAINTENANCE, y);
 
-  y = addSectionHeading(
+  y = addTintedPanel(
     doc,
-    "Dedicated support — we are here for everything you need",
     y,
+    "Dedicated support — we are here for everything you need",
+    CONFIGURATION_LETTER_ONGOING_SUPPORT,
+    [239, 246, 255],
     PDF_COLOR.navy,
   );
-  y = addBulletList(doc, CONFIGURATION_LETTER_ONGOING_SUPPORT, y);
 
   y = addWrappedBlock(
     doc,
@@ -419,15 +490,19 @@ export async function downloadConfigurationLetterPdf(data: ConfigurationLetterDa
     PDF_COLOR.body,
   );
 
-  y = addWrappedBlock(
-    doc,
-    configurationLetterThankYou(data.operatorName),
-    PDF_LAYOUT.margin,
-    y,
-    contentWidth,
-    PDF_FONT.bodyItalic,
-    PDF_COLOR.thankYou,
-  );
+  const thankYouText = configurationLetterThankYou(data.operatorName);
+  applyPdfFont(doc, PDF_FONT.bodyItalic);
+  const thankYouLines = doc.splitTextToSize(thankYouText, contentWidth - 32) as string[];
+  const thankYouHeight = thankYouLines.length * lineHeightFor(PDF_FONT.bodyItalic.size) + 28;
+  y = ensureSpace(doc, y, thankYouHeight + PDF_LAYOUT.paragraphGap);
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(...PDF_COLOR.rule);
+  doc.roundedRect(PDF_LAYOUT.margin, y, contentWidth, thankYouHeight, 10, 10, "FD");
+  doc.setTextColor(...PDF_COLOR.thankYou);
+  thankYouLines.forEach((line, index) => {
+    doc.text(line, PDF_LAYOUT.margin + 16, y + 18 + index * lineHeightFor(PDF_FONT.bodyItalic.size));
+  });
+  y += thankYouHeight + PDF_LAYOUT.paragraphGap;
 
   y = addWrappedBlock(
     doc,
@@ -439,17 +514,22 @@ export async function downloadConfigurationLetterPdf(data: ConfigurationLetterDa
     PDF_COLOR.body,
   );
 
-  y = ensureSpace(doc, y, 60);
+  y = ensureSpace(doc, y, 80);
   y += PDF_LAYOUT.sectionGap;
-  doc.setDrawColor(...PDF_COLOR.rule);
-  doc.setLineWidth(0.5);
-  doc.line(PDF_LAYOUT.margin, y, pageWidth - PDF_LAYOUT.margin, y);
-  y += 18;
+  doc.setDrawColor(brandR, brandG, brandB);
+  doc.setLineWidth(2);
+  doc.line(PDF_LAYOUT.margin, y, PDF_LAYOUT.margin + 72, y);
+  y += 16;
 
   applyPdfFont(doc, PDF_FONT.footerBold);
   doc.setTextColor(...PDF_COLOR.title);
   doc.text(PARCELA_PLATFORM_CONTACT.teamName, PDF_LAYOUT.margin, y + PDF_FONT.footerBold.size * 0.85);
-  y += lineHeightFor(PDF_FONT.footerBold.size);
+  y += lineHeightFor(PDF_FONT.footerBold.size) + 2;
+
+  applyPdfFont(doc, PDF_FONT.footer);
+  doc.setTextColor(...PDF_COLOR.muted);
+  doc.text("Authorised platform correspondence", PDF_LAYOUT.margin, y + PDF_FONT.footer.size * 0.85);
+  y += lineHeightFor(PDF_FONT.footer.size);
 
   applyPdfFont(doc, PDF_FONT.footer);
   doc.setTextColor(...PDF_COLOR.muted);

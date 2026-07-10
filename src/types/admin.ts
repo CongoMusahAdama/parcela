@@ -8,6 +8,12 @@ export type AdminAccount = {
   /** Set once the operator completes transport setup in HQ. */
   operator: Operator | null;
   operatorConfigured: boolean;
+  /** Full transport name from platform onboarding. */
+  operatorName?: string | null;
+  /** Brand colour chosen during platform onboarding. */
+  brandColor?: string | null;
+  /** Uploaded operator logo from platform onboarding. */
+  logoDataUrl?: string | null;
 };
 
 export type AdminSession = {
