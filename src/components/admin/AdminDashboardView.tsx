@@ -21,7 +21,7 @@ import { PlatformOperatorMark } from "@/components/platform/PlatformOperatorMark
 import { AdminDemoWalkthrough } from "@/components/admin/AdminDemoWalkthrough";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
 import { fetchAdminOverview, fetchAdminParcels } from "@/lib/admin-api";
-import { getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
+import { getAdminOperator, getAdminOperatorName, isLegacyOperator } from "@/lib/admin-operator";
 import { brandColorHeroGradient } from "@/lib/brand-color-theme";
 import { OPERATOR_WELCOME_BG } from "@/lib/operators";
 import { StaffLiveClock } from "@/components/staff/StaffLiveClock";
@@ -417,7 +417,10 @@ export function AdminDashboardView() {
             !admin.operatorConfigured && "bg-[#0f172a]",
           )}
         >
-          {admin.operatorConfigured && admin.operator && !customBranding && (
+          {admin.operatorConfigured &&
+            admin.operator &&
+            !customBranding &&
+            isLegacyOperator(admin.operator) && (
             <div className="absolute inset-y-0 right-0 flex w-[72%] items-start justify-end sm:w-[68%] lg:w-[62%]">
               <Image
                 src={OPERATOR_WELCOME_BG[admin.operator]}

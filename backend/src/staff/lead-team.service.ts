@@ -160,7 +160,7 @@ export class LeadTeamService {
       throw new ConflictException('A staff account with this email already exists');
     }
 
-    const temporaryPassword = generateTemporaryPassword(10);
+    const temporaryPassword = generateTemporaryPassword();
     const location = `${station.city} · ${station.name}`;
     const webUrl = (this.config.get<string>('app.publicWebUrl') ?? 'http://localhost:3001').replace(
       /\/$/,
@@ -173,7 +173,7 @@ export class LeadTeamService {
       email,
       phone: input.phone.trim(),
       password: temporaryPassword,
-      pin: generateTemporaryPassword(8),
+      pin: generateTemporaryPassword(),
       active: true,
       role: 'station_staff' as StaffRole,
       operator: leadOperator,
@@ -191,8 +191,8 @@ export class LeadTeamService {
       `Parcela counter staff account for ${station.name} is ready.`,
       `Sign in: ${loginUrl}`,
       `Email: ${email}`,
-      `Temporary password: ${temporaryPassword}`,
-      `Sign in with this password, then set a new password from the portal.`,
+      `Temporary code: ${temporaryPassword}`,
+      `Sign in with this code, then set a new password from the portal.`,
     ].join(' ');
 
     const smsSent = await this.smsService.sendSms(input.phone.trim(), message);

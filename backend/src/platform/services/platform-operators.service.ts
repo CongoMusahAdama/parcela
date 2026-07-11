@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -25,12 +26,20 @@ import {
   TransportOperatorDocument,
 } from '../schemas/transport-operator.schema';
 import { PlatformAuditService } from './platform-audit.service';
+import { OperatorSettings, OperatorSettingsDocument } from '../../admin/schemas/operator-settings.schema';
+import { Parcel, ParcelDocument } from '../../parcels/schemas/parcel.schema';
+
+const PROTECTED_OPERATOR_CODES = new Set(['VIP', 'STC']);
 
 @Injectable()
 export class PlatformOperatorsService {
   constructor(
     @InjectModel(TransportOperator.name)
     private readonly operatorModel: Model<TransportOperatorDocument>,
+    @InjectModel(OperatorSettings.name)
+    private readonly operatorSettingsModel: Model<OperatorSettingsDocument>,
+    @InjectModel(Parcel.name)
+    private readonly parcelModel: Model<ParcelDocument>,
     private readonly staffAuth: StaffAuthService,
     private readonly audit: PlatformAuditService,
     private readonly sms: SmsService,
@@ -118,7 +127,7 @@ export class PlatformOperatorsService {
         email: hqEmail,
         phone: dto.hqPhone?.trim() || '0200000000',
         password: tempPassword,
-        pin: generateTemporaryPassword(6),
+        pin: generateTemporaryPassword(),
         active: true,
         role: 'operator_admin',
         operator: code,
@@ -248,6 +257,47 @@ export class PlatformOperatorsService {
     });
 
     return this.withHqCount(doc.toObject());
+  }
+
+  async remove(operatorId: string, actorEmail: string) {
+    const doc = await this.operatorModel.findOne({ operatorId });
+    if (!doc) throw new NotFoundException('Transport operator not found');
+
+    const code = doc.code.trim().toUpperCase();
+    if (PROTECTED_OPERATOR_CODES.has(code)) {
+      throw new ForbiddenException(`${code} is a built-in operator and cannot be deleted`);
+    }
+
+    const [staffRemoved, stationsRemoved, parcelsRemoved, settingsRemoved] = await Promise.all([
+      Promise.resolve(this.staffAuth.removeAccountsByOperator(code)),
+      this.stations.removeByOperator(code),
+      this.parcelModel.deleteMany({ operator: code }).then((result) => result.deletedCount ?? 0),
+      this.operatorSettingsModel
+        .deleteMany({ operator: code })
+        .then((result) => result.deletedCount ?? 0),
+    ]);
+
+    await this.operatorModel.deleteOne({ operatorId });
+
+    await this.audit.record({
+      action: 'Transport removed',
+      detail: `${doc.name} (${code}) — staff ${staffRemoved}, stations ${stationsRemoved}, parcels ${parcelsRemoved}`,
+      actorEmail,
+      operatorCode: code,
+    });
+
+    return {
+      ok: true,
+      operatorId,
+      operatorCode: code,
+      operatorName: doc.name,
+      removed: {
+        staffAccounts: staffRemoved,
+        stations: stationsRemoved,
+        parcels: parcelsRemoved,
+        operatorSettings: settingsRemoved,
+      },
+    };
   }
 
   async sendRenewalReminder(

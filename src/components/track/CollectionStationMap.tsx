@@ -5,7 +5,7 @@ import L from "leaflet";
 import { Locate, MapPin, Navigation } from "lucide-react";
 import { MapContainer, Marker, Polyline, TileLayer, useMap } from "react-leaflet";
 import type { TrackedParcel } from "@/types/parcel";
-import { OPERATOR_ACCENT } from "@/lib/operators";
+import { operatorAccentColor } from "@/lib/operators";
 import { stationDirectionsUrl } from "@/lib/maps";
 import { getSendLocation, requestSendLocation } from "@/lib/sendLocation";
 import "leaflet/dist/leaflet.css";
@@ -123,7 +123,7 @@ export function CollectionStationMap({
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const accent = parcel.destinationOperator
-    ? OPERATOR_ACCENT[parcel.destinationOperator]
+    ? operatorAccentColor(parcel.destinationOperator)
     : "#0d9488";
 
   useEffect(() => {

@@ -89,8 +89,20 @@ export class StaffAuthService implements OnModuleInit {
     const index = this.accounts.findIndex((account) => account.id === accountId);
     if (index === -1) return false;
     this.accounts.splice(index, 1);
+    this.activeStaffSessions.delete(accountId);
     void this.deleteAccount(accountId);
     return true;
+  }
+
+  removeAccountsByOperator(operatorCode: string): number {
+    const code = operatorCode.trim().toUpperCase();
+    const accountIds = this.accounts
+      .filter((account) => account.operator.trim().toUpperCase() === code)
+      .map((account) => account.id);
+    for (const accountId of accountIds) {
+      this.removeAccount(accountId);
+    }
+    return accountIds.length;
   }
 
   private get secret() {

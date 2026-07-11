@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, MapPin, Search, X } from "lucide-react";
-import { OPERATOR_ACCENT, SUPPORTED_OPERATORS } from "@/lib/operators";
+import { operatorAccentColor, SUPPORTED_OPERATORS } from "@/lib/operators";
 import { filterStationsByOperator, searchStations } from "@/lib/stations";
 import type { Operator, Station } from "@/types/parcel";
 import { cn } from "@/lib/utils";
@@ -84,7 +84,7 @@ export function DestinationStationPicker({
             <>
               <span
                 className="size-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: OPERATOR_ACCENT[selected.operator] }}
+                style={{ backgroundColor: operatorAccentColor(selected.operator) }}
               />
               <span className="truncate text-foreground">{stationLabel(selected)}</span>
             </>
@@ -184,7 +184,7 @@ export function DestinationStationPicker({
                       >
                         <span
                           className="size-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: OPERATOR_ACCENT[station.operator] }}
+                          style={{ backgroundColor: operatorAccentColor(station.operator) }}
                         />
                         <span className="min-w-0 flex-1">
                           <span

@@ -6,7 +6,7 @@ import L from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import type { Station } from "@/types/parcel";
-import { OPERATOR_ACCENT } from "@/lib/operators";
+import { operatorAccentColor } from "@/lib/operators";
 import { formatDistance } from "@/lib/utils";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
@@ -22,7 +22,7 @@ type StationMapViewProps = {
 const GHANA_CENTER: [number, number] = [7.9465, -1.0232];
 
 function operatorMarkerIcon(operator: Station["operator"]) {
-  const color = OPERATOR_ACCENT[operator];
+  const color = operatorAccentColor(operator);
   return L.divIcon({
     className: "parcela-map-marker",
     html: `<span style="display:block;width:16px;height:16px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 1px 4px rgba(15,23,42,.35)"></span>`,

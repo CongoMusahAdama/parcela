@@ -46,6 +46,19 @@ export type OperatorLetterResult = PlatformOperatorRow & {
   letterSmsSent?: boolean;
 };
 
+export type DeleteTransportOperatorResult = {
+  ok: boolean;
+  operatorId: string;
+  operatorCode: string;
+  operatorName: string;
+  removed: {
+    staffAccounts: number;
+    stations: number;
+    parcels: number;
+    operatorSettings: number;
+  };
+};
+
 export type OperatorTerminalInput = {
   name: string;
   city: string;
@@ -115,6 +128,14 @@ export async function markOperatorConfiguredApi(operatorId: string): Promise<Pla
 export async function toggleOperatorSuspendApi(operatorId: string): Promise<PlatformOperatorRow> {
   return apiFetch<PlatformOperatorRow>(`/platform/operators/${operatorId}/toggle-suspend`, {
     method: "POST",
+  });
+}
+
+export async function deleteTransportOperatorApi(
+  operatorId: string,
+): Promise<DeleteTransportOperatorResult> {
+  return apiFetch<DeleteTransportOperatorResult>(`/platform/operators/${operatorId}`, {
+    method: "DELETE",
   });
 }
 

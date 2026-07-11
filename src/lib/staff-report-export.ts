@@ -100,11 +100,13 @@ export async function exportStaffReportPdf(result: StaffReportResult, meta: Staf
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  try {
-    const logo = await loadLogoDataUrl(meta.logoSrc);
-    doc.addImage(logo, logoFormat(meta.logoSrc), 40, 28, 48, 36);
-  } catch {
-    // Logo optional — report still exports without it.
+  if (meta.logoSrc) {
+    try {
+      const logo = await loadLogoDataUrl(meta.logoSrc);
+      doc.addImage(logo, logoFormat(meta.logoSrc), 40, 28, 48, 36);
+    } catch {
+      // Logo optional — report still exports without it.
+    }
   }
 
   doc.setFont("helvetica", "bold");

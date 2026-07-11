@@ -58,12 +58,12 @@ export async function fetchPreBookingByReference(
   }
 }
 
-export function resolveBookingOperator(booking: PreBooking): Operator {
+export function resolveBookingOperator(booking: PreBooking): string {
   if (booking.operator) return booking.operator;
   return getStationById(booking.stationId)?.operator ?? "VIP";
 }
 
-export function resolveDestinationOperator(booking: PreBooking): Operator | undefined {
+export function resolveDestinationOperator(booking: PreBooking): string | undefined {
   if (booking.destinationOperator) return booking.destinationOperator;
   if (booking.destinationStationId) {
     return getStationById(booking.destinationStationId)?.operator;

@@ -18,6 +18,7 @@ import type {
 } from "@/lib/platform-demo";
 import {
   createTransportOperatorApi,
+  deleteTransportOperatorApi,
   fetchPlatformWorkspace,
   issueHqCredentialsApi,
   markOperatorConfiguredApi,
@@ -29,6 +30,7 @@ import {
   updateHqAdminApi,
   updatePlatformUserApi,
   type CreateTransportOperatorPayload,
+  type DeleteTransportOperatorResult,
   type PlatformCredentialResult,
   type PlatformWorkspace,
   type PlatformWorkspaceStats,
@@ -47,6 +49,7 @@ type PlatformDataContextValue = {
   createOperator: (payload: CreateTransportOperatorPayload) => Promise<PlatformOperatorRow & { hqSmsSent?: boolean }>;
   markConfigured: (operatorId: string) => Promise<PlatformOperatorRow>;
   toggleSuspend: (operatorId: string) => Promise<PlatformOperatorRow>;
+  deleteOperator: (operatorId: string) => Promise<DeleteTransportOperatorResult>;
   sendRenewalReminder: (
     operatorId: string,
     reminder: PlatformRenewalReminder,
@@ -177,6 +180,12 @@ export function PlatformDataProvider({ children }: { children: ReactNode }) {
         const row = await toggleOperatorSuspendApi(operatorId);
         afterMutation(row);
         return row;
+      },
+      async deleteOperator(operatorId) {
+        const result = await deleteTransportOperatorApi(operatorId);
+        setOperators((prev) => prev.filter((row) => row.id !== operatorId));
+        void refresh({ silent: true });
+        return result;
       },
       async sendRenewalReminder(operatorId, reminder) {
         const row = await sendRenewalReminderApi(operatorId, reminder);

@@ -15,19 +15,21 @@ import {
   Trash2,
   UserCog,
 } from "lucide-react";
-import { OperatorLogo } from "@/components/brand/OperatorLogo";
+import { PlatformOperatorMark } from "@/components/platform/PlatformOperatorMark";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
 import {
   fetchAdminLeads,
+  fetchAdminStations,
   sendAdminLeadCredentialsApi,
   type AdminLeadAccount,
 } from "@/lib/admin-api";
 import { completeAdminSetup } from "@/lib/admin-auth";
-import { getAdminOperator } from "@/lib/admin-operator";
-import { fetchStations } from "@/lib/api";
-import { OPERATOR_ACCENT, OPERATOR_REPORT_BRAND } from "@/lib/operators";
+import {
+  getAdminAccentColor,
+  getAdminOperator,
+  getAdminOperatorName,
+} from "@/lib/admin-operator";
 import { showConfirmDialog, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
-import type { Operator } from "@/types/parcel";
 import { cn } from "@/lib/utils";
 
 type SetupBranch = {
@@ -51,8 +53,6 @@ type StationLeadCoverage = {
 };
 
 /** Fallback only when session has no operator yet (should not happen for seeded HQ). */
-const SETUP_OPERATOR: Operator = "VIP";
-
 const STEPS = [
   { id: 1, label: "Branches", icon: Building2 },
   { id: 2, label: "Branch leads", icon: UserCog },
@@ -237,8 +237,9 @@ function buildCoverage(
 
 export function AdminSetupView() {
   const { admin } = useAdminSession();
-  const operator: Operator = getAdminOperator(admin) ?? SETUP_OPERATOR;
-  const companyName = OPERATOR_REPORT_BRAND[operator].companyName;
+  const operator = getAdminOperator(admin);
+  const companyName = getAdminOperatorName(admin);
+  const accentColor = getAdminAccentColor(admin);
 
   const [step, setStep] = useState(1);
   const [branches, setBranches] = useState<SetupBranch[]>([]);
@@ -259,17 +260,22 @@ export function AdminSetupView() {
   }, []);
 
   useEffect(() => {
+    if (!operator) {
+      setBranches([]);
+      setCoverage([]);
+      setBranchesLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     async function loadOperatorBranches() {
       setBranchesLoading(true);
       setBranchesError(null);
       try {
-        // All live terminals for this transport only (VIP → VIP stations, STC → STC).
-        const stations = await fetchStations({ operator });
+        const stations = await fetchAdminStations();
         if (cancelled) return;
         const nextBranches = stations
-          .filter((station) => station.operator === operator)
           .map((station) => ({
             id: station.id,
             name: station.name,
@@ -379,7 +385,7 @@ export function AdminSetupView() {
       text: `SMS will go to ${row.lead.leadPhone} with a temporary PIN. ${row.lead.leadName} will only manage staff and parcels at ${row.stationName}.`,
       confirmText: "Send SMS",
       cancelText: "Not now",
-      confirmButtonColor: OPERATOR_ACCENT[operator],
+      confirmButtonColor: accentColor,
     });
     if (!confirmed) return;
 
@@ -397,7 +403,7 @@ export function AdminSetupView() {
         text: result.smsSent
           ? `Login sent to ${row.lead.leadPhone}. Branch: ${row.stationName} (${row.stationCode}).`
           : `A new PIN was generated for ${row.lead.leadName}, but SMS may be unavailable. Resend when messaging is online.`,
-        confirmButtonColor: OPERATOR_ACCENT[operator],
+        confirmButtonColor: accentColor,
       });
     } catch (error) {
       await showValidationAlert({
@@ -419,6 +425,7 @@ export function AdminSetupView() {
   };
 
   const activate = async () => {
+    if (!operator) return;
     setActivating(true);
     try {
       await completeAdminSetup(operator);
@@ -426,9 +433,9 @@ export function AdminSetupView() {
         title: isConfigured ? "Setup updated" : "Application configured",
         text: isConfigured
           ? `${companyName} setup has been saved. Branches and lead coverage are up to date.`
-          : `${companyName} is ready. Your HQ portal is now live with ${operator} branding.`,
+          : `${companyName} is ready. Your HQ portal is now live.`,
         confirmText: isConfigured ? "Got it" : "Go to dashboard",
-        confirmButtonColor: OPERATOR_ACCENT[operator],
+        confirmButtonColor: accentColor,
       });
       if (!isConfigured) {
         window.location.assign("/admin/dashboard");
@@ -444,6 +451,17 @@ export function AdminSetupView() {
       setActivating(false);
     }
   };
+
+  if (!operator) {
+    return (
+      <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <h1 className="font-display text-xl font-bold text-foreground">Admin setup</h1>
+        <p className="font-body mt-2 text-sm text-muted">
+          Your HQ account is not linked to a transport yet. Contact Parcela platform support.
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
@@ -491,9 +509,14 @@ export function AdminSetupView() {
         )}
 
         <div className="mt-5 flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 shadow-sm">
-          <div className="rounded-lg border border-border bg-white p-1.5">
-            <OperatorLogo operator={operator} className="h-7" />
-          </div>
+          <PlatformOperatorMark
+            code={operator}
+            name={companyName}
+            brandColor={admin.brandColor ?? accentColor}
+            logoDataUrl={admin.logoDataUrl}
+            size="md"
+            className="rounded-lg border border-border bg-white p-1.5"
+          />
           <div className="min-w-0">
             <p className="font-display truncate text-sm font-bold text-foreground">
               {companyName}
@@ -508,7 +531,7 @@ export function AdminSetupView() {
           </div>
           <span
             className="ml-auto size-4 shrink-0 rounded-full"
-            style={{ background: OPERATOR_ACCENT[operator] }}
+            style={{ background: accentColor }}
             aria-label="Accent colour"
           />
         </div>
@@ -560,8 +583,8 @@ export function AdminSetupView() {
                 Branches
               </h2>
               <p className="font-body mt-1 text-sm text-muted">
-                All {operator} terminals across Ghana are loaded below. Remove any you do not need,
-                or add a new one HQ opens later.
+                Terminals onboarded for {companyName} on Parcela are loaded below. Remove any you
+                do not need, or add a new branch when HQ opens one later.
               </p>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_7rem_1fr_auto]">
@@ -590,7 +613,7 @@ export function AdminSetupView() {
                     onChange={(e) =>
                       setBranchDraft((d) => ({ ...d, code: e.target.value.toUpperCase() }))
                     }
-                    placeholder="VIP-KNH"
+                    placeholder={`${operator}-KNH`}
                     className={cn(inputClass, "font-mono uppercase")}
                   />
                 </div>
@@ -815,9 +838,14 @@ export function AdminSetupView() {
               )}
 
               <div className="mt-5 flex items-center gap-4 rounded-xl border border-border bg-white p-4">
-                <div className="rounded-xl border border-border bg-white p-2">
-                  <OperatorLogo operator={operator} className="h-9" />
-                </div>
+                <PlatformOperatorMark
+                  code={operator}
+                  name={companyName}
+                  brandColor={admin.brandColor ?? accentColor}
+                  logoDataUrl={admin.logoDataUrl}
+                  size="lg"
+                  className="rounded-xl border border-border bg-white p-2"
+                />
                 <div className="min-w-0">
                   <p className="font-display truncate text-sm font-bold text-foreground">
                     {companyName}
@@ -829,7 +857,7 @@ export function AdminSetupView() {
                 </div>
                 <span
                   className="ml-auto size-5 shrink-0 rounded-full ring-2 ring-inset ring-white"
-                  style={{ background: OPERATOR_ACCENT[operator] }}
+                  style={{ background: accentColor }}
                   aria-label="Accent colour"
                 />
               </div>
@@ -915,7 +943,7 @@ export function AdminSetupView() {
                 onClick={activate}
                 disabled={activating}
                 className="font-display flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-white disabled:opacity-60"
-                style={{ background: OPERATOR_ACCENT[operator] }}
+                style={{ background: accentColor }}
               >
                 <Rocket className="size-4" />
                 {activating

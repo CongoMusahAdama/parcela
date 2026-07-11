@@ -21,7 +21,7 @@ export type AdminLeadAccount = {
   phone: string;
   active: boolean;
   role: "station_lead";
-  operator: Operator;
+  operator: string;
   stationId: string;
   stationName: string;
   stationCode: string;
@@ -35,7 +35,7 @@ export type AdminPersonAccount = {
   phone: string;
   active: boolean;
   role: "station_lead" | "station_staff";
-  operator: Operator;
+  operator: string;
   stationId: string;
   stationName: string;
   stationCode: string;
@@ -108,7 +108,7 @@ export async function fetchAdminSession(): Promise<AdminSession> {
   return apiFetch<AdminSession>("/admin/session");
 }
 
-export async function completeAdminSetupApi(operator: Operator): Promise<{
+export async function completeAdminSetupApi(operator: string): Promise<{
   ok: boolean;
   settings: OperatorControlsPayload;
   admin: AdminSession["admin"];
@@ -220,8 +220,8 @@ export async function patchOperatorSettingsApi(
 
 /** Public lock status for staff/lead banners and booking gate (no HQ cookie required). */
 export async function fetchOperatorLockStatus(
-  operator: Operator,
-): Promise<OperatorControlLocks & { operator: Operator; maintenanceBanner: string }> {
+  operator: string,
+): Promise<OperatorControlLocks & { operator: string; maintenanceBanner: string }> {
   return apiFetch(
     `/admin/operator-controls/status?operator=${encodeURIComponent(operator)}`,
   );

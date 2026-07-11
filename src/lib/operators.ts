@@ -66,6 +66,16 @@ export function isSupportedOperator(value: string): value is Operator {
   return SUPPORTED_OPERATORS.includes(value as Operator);
 }
 
+export function operatorAccentColor(value: string): string {
+  return isSupportedOperator(value) ? OPERATOR_ACCENT[value] : "#0d9488";
+}
+
+export function operatorBadgeClass(value: string): string {
+  return isSupportedOperator(value)
+    ? OPERATOR_BADGE_CLASS[value]
+    : "bg-primary/10 text-primary";
+}
+
 export function assertSupportedOperator(value: string): Operator {
   if (!isSupportedOperator(value)) {
     throw new Error(`Operator "${value}" is not supported. Only VIP and STC are accepted.`);

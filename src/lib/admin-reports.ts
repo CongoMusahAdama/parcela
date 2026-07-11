@@ -7,8 +7,8 @@ import {
   Layers,
   Package,
 } from "lucide-react";
+import { isLegacyOperator } from "@/lib/admin-operator";
 import { OPERATOR_ACCENT, OPERATOR_LOGOS, OPERATOR_REPORT_BRAND } from "@/lib/operators";
-import type { Operator } from "@/types/parcel";
 
 export type AdminReportModule = {
   id: AdminReportModuleId;
@@ -107,13 +107,13 @@ export type AdminReportFilter = {
 export type AdminReportMeta = {
   companyName: string;
   companyTagline: string;
-  operator: Operator;
+  operator: string;
   reportTitle: string;
   periodLabel: string;
   generatedBy: string;
   generatedAt: string;
   scopeLabel: string;
-  logoSrc: string;
+  logoSrc: string | null;
   accentColor: string;
   accentRgb: [number, number, number];
 };
@@ -134,17 +134,25 @@ export function formatAdminReportPeriod(dateFrom: string, dateTo: string) {
 }
 
 export function buildAdminReportMeta(input: {
-  operator: Operator;
+  operator: string;
   reportTitle: string;
   periodLabel: string;
   generatedBy: string;
   scopeLabel: string;
 }): AdminReportMeta {
-  const brand = OPERATOR_REPORT_BRAND[input.operator];
+  const code = input.operator.toUpperCase();
+  const legacy = isLegacyOperator(code) ? code : null;
+  const brand = legacy
+    ? OPERATOR_REPORT_BRAND[legacy]
+    : {
+        companyName: `${code} Transport`,
+        companyTagline: `${code} terminal parcel operations report`,
+        accentRgb: [51, 65, 85] as [number, number, number],
+      };
   return {
     companyName: brand.companyName,
     companyTagline: brand.companyTagline,
-    operator: input.operator,
+    operator: code,
     reportTitle: input.reportTitle,
     periodLabel: input.periodLabel,
     generatedBy: input.generatedBy,
@@ -153,8 +161,8 @@ export function buildAdminReportMeta(input: {
       timeStyle: "short",
     }),
     scopeLabel: input.scopeLabel,
-    logoSrc: OPERATOR_LOGOS[input.operator],
-    accentColor: OPERATOR_ACCENT[input.operator],
+    logoSrc: legacy ? OPERATOR_LOGOS[legacy] : null,
+    accentColor: legacy ? OPERATOR_ACCENT[legacy] : "#334155",
     accentRgb: brand.accentRgb,
   };
 }

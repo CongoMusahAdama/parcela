@@ -235,10 +235,13 @@ function pageMetrics(doc: LetterPdf) {
   };
 }
 
+let activeLetterWatermark: (() => void) | null = null;
+
 function ensureSpace(doc: LetterPdf, y: number, needed: number) {
   const { bottomLimit } = pageMetrics(doc);
   if (y + needed <= bottomLimit) return y;
   doc.addPage();
+  activeLetterWatermark?.();
   return PDF_LAYOUT.margin;
 }
 
@@ -341,6 +344,97 @@ function addTintedPanel(
   return innerY + PDF_LAYOUT.bulletGap;
 }
 
+function paintParcelaWatermark(doc: LetterPdf, parcelaLogo: string, format: "PNG" | "JPEG") {
+  const { width, height } = pageMetrics(doc);
+  const wmW = width * 0.62;
+  const wmH = wmW * 0.72;
+  const x = (width - wmW) / 2;
+  const y = (height - wmH) / 2 - 12;
+
+  try {
+    const GStateCtor = (doc as LetterPdf & { GState?: new (opts: { opacity: number }) => unknown })
+      .GState;
+    if (GStateCtor) {
+      doc.saveGraphicsState();
+      doc.setGState(new GStateCtor({ opacity: 0.07 }));
+      doc.addImage(parcelaLogo, format, x, y, wmW, wmH);
+      doc.restoreGraphicsState();
+      return;
+    }
+  } catch {
+    // fall through to plain image
+  }
+
+  doc.addImage(parcelaLogo, format, x, y, wmW, wmH);
+}
+
+async function drawCenteredOperatorHeader(
+  doc: LetterPdf,
+  data: ConfigurationLetterData,
+  y: number,
+  pageWidth: number,
+) {
+  const logoW = 152;
+  const logoH = 98;
+  const logoX = (pageWidth - logoW) / 2;
+  let operatorMarkDrawn = false;
+
+  if (data.operatorLogoSrc) {
+    try {
+      const operatorLogo = await loadImageDataUrl(data.operatorLogoSrc);
+      doc.addImage(operatorLogo, imageFormat(data.operatorLogoSrc), logoX, y, logoW, logoH);
+      operatorMarkDrawn = true;
+    } catch {
+      operatorMarkDrawn = false;
+    }
+  }
+
+  if (!operatorMarkDrawn) {
+    const [r, g, b] = hexToRgb(data.brandColor);
+    doc.setFillColor(r, g, b);
+    doc.roundedRect(logoX, y, logoW, logoH, 12, 12, "F");
+    applyPdfFont(doc, { family: "helvetica", style: "bold", size: 28 });
+    doc.setTextColor(255, 255, 255);
+    doc.text(operatorInitials(data.operatorName, data.operatorCode), pageWidth / 2, y + logoH / 2 + 10, {
+      align: "center",
+    });
+  }
+
+  y += logoH + 16;
+
+  applyPdfFont(doc, PDF_FONT.footerBold);
+  doc.setFontSize(15);
+  doc.setTextColor(...PDF_COLOR.title);
+  doc.text(data.operatorName.toUpperCase(), pageWidth / 2, y + 12, { align: "center" });
+  y += 24;
+
+  applyPdfFont(doc, PDF_FONT.subtitle);
+  doc.setTextColor(...PDF_COLOR.muted);
+  const contactLine = [data.contactEmail, data.contactPhone].filter(Boolean).join(" · ");
+  doc.text(
+    contactLine || `${data.operatorCode} · ${data.region}`,
+    pageWidth / 2,
+    y + PDF_FONT.subtitle.size * 0.85,
+    { align: "center" },
+  );
+  y += lineHeightFor(PDF_FONT.subtitle.size) + 6;
+
+  if (contactLine) {
+    doc.text(
+      `${data.operatorCode} · ${data.region}`,
+      pageWidth / 2,
+      y + PDF_FONT.subtitle.size * 0.85,
+      { align: "center" },
+    );
+    y += lineHeightFor(PDF_FONT.subtitle.size) + 10;
+  }
+
+  doc.setDrawColor(...PDF_COLOR.rule);
+  doc.setLineWidth(1);
+  doc.line(PDF_LAYOUT.margin, y, pageWidth - PDF_LAYOUT.margin, y);
+  return y + 18;
+}
+
 export async function downloadConfigurationLetterPdf(data: ConfigurationLetterData) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
@@ -354,43 +448,16 @@ export async function downloadConfigurationLetterPdf(data: ConfigurationLetterDa
   doc.rect(0, 6, pageWidth, 3, "F");
   y += 10;
 
+  let parcelaLogo: string | null = null;
   try {
-    const parcelaLogo = await loadImageDataUrl(BRAND_LOGO_SRC);
-    doc.addImage(parcelaLogo, imageFormat(BRAND_LOGO_SRC), PDF_LAYOUT.margin, y, 64, 48);
+    parcelaLogo = await loadImageDataUrl(BRAND_LOGO_SRC);
+    activeLetterWatermark = () => paintParcelaWatermark(doc, parcelaLogo!, imageFormat(BRAND_LOGO_SRC));
+    activeLetterWatermark();
   } catch {
-    applyPdfFont(doc, PDF_FONT.footerBold);
-    doc.setTextColor(...PDF_COLOR.navy);
-    doc.text(BRAND_NAME, PDF_LAYOUT.margin, y + 28);
+    activeLetterWatermark = null;
   }
 
-  const operatorBoxX = pageWidth - PDF_LAYOUT.margin - 64;
-  let operatorMarkDrawn = false;
-  if (data.operatorLogoSrc) {
-    try {
-      const operatorLogo = await loadImageDataUrl(data.operatorLogoSrc);
-      doc.addImage(operatorLogo, imageFormat(data.operatorLogoSrc), operatorBoxX, y + 4, 64, 40);
-      operatorMarkDrawn = true;
-    } catch {
-      operatorMarkDrawn = false;
-    }
-  }
-
-  if (!operatorMarkDrawn) {
-    const [r, g, b] = hexToRgb(data.brandColor);
-    doc.setFillColor(r, g, b);
-    doc.roundedRect(operatorBoxX, y + 4, 64, 40, 8, 8, "F");
-    applyPdfFont(doc, PDF_FONT.footerBold);
-    doc.setTextColor(255, 255, 255);
-    doc.text(operatorInitials(data.operatorName, data.operatorCode), operatorBoxX + 32, y + 30, {
-      align: "center",
-    });
-  }
-
-  y += 58;
-  doc.setDrawColor(...PDF_COLOR.rule);
-  doc.setLineWidth(1);
-  doc.line(PDF_LAYOUT.margin, y, pageWidth - PDF_LAYOUT.margin, y);
-  y += 10;
+  y = await drawCenteredOperatorHeader(doc, data, y, pageWidth);
 
   applyPdfFont(doc, PDF_FONT.subtitle);
   doc.setTextColor(...PDF_COLOR.muted);
@@ -403,10 +470,16 @@ export async function downloadConfigurationLetterPdf(data: ConfigurationLetterDa
 
   applyPdfFont(doc, PDF_FONT.title);
   doc.setTextColor(...PDF_COLOR.title);
-  doc.text("Configuration Completion Letter", pageWidth / 2, y + PDF_FONT.title.size * 0.85, {
+  doc.text("CONFIGURATION COMPLETION LETTER", pageWidth / 2, y + PDF_FONT.title.size * 0.85, {
     align: "center",
   });
   y += lineHeightFor(PDF_FONT.title.size) + 4;
+
+  doc.setDrawColor(...PDF_COLOR.title);
+  doc.setLineWidth(0.75);
+  const titleW = doc.getTextWidth("CONFIGURATION COMPLETION LETTER");
+  doc.line(pageWidth / 2 - titleW / 2, y, pageWidth / 2 + titleW / 2, y);
+  y += 10;
 
   applyPdfFont(doc, PDF_FONT.subtitle);
   doc.setTextColor(...PDF_COLOR.muted);
@@ -537,6 +610,7 @@ export async function downloadConfigurationLetterPdf(data: ConfigurationLetterDa
   y += lineHeightFor(PDF_FONT.footer.size);
   doc.text(`Email: ${PARCELA_PLATFORM_CONTACT.email}`, PDF_LAYOUT.margin, y + PDF_FONT.footer.size * 0.85);
 
+  activeLetterWatermark = null;
   doc.save(letterFilename(data.operatorCode));
 }
 

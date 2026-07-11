@@ -112,6 +112,15 @@ export class StationsService {
     return created;
   }
 
+  async removeByOperator(operatorCode: string): Promise<number> {
+    const code = operatorCode.trim().toUpperCase();
+    const result = await this.stationModel.deleteMany({ operator: code });
+    if ((result.deletedCount ?? 0) > 0) {
+      this.logger.log(`Removed ${result.deletedCount} station(s) for operator ${code}`);
+    }
+    return result.deletedCount ?? 0;
+  }
+
   async listGhanaCities() {
     const fromDb = await this.stationModel.distinct('city');
     return mergeGhanaCities(GHANA_CITIES, fromDb);

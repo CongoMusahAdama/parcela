@@ -1,5 +1,5 @@
-import type { Operator } from "@/types/parcel";
 import { brandColorStaffTheme } from "@/lib/brand-color-theme";
+import { isLegacyOperator } from "@/lib/admin-operator";
 import { operatorStaffThemeStyle } from "@/lib/operator-theme";
 
 /** Neutral HQ theme before transport setup is complete. */
@@ -23,7 +23,7 @@ function brandThemeStyle(brandColor: string): React.CSSProperties {
 }
 
 export function adminThemeStyle(
-  operator: Operator | null,
+  operator: string | null,
   operatorConfigured: boolean,
   brandColor?: string | null,
 ): React.CSSProperties {
@@ -31,7 +31,7 @@ export function adminThemeStyle(
     return brandThemeStyle(brandColor);
   }
 
-  if (operatorConfigured && operator) {
+  if (operatorConfigured && operator && isLegacyOperator(operator)) {
     return operatorStaffThemeStyle(operator);
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { OperatorLogo } from "@/components/brand/OperatorLogo";
+import { isLegacyOperator } from "@/lib/admin-operator";
 import { OPERATOR_LABELS } from "@/lib/operators";
 import type { ParcelTagFields } from "@/lib/parcel-tag";
 import { cn } from "@/lib/utils";
@@ -71,11 +72,13 @@ export function ParcelTagReceipt({
         className
       )}
     >
-      <OperatorLogo
-        operator={tag.operator}
-        variant="watermark"
-        className={emphasized ? "opacity-[0.1]" : "opacity-[0.22]"}
-      />
+      {isLegacyOperator(tag.operator) ? (
+        <OperatorLogo
+          operator={tag.operator}
+          variant="watermark"
+          className={emphasized ? "opacity-[0.1]" : "opacity-[0.22]"}
+        />
+      ) : null}
 
       <div
         className={cn(
@@ -84,9 +87,15 @@ export function ParcelTagReceipt({
         )}
       >
         <div className="flex items-center gap-2 border-b-2 border-[#0f172a] pb-2">
-          <OperatorLogo operator={tag.operator} className={compact ? "h-6" : "h-8"} />
+          {isLegacyOperator(tag.operator) ? (
+            <OperatorLogo operator={tag.operator} className={compact ? "h-6" : "h-8"} />
+          ) : (
+            <span className="font-display text-xs font-bold uppercase text-[#475569]">
+              {tag.operator}
+            </span>
+          )}
           <p className="font-display text-[11px] font-bold uppercase tracking-wide text-[#475569]">
-            {OPERATOR_LABELS[tag.operator]} · Parcel tag
+            {isLegacyOperator(tag.operator) ? OPERATOR_LABELS[tag.operator] : tag.operator} · Parcel tag
           </p>
         </div>
 
@@ -207,7 +216,11 @@ export function ParcelTagReceipt({
               {isCounter && tag.busNumber ? (
                 <TagField label="Bus no." value={tag.busNumber} mono emphasized={emphasized} />
               ) : (
-                <TagField label="Transport" value={OPERATOR_LABELS[tag.operator]} emphasized={emphasized} />
+                <TagField
+                  label="Transport"
+                  value={isLegacyOperator(tag.operator) ? OPERATOR_LABELS[tag.operator] : tag.operator}
+                  emphasized={emphasized}
+                />
               )}
             </div>
             {isCounter && tag.driverPhone && (

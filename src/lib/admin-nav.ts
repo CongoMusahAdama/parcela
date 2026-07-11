@@ -37,7 +37,7 @@ export const ADMIN_SETUP_ITEM: AdminNavItem = {
   label: "Admin setup",
   href: "/admin/setup",
   icon: Settings,
-  description: "Configure the VIP Transport application — branches and branch leads.",
+  description: "Configure your transport application — branches and branch leads.",
   badge: "Start here",
   emphasizeWhenUnconfigured: true,
 };

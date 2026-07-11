@@ -13,8 +13,7 @@ import {
 } from "lucide-react";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
 import { fetchAdminOverview } from "@/lib/admin-api";
-import { getAdminOperator } from "@/lib/admin-operator";
-import { OPERATOR_REPORT_BRAND } from "@/lib/operators";
+import { getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
 import type { AdminBranchSnapshot, AdminBranchStatus, AdminNetworkOverview } from "@/types/admin";
 import type { Operator } from "@/types/parcel";
 import { cn } from "@/lib/utils";
@@ -155,9 +154,7 @@ function AnalyticsPieChart({
 export function AdminAnalyticsView() {
   const { admin } = useAdminSession();
   const operator = getAdminOperator(admin);
-  const companyName = operator
-    ? OPERATOR_REPORT_BRAND[operator].companyName
-    : "Your transport";
+  const companyName = getAdminOperatorName(admin);
 
   const [overview, setOverview] = useState<AdminNetworkOverview>(EMPTY_OVERVIEW);
   const [branches, setBranches] = useState<AnalyticsBranch[]>([]);

@@ -17,8 +17,7 @@ import {
 } from "lucide-react";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
 import { fetchAdminPeople, setAdminPersonActiveApi } from "@/lib/admin-api";
-import { getAdminOperator } from "@/lib/admin-operator";
-import { OPERATOR_ACCENT, OPERATOR_REPORT_BRAND } from "@/lib/operators";
+import { getAdminAccentColor, getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
 import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import type { Operator } from "@/types/parcel";
 import { cn } from "@/lib/utils";
@@ -158,9 +157,8 @@ function PeoplePieChart({ rows }: { rows: PersonRow[] }) {
 export function AdminPeopleView() {
   const { admin } = useAdminSession();
   const operator = getAdminOperator(admin);
-  const companyName = operator
-    ? OPERATOR_REPORT_BRAND[operator].companyName
-    : "Your transport";
+  const companyName = getAdminOperatorName(admin);
+  const accentColor = getAdminAccentColor(admin);
 
   const [rows, setRows] = useState<PersonRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -279,7 +277,7 @@ export function AdminPeopleView() {
       await showSuccessAlert({
         title: next === "active" ? "Account activated" : "Account deactivated",
         text: `${person.name} is now ${next}.`,
-        confirmButtonColor: OPERATOR_ACCENT[operator],
+        confirmButtonColor: accentColor,
       });
     } catch (error) {
       await showValidationAlert({

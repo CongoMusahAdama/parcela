@@ -14,6 +14,7 @@ import {
   PauseCircle,
   PlayCircle,
   Plus,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -234,6 +235,7 @@ export function PlatformOperatorsView() {
     createOperator,
     markConfigured,
     toggleSuspend,
+    deleteOperator,
     patchOperatorLocal,
     recordConfigurationLetter,
     issueHqCredentials,
@@ -253,6 +255,9 @@ export function PlatformOperatorsView() {
   const [letterOperatorId, setLetterOperatorId] = useState<string | null>(null);
   const [letterAgreementDate, setLetterAgreementDate] = useState("");
   const [suspendBusyId, setSuspendBusyId] = useState<string | null>(null);
+  const [deleteBusyId, setDeleteBusyId] = useState<string | null>(null);
+
+  const isProtectedOperator = (code: string) => code === "VIP" || code === "STC";
 
   useEffect(() => {
     if (!selectedId && operators[0]?.id) setSelectedId(operators[0].id);
@@ -502,6 +507,52 @@ export function PlatformOperatorsView() {
       });
     } finally {
       setSuspendBusyId(null);
+    }
+  }
+
+  async function handleDeleteOperator(row: PlatformOperatorRow) {
+    if (isProtectedOperator(row.code)) {
+      await showValidationAlert({
+        title: "Cannot delete",
+        text: `${row.code} is a built-in operator and cannot be removed from Parcela.`,
+      });
+      return;
+    }
+
+    const confirmed = await showConfirmDialog({
+      title: `Delete ${row.name}?`,
+      text: `This permanently removes ${row.name} (${row.code}), including HQ and staff logins, terminals, parcels, and settings. This cannot be undone.`,
+      confirmText: "Delete transport",
+      cancelText: "Cancel",
+      icon: "warning",
+      confirmButtonColor: "#dc2626",
+    });
+    if (!confirmed) return;
+
+    setDeleteBusyId(row.id);
+    try {
+      const result = await deleteOperator(row.id);
+      if (selectedId === row.id) {
+        const remaining = operators.filter((operator) => operator.id !== row.id);
+        setSelectedId(remaining[0]?.id ?? null);
+      }
+      await showSuccessAlert({
+        title: "Transport removed",
+        text: `${result.operatorName} was deleted. Removed ${result.removed.staffAccounts} account(s), ${result.removed.stations} terminal(s), and ${result.removed.parcels} parcel record(s).`,
+        confirmButtonColor: "#fd7e14",
+      });
+    } catch (error) {
+      await showValidationAlert({
+        title: "Delete failed",
+        text:
+          error instanceof ApiError
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : "Could not delete this transport.",
+      });
+    } finally {
+      setDeleteBusyId(null);
     }
   }
 
@@ -969,6 +1020,29 @@ export function PlatformOperatorsView() {
                     </>
                   )}
                 </button>
+                {!isProtectedOperator(selected.code) ? (
+                  <button
+                    type="button"
+                    disabled={deleteBusyId === selected.id}
+                    onClick={() => void handleDeleteOperator(selected)}
+                    className={cn(
+                      "font-display inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-red-700 hover:bg-red-100",
+                      deleteBusyId === selected.id && "cursor-wait opacity-70",
+                    )}
+                  >
+                    {deleteBusyId === selected.id ? (
+                      <>
+                        <Loader2 className="size-3.5 animate-spin" />
+                        Deleting…
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="size-3.5" />
+                        Delete transport
+                      </>
+                    )}
+                  </button>
+                ) : null}
                 <Link
                   href="/platform/hq-admins"
                   className="font-display inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 hover:bg-stone-50"

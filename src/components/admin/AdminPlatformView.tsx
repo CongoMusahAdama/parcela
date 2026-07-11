@@ -15,8 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
-import { getAdminOperator } from "@/lib/admin-operator";
-import { OPERATOR_ACCENT, OPERATOR_REPORT_BRAND } from "@/lib/operators";
+import { getAdminAccentColor, getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
 import {
   countActiveLocks,
   loadOperatorControls,
@@ -70,9 +69,8 @@ function formatAuditTime(iso: string) {
 export function AdminPlatformView() {
   const { admin } = useAdminSession();
   const operator = getAdminOperator(admin);
-  const companyName = operator
-    ? OPERATOR_REPORT_BRAND[operator].companyName
-    : "Your transport";
+  const companyName = getAdminOperatorName(admin);
+  const accentColor = getAdminAccentColor(admin);
 
   const [locks, setLocks] = useState<OperatorControlLocks | null>(null);
   const [settings, setSettings] = useState<OperatorControlSettings | null>(null);
@@ -157,7 +155,7 @@ export function AdminPlatformView() {
       confirmText: nextValue ? "Lock now" : "Unlock now",
       cancelText: "Cancel",
       icon: nextValue ? "warning" : "question",
-      confirmButtonColor: nextValue ? "#dc2626" : OPERATOR_ACCENT[operator],
+      confirmButtonColor: nextValue ? "#dc2626" : accentColor,
     });
     if (!confirmed) return;
 
@@ -172,7 +170,7 @@ export function AdminPlatformView() {
         text: nextValue
           ? `${card.title} are now frozen across ${companyName}.`
           : `${card.title} are active again across ${companyName}.`,
-        confirmButtonColor: OPERATOR_ACCENT[operator],
+        confirmButtonColor: accentColor,
       });
     } catch (error) {
       await showValidationAlert({
@@ -199,7 +197,7 @@ export function AdminPlatformView() {
       await showSuccessAlert({
         title: "Settings saved",
         text: `Operator controls for ${companyName} were updated.`,
-        confirmButtonColor: OPERATOR_ACCENT[operator],
+        confirmButtonColor: accentColor,
       });
     } catch (error) {
       await showValidationAlert({

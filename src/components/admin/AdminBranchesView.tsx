@@ -19,8 +19,7 @@ import {
   fetchAdminStations,
   upsertAdminLeadApi,
 } from "@/lib/admin-api";
-import { getAdminOperator } from "@/lib/admin-operator";
-import { OPERATOR_ACCENT, OPERATOR_REPORT_BRAND } from "@/lib/operators";
+import { getAdminAccentColor, getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
 import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import type { AdminBranchStatus } from "@/types/admin";
 import type { Operator } from "@/types/parcel";
@@ -179,9 +178,8 @@ function BranchesPieChart({ rows }: { rows: BranchRow[] }) {
 export function AdminBranchesView() {
   const { admin } = useAdminSession();
   const operator = getAdminOperator(admin);
-  const companyName = operator
-    ? OPERATOR_REPORT_BRAND[operator].companyName
-    : "Your transport";
+  const companyName = getAdminOperatorName(admin);
+  const accentColor = getAdminAccentColor(admin);
 
   const [rows, setRows] = useState<BranchRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -358,7 +356,7 @@ export function AdminBranchesView() {
             ? "Login PIN was sent by SMS."
             : "A PIN was generated — use Branch leads → Send login if needed."
         }`,
-        confirmButtonColor: OPERATOR_ACCENT[operator],
+        confirmButtonColor: accentColor,
       });
       closeAction();
     } catch (error) {
@@ -382,7 +380,7 @@ export function AdminBranchesView() {
     await showSuccessAlert({
       title: "Station marked healthy",
       text: `${actionStation.name} no longer needs attention.`,
-      confirmButtonColor: OPERATOR_ACCENT[operator],
+      confirmButtonColor: accentColor,
     });
     setSavingAction(false);
     closeAction();

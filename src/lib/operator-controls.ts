@@ -1,4 +1,3 @@
-import type { Operator } from "@/types/parcel";
 import {
   fetchOperatorControls,
   fetchOperatorLockStatus,
@@ -24,19 +23,19 @@ const DEFAULT_LOCKS: OperatorControlLocks = {
 };
 
 /** In-memory cache so staff/lead banners can read sync helpers after a poll. */
-const lockCache = new Map<Operator, OperatorControlLocks>();
+const lockCache = new Map<string, OperatorControlLocks>();
 
 export function countActiveLocks(locks: OperatorControlLocks) {
   return [locks.bookingsLocked, locks.staffOpsLocked, locks.leadOpsLocked].filter(Boolean)
     .length;
 }
 
-export function cacheOperatorLocks(operator: Operator, locks: OperatorControlLocks) {
-  lockCache.set(operator, { ...locks });
+export function cacheOperatorLocks(operator: string, locks: OperatorControlLocks) {
+  lockCache.set(operator.toUpperCase(), { ...locks });
 }
 
-export function getCachedOperatorLocks(operator: Operator): OperatorControlLocks {
-  return { ...(lockCache.get(operator) ?? DEFAULT_LOCKS) };
+export function getCachedOperatorLocks(operator: string): OperatorControlLocks {
+  return { ...(lockCache.get(operator.toUpperCase()) ?? DEFAULT_LOCKS) };
 }
 
 export async function loadOperatorControls(): Promise<OperatorControlsPayload> {
@@ -49,7 +48,7 @@ export async function loadOperatorControls(): Promise<OperatorControlsPayload> {
   return payload;
 }
 
-export async function loadOperatorLockStatus(operator: Operator): Promise<OperatorControlLocks> {
+export async function loadOperatorLockStatus(operator: string): Promise<OperatorControlLocks> {
   const status = await fetchOperatorLockStatus(operator);
   const locks: OperatorControlLocks = {
     bookingsLocked: status.bookingsLocked,
@@ -61,7 +60,7 @@ export async function loadOperatorLockStatus(operator: Operator): Promise<Operat
 }
 
 export async function setOperatorLock(
-  _operator: Operator,
+  _operator: string,
   key: keyof OperatorControlLocks,
   value: boolean,
   _actor: string,
@@ -77,7 +76,7 @@ export async function setOperatorLock(
 }
 
 export async function saveOperatorSettings(
-  _operator: Operator,
+  _operator: string,
   settings: OperatorControlSettings,
   _actor: string,
 ): Promise<OperatorControlsPayload> {
@@ -91,22 +90,22 @@ export async function saveOperatorSettings(
 }
 
 /** Sync read of last polled locks (prefer loadOperatorLockStatus for freshness). */
-export function isStaffOpsFrozen(operator: Operator): boolean {
+export function isStaffOpsFrozen(operator: string): boolean {
   return getCachedOperatorLocks(operator).staffOpsLocked;
 }
 
-export function isLeadOpsFrozen(operator: Operator): boolean {
+export function isLeadOpsFrozen(operator: string): boolean {
   return getCachedOperatorLocks(operator).leadOpsLocked;
 }
 
-export function isBookingsFrozen(operator: Operator): boolean {
+export function isBookingsFrozen(operator: string): boolean {
   return getCachedOperatorLocks(operator).bookingsLocked;
 }
 
-export function getStaffFreezeMessage(operator: Operator): string {
+export function getStaffFreezeMessage(operator: string): string {
   return `${operator} HQ has frozen staff operations. You can still view parcels, but verify, arrive, and release are paused until HQ unlocks.`;
 }
 
-export function getLeadFreezeMessage(operator: Operator): string {
+export function getLeadFreezeMessage(operator: string): string {
   return `${operator} HQ has frozen lead operations. You can still view your branch, but adding or editing staff is paused until HQ unlocks.`;
 }

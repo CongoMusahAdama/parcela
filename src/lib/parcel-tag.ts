@@ -1,5 +1,4 @@
 import { GHANA_STATIONS } from "../../data/ghana-stations";
-import type { Operator } from "@/types/parcel";
 import type { ParcelType } from "@/types/parcel";
 
 export type ParcelTagItem = {
@@ -8,7 +7,7 @@ export type ParcelTagItem = {
 };
 
 export type ParcelTagFields = {
-  operator: Operator;
+  operator: string;
   receiptNumber: string;
   bookingReference: string;
   pickupCode: string;
@@ -102,7 +101,7 @@ export function buildContentsSummary(items: ParcelTagItem[], maxLength = 72): st
 }
 
 export function buildParcelTagFields(input: {
-  operator: Operator;
+  operator: string;
   bookingReference: string;
   pickupCode: string;
   loggedAt: string | Date;

@@ -10,13 +10,15 @@ type PlatformOperatorMarkProps = {
   brandColor?: string;
   logoDataUrl?: string | null;
   className?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl" | "letter";
 };
 
 const SIZE = {
   sm: "size-10 text-xs",
   md: "size-12 text-sm",
   lg: "size-14 text-base",
+  xl: "size-20 text-lg",
+  letter: "h-28 w-44 min-h-28 min-w-44 text-xl",
 } as const;
 
 /** Logo for VIP/STC; initials mark for any other transport. */
@@ -51,12 +53,18 @@ export function PlatformOperatorMark({
     return (
       <div
         className={cn(
-          "flex items-center justify-center rounded-xl border border-stone-200 bg-white p-1.5",
+          "flex items-center justify-center rounded-xl border border-stone-200 bg-white p-2",
           SIZE[size],
           className,
         )}
       >
-        <OperatorLogo operator={code} className="h-6 w-auto max-w-full object-contain" />
+        <OperatorLogo
+          operator={code}
+          className={cn(
+            "w-auto max-w-full object-contain",
+            size === "letter" ? "h-16" : size === "xl" ? "h-10" : "h-8",
+          )}
+        />
       </div>
     );
   }

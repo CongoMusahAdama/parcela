@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Clock, MapPin } from "lucide-react";
 import { StationIcon } from "@/components/send/StationIcon";
 import type { Station } from "@/types/parcel";
-import { OPERATOR_BADGE_CLASS } from "@/lib/operators";
+import { operatorBadgeClass } from "@/lib/operators";
 import { formatDistance } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +12,7 @@ type StationCardProps = {
   href: string;
 };
 
-const operatorBadge = OPERATOR_BADGE_CLASS;
+const operatorBadge = operatorBadgeClass;
 
 export function StationCard({ station, distanceKm, href }: StationCardProps) {
   return (
@@ -33,7 +33,7 @@ export function StationCard({ station, distanceKm, href }: StationCardProps) {
                 <span
                   className={cn(
                     "font-display rounded-md px-1.5 py-px text-[10px] font-bold uppercase",
-                    operatorBadge[station.operator]
+                    operatorBadge(station.operator)
                   )}
                 >
                   {station.operator}

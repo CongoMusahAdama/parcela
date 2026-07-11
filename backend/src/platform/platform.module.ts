@@ -3,6 +3,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SmsModule } from '../sms/sms.module';
 import { StaffModule } from '../staff/staff.module';
 import { StationsModule } from '../stations/stations.module';
+import { OperatorSettings, OperatorSettingsSchema } from '../admin/schemas/operator-settings.schema';
+import { Parcel, ParcelSchema } from '../parcels/schemas/parcel.schema';
 import { PlatformAuthController } from './controllers/platform-auth.controller';
 import { PlatformOperatorsController } from './controllers/platform-operators.controller';
 import { PlatformPeopleController } from './controllers/platform-people.controller';
@@ -26,6 +28,8 @@ import { PlatformWorkspaceService } from './services/platform-workspace.service'
       { name: PlatformAdmin.name, schema: PlatformAdminSchema },
       { name: TransportOperator.name, schema: TransportOperatorSchema },
       { name: PlatformAuditEntry.name, schema: PlatformAuditEntrySchema },
+      { name: OperatorSettings.name, schema: OperatorSettingsSchema },
+      { name: Parcel.name, schema: ParcelSchema },
     ]),
     StaffModule,
     SmsModule,

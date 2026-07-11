@@ -1,12 +1,11 @@
-import type { Operator } from "@/types/parcel";
-
 /** HQ operator admin — provisioned by Parcela; configures transport after first login. */
 export type AdminAccount = {
   id: string;
   email: string;
   displayName: string;
   /** Set once the operator completes transport setup in HQ. */
-  operator: Operator | null;
+  /** Transport operator code from platform onboarding (e.g. ATS, VIP). */
+  operator: string | null;
   operatorConfigured: boolean;
   /** Full transport name from platform onboarding. */
   operatorName?: string | null;

@@ -3,8 +3,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Download, Mail, X } from "lucide-react";
 import { PlatformOperatorMark } from "@/components/platform/PlatformOperatorMark";
-import { Logo } from "@/components/brand/Logo";
-import { BRAND_NAME } from "@/lib/brand";
+import { BRAND_LOGO_SRC, BRAND_NAME } from "@/lib/brand";
 import {
   CONFIGURATION_LETTER_MONTHLY_MAINTENANCE,
   CONFIGURATION_LETTER_ONGOING_SUPPORT,
@@ -168,16 +167,41 @@ export function PlatformConfigurationLetterModal({
               <div className="w-1/3" style={{ backgroundColor: PLATFORM_THEME.orange }} />
             </div>
 
-            <div className="px-6 py-7 sm:px-10 sm:py-9">
-              <header className="flex items-center justify-between gap-4 border-b border-stone-200 pb-5">
-                <Logo size="lg" showWordmark />
-                <PlatformOperatorMark
-                  code={operator.code}
-                  name={operator.name}
-                  brandColor={operator.brandColor}
-                  logoDataUrl={operator.logoDataUrl}
-                  size="lg"
-                />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={BRAND_LOGO_SRC}
+                alt=""
+                className="w-[min(68%,26rem)] max-w-none select-none object-contain opacity-[0.07]"
+              />
+            </div>
+
+            <div className="relative z-10 px-6 py-7 sm:px-10 sm:py-9">
+              <header className="border-b border-stone-200 pb-6 text-center">
+                <div className="flex justify-center">
+                  <PlatformOperatorMark
+                    code={operator.code}
+                    name={operator.name}
+                    brandColor={operator.brandColor}
+                    logoDataUrl={operator.logoDataUrl}
+                    size="letter"
+                    className="rounded-2xl border-stone-200 p-3 shadow-sm"
+                  />
+                </div>
+                <h3 className="font-display mt-5 text-lg font-bold uppercase tracking-[0.08em] text-stone-900 sm:text-xl">
+                  {operator.name}
+                </h3>
+                {(operator.contactEmail || operator.contactPhone) && (
+                  <p className="font-body mt-2 text-sm text-stone-500">
+                    {[operator.contactEmail, operator.contactPhone].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                <p className="font-body mt-1 text-xs uppercase tracking-[0.14em] text-stone-400">
+                  {operator.code} · {operator.region}
+                </p>
               </header>
 
               <p className="font-body mt-5 text-[11px] uppercase tracking-[0.12em] text-stone-400">
@@ -185,7 +209,7 @@ export function PlatformConfigurationLetterModal({
               </p>
 
               <div className="mt-5 text-center">
-                <h3 className="font-display text-xl font-bold tracking-tight text-stone-900">
+                <h3 className="font-display text-xl font-bold tracking-tight text-stone-900 underline decoration-stone-300 underline-offset-4">
                   Configuration Completion Letter
                 </h3>
                 <p className="font-body mt-1.5 text-sm text-stone-500">
@@ -279,7 +303,7 @@ export function PlatformConfigurationLetterModal({
               </p>
             </div>
 
-            <footer className="mt-10 pt-5">
+            <footer className="relative z-10 mt-10 px-6 pb-7 pt-5 sm:px-10 sm:pb-9">
               <div
                 className="mb-4 h-0.5 w-16 rounded-full"
                 style={{ backgroundColor: operator.brandColor }}

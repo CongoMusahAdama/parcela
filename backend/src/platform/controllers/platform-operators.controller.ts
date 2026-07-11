@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -70,6 +71,11 @@ export class PlatformOperatorsController {
   @Post('operators/:operatorId/toggle-suspend')
   toggleSuspend(@Param('operatorId') operatorId: string, @Req() req: PlatformRequest) {
     return this.operators.toggleSuspend(operatorId, req.platform.admin.email);
+  }
+
+  @Delete('operators/:operatorId')
+  deleteOperator(@Param('operatorId') operatorId: string, @Req() req: PlatformRequest) {
+    return this.operators.remove(operatorId, req.platform.admin.email);
   }
 
   @Post('operators/:operatorId/renewal-reminder')

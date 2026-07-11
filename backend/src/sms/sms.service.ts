@@ -131,9 +131,9 @@ export class SmsService {
       intro,
       `Sign in: ${loginUrl}`,
       `Email: ${params.email}`,
-      `Temporary password: ${params.temporaryPassword}`,
-      'Sign in with this password, then set a new one from the portal.',
-      'Do not share this password with anyone.',
+      `Temporary code: ${params.temporaryPassword}`,
+      'Sign in with this code, then set a new password from the portal.',
+      'Do not share this code with anyone.',
     ].join(' ');
     return this.sendSms(params.phone, message);
   }
@@ -177,8 +177,8 @@ export class SmsService {
       intro,
       `Sign in: ${loginUrl}`,
       `Email: ${params.email}`,
-      `Temporary password: ${params.temporaryPassword}`,
-      'Sign in with this password, then set a new one from the portal.',
+      `Temporary code: ${params.temporaryPassword}`,
+      'Sign in with this code, then set a new password from the portal.',
     ].join(' ');
     return this.sendSms(params.phone, message);
   }

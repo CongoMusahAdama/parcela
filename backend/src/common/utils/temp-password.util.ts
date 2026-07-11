@@ -1,12 +1,11 @@
-import { randomBytes } from 'crypto';
+import { randomInt } from 'crypto';
 
-const CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+const DEFAULT_OTP_LENGTH = 6;
 
-export function generateTemporaryPassword(length = 10): string {
-  const bytes = randomBytes(length);
-  let password = '';
-  for (let i = 0; i < length; i += 1) {
-    password += CHARSET[bytes[i] % CHARSET.length];
-  }
-  return password;
+/** Short numeric one-time code for temporary logins (SMS-friendly). */
+export function generateTemporaryPassword(length = DEFAULT_OTP_LENGTH): string {
+  const digits = Math.max(4, Math.min(length, 8));
+  const min = 10 ** (digits - 1);
+  const max = 10 ** digits;
+  return String(randomInt(min, max));
 }

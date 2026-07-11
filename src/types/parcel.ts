@@ -9,7 +9,7 @@ export type Station = {
   hours: string;
   lat: number;
   lng: number;
-  operator: Operator;
+  operator: string;
 };
 
 export type ParcelType = "document" | "box" | "envelope" | "other";
@@ -37,7 +37,7 @@ export type PreBooking = {
   stationName: string;
   stationCode: string;
   operator?: Operator;
-  destinationOperator?: Operator;
+  destinationOperator?: string;
   senderName: string;
   senderPhone: string;
   recipientName: string;
@@ -58,7 +58,7 @@ export type TrackedParcel = {
   destinationStationName: string;
   destinationStationAddress: string;
   destinationStationHours: string;
-  destinationOperator?: Operator;
+  destinationOperator?: string;
   recipientName: string;
   recipientPhoneMasked: string;
   items: BookingItem[];

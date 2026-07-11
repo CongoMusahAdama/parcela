@@ -623,12 +623,14 @@ function AdminReportPrintSheet({
     >
       <header className="admin-report-print-header">
         <div className="flex items-center gap-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={meta.logoSrc}
-            alt={meta.companyName}
-            className="h-14 w-auto max-w-[8rem] object-contain"
-          />
+          {meta.logoSrc ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={meta.logoSrc}
+              alt={meta.companyName}
+              className="h-14 w-auto max-w-[8rem] object-contain"
+            />
+          ) : null}
           <div>
             <p className="admin-report-print-company">{meta.companyName}</p>
             <p className="text-sm text-slate-600">{meta.companyTagline}</p>
@@ -733,11 +735,13 @@ async function exportAdminReportPdf(result: AdminReportResult, meta: AdminReport
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  try {
-    const logo = await loadLogoDataUrl(meta.logoSrc);
-    doc.addImage(logo, logoFormat(meta.logoSrc), 40, 28, 48, 36);
-  } catch {
-    // Logo optional — report still exports without it.
+  if (meta.logoSrc) {
+    try {
+      const logo = await loadLogoDataUrl(meta.logoSrc);
+      doc.addImage(logo, logoFormat(meta.logoSrc), 40, 28, 48, 36);
+    } catch {
+      // Logo optional — report still exports without it.
+    }
   }
 
   doc.setFont("helvetica", "bold");

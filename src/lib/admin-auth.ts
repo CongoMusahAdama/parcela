@@ -107,7 +107,7 @@ export async function signOutAdmin(): Promise<void> {
   clearAdminSession();
 }
 
-export async function completeAdminSetup(operator: Operator): Promise<AdminSession | null> {
+export async function completeAdminSetup(operator: string): Promise<AdminSession | null> {
   const result = await completeAdminSetupApi(operator);
   const current = getAdminSession();
   if (!current) return null;

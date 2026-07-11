@@ -16,7 +16,7 @@ import { PenaltyNotice } from "@/components/track/PenaltyNotice";
 import { TrackNotFound } from "@/components/track/TrackNotFound";
 import { TrackWizardSteps } from "@/components/track/TrackWizardSteps";
 import { stationDirectionsUrl } from "@/lib/maps";
-import { OPERATOR_ACCENT } from "@/lib/operators";
+import { operatorAccentColor } from "@/lib/operators";
 import { lookupParcelAsync, resolveStationCoords } from "@/lib/tracking";
 import type { TrackedParcel } from "@/types/parcel";
 
@@ -61,7 +61,7 @@ function TrackStationContent() {
   const canCollect =
     parcel.status === "ready_for_collection" || parcel.status === "arrived";
   const accent = parcel.destinationOperator
-    ? OPERATOR_ACCENT[parcel.destinationOperator]
+    ? operatorAccentColor(parcel.destinationOperator)
     : "#0d9488";
   const directionsHref = stationDirectionsUrl(
     coords.lat,

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { OPERATOR_ACCENT } from "@/lib/operators";
+import { operatorAccentColor } from "@/lib/operators";
 import type { Operator } from "@/types/parcel";
 
 const MapInner = dynamic(
@@ -29,7 +29,7 @@ export function DestinationStationMap({
   operator,
   className,
 }: DestinationStationMapProps) {
-  const accent = operator ? OPERATOR_ACCENT[operator] : "#0d9488";
+  const accent = operator ? operatorAccentColor(operator) : "#0d9488";
 
   return (
     <div className={className}>

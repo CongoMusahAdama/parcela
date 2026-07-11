@@ -23,8 +23,7 @@ import {
   type AdminLeadAccount,
   type AdminStationRow,
 } from "@/lib/admin-api";
-import { getAdminOperator } from "@/lib/admin-operator";
-import { OPERATOR_ACCENT, OPERATOR_REPORT_BRAND } from "@/lib/operators";
+import { getAdminAccentColor, getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
 import { showConfirmDialog, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import type { Operator } from "@/types/parcel";
 import { cn } from "@/lib/utils";
@@ -192,9 +191,8 @@ function LeadsPieChart({ rows }: { rows: LeadRow[] }) {
 export function AdminLeadsView() {
   const { admin } = useAdminSession();
   const operator = getAdminOperator(admin);
-  const companyName = operator
-    ? OPERATOR_REPORT_BRAND[operator].companyName
-    : "Your transport";
+  const companyName = getAdminOperatorName(admin);
+  const accentColor = getAdminAccentColor(admin);
 
   const [rows, setRows] = useState<LeadRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -346,7 +344,7 @@ export function AdminLeadsView() {
       text: `SMS will go to ${phone} with a temporary PIN for ${row.stationName}. The lead will only see staff and parcels for that branch.`,
       confirmText: "Send SMS",
       cancelText: "Not now",
-      confirmButtonColor: OPERATOR_ACCENT[operator],
+      confirmButtonColor: accentColor,
     });
     if (!confirmed) return false;
 
@@ -379,7 +377,7 @@ export function AdminLeadsView() {
         text: result.smsSent
           ? `Login details were sent to ${phone}. ${result.lead.displayName} is locked to ${row.stationName} (${row.stationCode}).`
           : `A new PIN was generated for ${result.lead.displayName}, but SMS may be unavailable. Ask them to check their phone or resend later.`,
-        confirmButtonColor: OPERATOR_ACCENT[operator],
+        confirmButtonColor: accentColor,
       });
       return true;
     } catch (error) {
@@ -452,7 +450,7 @@ export function AdminLeadsView() {
           : `${name} remains the branch lead for ${station.stationName}. A new PIN was generated${
               result.smsSent ? " and sent by SMS" : ""
             }.`,
-        confirmButtonColor: OPERATOR_ACCENT[operator],
+        confirmButtonColor: accentColor,
       });
       closePanel();
 
@@ -511,7 +509,7 @@ export function AdminLeadsView() {
       await showSuccessAlert({
         title: "Lead removed",
         text: `${row.stationName} is unassigned. You can assign a new lead anytime.`,
-        confirmButtonColor: OPERATOR_ACCENT[operator],
+        confirmButtonColor: accentColor,
       });
     } catch (error) {
       await showValidationAlert({
