@@ -187,7 +187,7 @@ export function PlatformOverviewView() {
       text: result.renewalSmsSent
         ? `${SUBSCRIPTION_REMINDER_DAYS[reminder]}-day countdown SMS sent to the transport billing contact.`
         : `${SUBSCRIPTION_REMINDER_DAYS[reminder]}-day reminder recorded, but SMS could not be sent — check the operator contact phone.`,
-      confirmButtonColor: "#10367D",
+      confirmButtonColor: "#0a0a0a",
     });
   }
 
@@ -207,7 +207,7 @@ export function PlatformOverviewView() {
     await showSuccessAlert({
       title: "Everyone signed out",
       text: "All portal sessions were ended. Sign in again to continue.",
-      confirmButtonColor: "#10367D",
+      confirmButtonColor: "#0a0a0a",
     });
     router.replace("/platform/login");
   }

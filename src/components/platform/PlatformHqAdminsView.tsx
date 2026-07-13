@@ -162,7 +162,7 @@ export function PlatformHqAdminsView() {
     await showSuccessAlert({
       title: "HQ admin updated",
       text: "Login and contact details saved.",
-      confirmButtonColor: "#10367D",
+      confirmButtonColor: "#0a0a0a",
     });
   }
 
@@ -171,7 +171,7 @@ export function PlatformHqAdminsView() {
       title: "Issue HQ login?",
       text: `Prepare first-time credentials for ${row.displayName} (${row.email}) on ${row.operatorCode}.`,
       confirmText: "Issue login",
-      confirmButtonColor: "#10367D",
+      confirmButtonColor: "#0a0a0a",
     });
     if (!ok) return;
 
@@ -183,7 +183,7 @@ export function PlatformHqAdminsView() {
     await showSuccessAlert({
       title: result.smsSent ? "HQ login sent" : "HQ login ready",
       text: platformCredentialSuccessText(result),
-      confirmButtonColor: "#10367D",
+      confirmButtonColor: "#0a0a0a",
     });
   }
 
@@ -192,7 +192,7 @@ export function PlatformHqAdminsView() {
       title: "Reset HQ login?",
       text: `Issue a temporary password for ${row.displayName} (${row.email}) on ${row.operatorCode}. Use when they forgot their password or are locked out.`,
       confirmText: "Reset login",
-      confirmButtonColor: "#10367D",
+      confirmButtonColor: "#0a0a0a",
     });
     if (!ok) return;
 
@@ -204,7 +204,7 @@ export function PlatformHqAdminsView() {
     await showSuccessAlert({
       title: result.smsSent ? "Login reset sent" : "Login reset",
       text: platformCredentialSuccessText(result),
-      confirmButtonColor: "#10367D",
+      confirmButtonColor: "#0a0a0a",
     });
   }
 

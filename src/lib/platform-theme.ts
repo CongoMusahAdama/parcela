@@ -1,19 +1,19 @@
 import type { CSSProperties } from "react";
 
-/** Parcela platform admin — Brand Blue Theme. */
+/** Parcela platform admin — black command-center theme. */
 export const PLATFORM_THEME = {
-  orange: "#10367D",
-  orangeDark: "#0c285d",
-  orangeDeep: "#081d43",
-  orangeLight: "#a5ce00",
-  orangeMuted: "rgba(165, 206, 0, 0.15)",
-  orangeSoft: "#f4f8e6",
+  orange: "#0a0a0a",
+  orangeDark: "#000000",
+  orangeDeep: "#000000",
+  orangeLight: "#525252",
+  orangeMuted: "rgba(10 10 10 / 0.1)",
+  orangeSoft: "#f5f5f5",
   white: "#ffffff",
   ink: "#1c1917",
   muted: "#78716c",
   border: "#ebebeb",
   canvas: "#fafaf9",
-  headerGradient: "linear-gradient(155deg, #10367D 0%, #0c285d 55%, #081d43 100%)",
+  headerGradient: "linear-gradient(155deg, #0a0a0a 0%, #171717 55%, #000000 100%)",
 } as const;
 
 export function platformThemeStyle(): CSSProperties {
