@@ -26,6 +26,7 @@ import { AdminLoginDto } from './dto/admin-login.dto';
 import { ChangePasswordDto } from '../staff/dto/change-password.dto';
 import { CompleteSetupDto } from './dto/complete-setup.dto';
 import { CreateLeadDto } from './dto/create-lead.dto';
+import { CreateStationDto } from './dto/create-station.dto';
 import { OperatorLocksDto } from './dto/operator-locks.dto';
 import { OperatorSettingsDto } from './dto/operator-settings.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
@@ -146,6 +147,12 @@ export class AdminController {
   @UseGuards(AdminAuthGuard)
   stations(@Req() req: AdminRequest) {
     return this.adminService.listStations(req.admin.staff.operator);
+  }
+
+  @Post('stations')
+  @UseGuards(AdminAuthGuard)
+  createStation(@Body() dto: CreateStationDto, @Req() req: AdminRequest) {
+    return this.adminService.createStation(req.admin.staff.operator, dto);
   }
 
   @Get('leads')

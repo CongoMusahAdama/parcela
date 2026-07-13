@@ -368,21 +368,39 @@ function paintParcelaWatermark(doc: LetterPdf, parcelaLogo: string, format: "PNG
   doc.addImage(parcelaLogo, format, x, y, wmW, wmH);
 }
 
-async function drawCenteredOperatorHeader(
+async function drawDualBrandHeader(
   doc: LetterPdf,
   data: ConfigurationLetterData,
   y: number,
   pageWidth: number,
+  parcelaLogo: string | null,
 ) {
-  const logoW = 152;
-  const logoH = 98;
-  const logoX = (pageWidth - logoW) / 2;
-  let operatorMarkDrawn = false;
+  const logoW = 128;
+  const logoH = 82;
+  const leftX = PDF_LAYOUT.margin;
+  const rightX = pageWidth - PDF_LAYOUT.margin - logoW;
 
+  if (parcelaLogo) {
+    try {
+      doc.addImage(parcelaLogo, imageFormat(BRAND_LOGO_SRC), leftX, y, logoW, logoH);
+    } catch {
+      // skip parcela mark
+    }
+  } else {
+    applyPdfFont(doc, { family: "helvetica", style: "bold", size: 18 });
+    doc.setTextColor(...PDF_COLOR.navy);
+    doc.text(BRAND_NAME, leftX, y + 28);
+  }
+
+  applyPdfFont(doc, PDF_FONT.subtitle);
+  doc.setTextColor(...PDF_COLOR.muted);
+  doc.text(`${BRAND_NAME} platform`, leftX, y + logoH + 14);
+
+  let operatorMarkDrawn = false;
   if (data.operatorLogoSrc) {
     try {
       const operatorLogo = await loadImageDataUrl(data.operatorLogoSrc);
-      doc.addImage(operatorLogo, imageFormat(data.operatorLogoSrc), logoX, y, logoW, logoH);
+      doc.addImage(operatorLogo, imageFormat(data.operatorLogoSrc), rightX, y, logoW, logoH);
       operatorMarkDrawn = true;
     } catch {
       operatorMarkDrawn = false;
@@ -392,40 +410,36 @@ async function drawCenteredOperatorHeader(
   if (!operatorMarkDrawn) {
     const [r, g, b] = hexToRgb(data.brandColor);
     doc.setFillColor(r, g, b);
-    doc.roundedRect(logoX, y, logoW, logoH, 12, 12, "F");
-    applyPdfFont(doc, { family: "helvetica", style: "bold", size: 28 });
+    doc.roundedRect(rightX, y, logoW, logoH, 12, 12, "F");
+    applyPdfFont(doc, { family: "helvetica", style: "bold", size: 24 });
     doc.setTextColor(255, 255, 255);
-    doc.text(operatorInitials(data.operatorName, data.operatorCode), pageWidth / 2, y + logoH / 2 + 10, {
+    doc.text(operatorInitials(data.operatorName, data.operatorCode), rightX + logoW / 2, y + logoH / 2 + 8, {
       align: "center",
     });
   }
 
-  y += logoH + 16;
+  applyPdfFont(doc, PDF_FONT.subtitle);
+  doc.setTextColor(...PDF_COLOR.muted);
+  doc.text(
+    `${data.operatorCode} · ${data.region}`,
+    rightX + logoW,
+    y + logoH + 14,
+    { align: "right" },
+  );
+
+  y += logoH + 28;
 
   applyPdfFont(doc, PDF_FONT.footerBold);
   doc.setFontSize(15);
   doc.setTextColor(...PDF_COLOR.title);
   doc.text(data.operatorName.toUpperCase(), pageWidth / 2, y + 12, { align: "center" });
-  y += 24;
+  y += 22;
 
   applyPdfFont(doc, PDF_FONT.subtitle);
   doc.setTextColor(...PDF_COLOR.muted);
   const contactLine = [data.contactEmail, data.contactPhone].filter(Boolean).join(" · ");
-  doc.text(
-    contactLine || `${data.operatorCode} · ${data.region}`,
-    pageWidth / 2,
-    y + PDF_FONT.subtitle.size * 0.85,
-    { align: "center" },
-  );
-  y += lineHeightFor(PDF_FONT.subtitle.size) + 6;
-
   if (contactLine) {
-    doc.text(
-      `${data.operatorCode} · ${data.region}`,
-      pageWidth / 2,
-      y + PDF_FONT.subtitle.size * 0.85,
-      { align: "center" },
-    );
+    doc.text(contactLine, pageWidth / 2, y + PDF_FONT.subtitle.size * 0.85, { align: "center" });
     y += lineHeightFor(PDF_FONT.subtitle.size) + 10;
   }
 
@@ -457,7 +471,7 @@ export async function downloadConfigurationLetterPdf(data: ConfigurationLetterDa
     activeLetterWatermark = null;
   }
 
-  y = await drawCenteredOperatorHeader(doc, data, y, pageWidth);
+  y = await drawDualBrandHeader(doc, data, y, pageWidth, parcelaLogo);
 
   applyPdfFont(doc, PDF_FONT.subtitle);
   doc.setTextColor(...PDF_COLOR.muted);

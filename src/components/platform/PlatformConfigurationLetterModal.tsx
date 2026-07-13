@@ -180,28 +180,41 @@ export function PlatformConfigurationLetterModal({
             </div>
 
             <div className="relative z-10 px-6 py-7 sm:px-10 sm:py-9">
-              <header className="border-b border-stone-200 pb-6 text-center">
-                <div className="flex justify-center">
-                  <PlatformOperatorMark
-                    code={operator.code}
-                    name={operator.name}
-                    brandColor={operator.brandColor}
-                    logoDataUrl={operator.logoDataUrl}
-                    size="letter"
-                    className="rounded-2xl border-stone-200 p-3 shadow-sm"
-                  />
+              <header className="border-b border-stone-200 pb-6">
+                <div className="flex items-center justify-between gap-6">
+                  <div className="flex min-w-0 flex-1 flex-col items-start">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={BRAND_LOGO_SRC}
+                      alt={BRAND_NAME}
+                      className="h-16 w-auto max-w-[11rem] object-contain object-left sm:h-20 sm:max-w-[13rem]"
+                    />
+                    <p className="font-display mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-400">
+                      {BRAND_NAME} platform
+                    </p>
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col items-end">
+                    <PlatformOperatorMark
+                      code={operator.code}
+                      name={operator.name}
+                      brandColor={operator.brandColor}
+                      logoDataUrl={operator.logoDataUrl}
+                      size="letter"
+                      className="rounded-2xl border-stone-200 p-3 shadow-sm"
+                    />
+                    <p className="font-display mt-2 text-right text-[10px] font-bold uppercase tracking-[0.14em] text-stone-400">
+                      {operator.code} · {operator.region}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="font-display mt-5 text-lg font-bold uppercase tracking-[0.08em] text-stone-900 sm:text-xl">
+                <h3 className="font-display mt-6 text-center text-lg font-bold uppercase tracking-[0.08em] text-stone-900 sm:text-xl">
                   {operator.name}
                 </h3>
                 {(operator.contactEmail || operator.contactPhone) && (
-                  <p className="font-body mt-2 text-sm text-stone-500">
+                  <p className="font-body mt-2 text-center text-sm text-stone-500">
                     {[operator.contactEmail, operator.contactPhone].filter(Boolean).join(" · ")}
                   </p>
                 )}
-                <p className="font-body mt-1 text-xs uppercase tracking-[0.14em] text-stone-400">
-                  {operator.code} · {operator.region}
-                </p>
               </header>
 
               <p className="font-body mt-5 text-[11px] uppercase tracking-[0.12em] text-stone-400">

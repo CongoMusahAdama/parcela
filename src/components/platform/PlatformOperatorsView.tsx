@@ -49,6 +49,10 @@ import {
 } from "@/lib/subscription-term";
 import { ApiError } from "@/lib/api-client";
 import { resolveGhanaCityName } from "@/lib/ghana-cities";
+import {
+  parseBulkTerminalLines,
+  parseTerminalNamesForCity,
+} from "@/lib/onboard-terminals";
 import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | PlatformOperatorStatus;
@@ -255,6 +259,9 @@ export function PlatformOperatorsView() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const [terminalDraft, setTerminalDraft] = useState({ name: "", city: "" });
+  const [networkInputMode, setNetworkInputMode] = useState<"quick" | "list">("quick");
+  const [bulkPasteText, setBulkPasteText] = useState("");
+  const [cityBatchText, setCityBatchText] = useState("");
   const [letterOperatorId, setLetterOperatorId] = useState<string | null>(null);
   const [letterAgreementDate, setLetterAgreementDate] = useState("");
   const [suspendBusyId, setSuspendBusyId] = useState<string | null>(null);
@@ -409,6 +416,10 @@ export function PlatformOperatorsView() {
   function openOnboard() {
     setDraft(EMPTY_DRAFT);
     setOnboardStep(1);
+    setNetworkInputMode("quick");
+    setBulkPasteText("");
+    setCityBatchText("");
+    setTerminalDraft({ name: "", city: "" });
     setOnboardOpen(true);
   }
 
@@ -416,6 +427,10 @@ export function PlatformOperatorsView() {
     setOnboardOpen(false);
     setOnboardStep(1);
     setDraft(EMPTY_DRAFT);
+    setNetworkInputMode("quick");
+    setBulkPasteText("");
+    setCityBatchText("");
+    setTerminalDraft({ name: "", city: "" });
   }
 
   async function validateStep(step: number): Promise<boolean> {
@@ -464,27 +479,24 @@ export function PlatformOperatorsView() {
       }
     }
     if (step === 3) {
-      const stations = Number(draft.stationCount);
       const hasTerminalList = draft.terminals.length > 0;
-      if (
-        !hasTerminalList &&
-        (!draft.stationCount.trim() || Number.isNaN(stations) || stations < 1)
-      ) {
+      if (hasTerminalList) return true;
+
+      const stations = Number(draft.stationCount);
+      const cities = Number(draft.cityCount);
+      if (!draft.stationCount.trim() || Number.isNaN(stations) || stations < 1) {
         await showValidationAlert({
-          title: "Network size required",
-          text: "Enter station/city numbers or add at least one terminal below.",
+          title: "How many terminals?",
+          text: "Enter an approximate station count, or switch to “List terminals” and add them in bulk.",
         });
         return false;
       }
-      if (!hasTerminalList) {
-        const cities = Number(draft.cityCount);
-        if (!draft.cityCount.trim() || Number.isNaN(cities) || cities < 1) {
-          await showValidationAlert({
-            title: "Cities required",
-            text: "Enter how many cities / corridors this transport covers.",
-          });
-          return false;
-        }
+      if (!draft.cityCount.trim() || Number.isNaN(cities) || cities < 1) {
+        await showValidationAlert({
+          title: "How many cities?",
+          text: "Enter how many cities or corridors this transport covers.",
+        });
+        return false;
       }
     }
     if (step === 4) {
@@ -679,6 +691,71 @@ export function PlatformOperatorsView() {
       const terminals = current.terminals.filter((terminal) => terminal.id !== terminalId);
       return { ...current, terminals, ...syncNetworkCounts(terminals) };
     });
+  }
+
+  function appendTerminals(rows: { name: string; city: string }[]) {
+    if (rows.length === 0) return 0;
+    setDraft((current) => {
+      const terminals = [
+        ...current.terminals,
+        ...rows.map((row) => ({
+          id: crypto.randomUUID(),
+          name: row.name.trim(),
+          city: row.city.trim(),
+        })),
+      ];
+      return { ...current, terminals, ...syncNetworkCounts(terminals) };
+    });
+    return rows.length;
+  }
+
+  async function addBulkTerminals() {
+    const { rows, skipped } = parseBulkTerminalLines(bulkPasteText);
+    if (rows.length === 0) {
+      await showValidationAlert({
+        title: "Nothing to add",
+        text:
+          skipped.length > 0
+            ? `Use one terminal per line as “Name, City” (e.g. Circle Terminal, Accra). ${skipped.length} line(s) could not be read.`
+            : "Paste terminals one per line: Terminal name, City",
+      });
+      return;
+    }
+
+    appendTerminals(rows);
+    setBulkPasteText("");
+    setNetworkInputMode("list");
+
+    if (skipped.length > 0) {
+      await showValidationAlert({
+        title: `${rows.length} terminal${rows.length === 1 ? "" : "s"} added`,
+        text: `${skipped.length} line(s) were skipped — use “Name, City” on each line.`,
+      });
+    }
+  }
+
+  async function addCityBatchTerminals() {
+    const city = resolveGhanaCityName(terminalDraft.city);
+    if (!city) {
+      await showValidationAlert({
+        title: "Choose a city first",
+        text: "Select the city these terminals belong to, then paste the terminal names.",
+      });
+      return;
+    }
+
+    const { rows } = parseTerminalNamesForCity(cityBatchText, city);
+    if (rows.length === 0) {
+      await showValidationAlert({
+        title: "Add terminal names",
+        text: "Enter one terminal name per line (e.g. Circle Terminal, Kaneshie, Madina).",
+      });
+      return;
+    }
+
+    appendTerminals(rows);
+    setCityBatchText("");
+    setNetworkInputMode("list");
   }
 
   async function handleLogoPick(file: File | null) {
@@ -1572,90 +1649,207 @@ export function PlatformOperatorsView() {
                 <div className="space-y-5">
                   <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
                     <p className="font-body text-sm leading-relaxed text-stone-600">
-                      Enter network size numbers, or add each terminal below. Counts update automatically
-                      when you add terminals — HQ can refine station details after go-live.
+                      Use a quick estimate if HQ will add stations later, or paste your full terminal
+                      list now — counts update automatically when you add terminals.
                     </p>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="op-cities" className={labelClass}>
-                        Cities / corridors
-                      </label>
-                      <input
-                        id="op-cities"
-                        type="number"
-                        min={1}
-                        className={inputClass}
-                        value={draft.cityCount}
-                        onChange={(e) => setDraft((d) => ({ ...d, cityCount: e.target.value }))}
-                        placeholder="e.g. 6"
-                        readOnly={draft.terminals.length > 0}
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="op-stations" className={labelClass}>
-                        Stations / terminals
-                      </label>
-                      <input
-                        id="op-stations"
-                        type="number"
-                        min={1}
-                        className={inputClass}
-                        value={draft.stationCount}
-                        onChange={(e) => setDraft((d) => ({ ...d, stationCount: e.target.value }))}
-                        placeholder="e.g. 12"
-                        readOnly={draft.terminals.length > 0}
-                      />
-                    </div>
                   </div>
 
-                  <div className="rounded-xl border border-stone-200 bg-white p-4">
-                    <p className="font-display text-[11px] font-bold uppercase tracking-wider text-stone-500">
-                      Add terminals
-                    </p>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNetworkInputMode("quick")}
+                      className={cn(
+                        "font-display rounded-xl border px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors",
+                        networkInputMode === "quick"
+                          ? "border-[var(--platform-orange)] bg-[var(--platform-orange-soft)] text-[var(--platform-orange-dark)]"
+                          : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50",
+                      )}
+                    >
+                      Quick estimate
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNetworkInputMode("list")}
+                      className={cn(
+                        "font-display rounded-xl border px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors",
+                        networkInputMode === "list"
+                          ? "border-[var(--platform-orange)] bg-[var(--platform-orange-soft)] text-[var(--platform-orange-dark)]"
+                          : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50",
+                      )}
+                    >
+                      List terminals
+                    </button>
+                  </div>
+
+                  {draft.terminals.length > 0 ? (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3">
+                      <p className="font-display text-xs font-bold uppercase tracking-wide text-emerald-800">
+                        Network summary
+                      </p>
+                      <p className="font-body mt-1 text-sm text-emerald-900">
+                        {draft.terminals.length} terminal{draft.terminals.length === 1 ? "" : "s"} across{" "}
+                        {draft.cityCount || "—"} cit{Number(draft.cityCount) === 1 ? "y" : "ies"}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {networkInputMode === "quick" ? (
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <div>
-                        <label htmlFor="terminal-name" className={labelClass}>
-                          Terminal name
+                        <label htmlFor="op-cities" className={labelClass}>
+                          Cities / corridors
                         </label>
                         <input
-                          id="terminal-name"
+                          id="op-cities"
+                          type="number"
+                          min={1}
                           className={inputClass}
-                          value={terminalDraft.name}
-                          onChange={(e) =>
-                            setTerminalDraft((current) => ({ ...current, name: e.target.value }))
-                          }
-                          placeholder="e.g. Circle Terminal"
+                          value={draft.cityCount}
+                          onChange={(e) => setDraft((d) => ({ ...d, cityCount: e.target.value }))}
+                          placeholder="e.g. 6"
+                          disabled={draft.terminals.length > 0}
                         />
                       </div>
                       <div>
-                        <label htmlFor="terminal-city" className={labelClass}>
-                          City
+                        <label htmlFor="op-stations" className={labelClass}>
+                          Stations / terminals
                         </label>
-                        <GhanaCitySelect
-                          id="terminal-city"
+                        <input
+                          id="op-stations"
+                          type="number"
+                          min={1}
                           className={inputClass}
-                          value={terminalDraft.city}
-                          onChange={(city) =>
-                            setTerminalDraft((current) => ({ ...current, city }))
-                          }
+                          value={draft.stationCount}
+                          onChange={(e) => setDraft((d) => ({ ...d, stationCount: e.target.value }))}
+                          placeholder="e.g. 12"
+                          disabled={draft.terminals.length > 0}
                         />
                       </div>
-                      <div className="flex items-end">
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="rounded-xl border border-stone-200 bg-white p-4">
+                        <p className="font-display text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                          Paste many at once
+                        </p>
+                        <p className="font-body mt-1 text-xs text-stone-500">
+                          One terminal per line:{" "}
+                          <span className="font-mono text-stone-600">Terminal name, City</span>
+                        </p>
+                        <textarea
+                          rows={4}
+                          className={cn(inputClass, "mt-3 font-mono text-xs")}
+                          value={bulkPasteText}
+                          onChange={(e) => setBulkPasteText(e.target.value)}
+                          placeholder={`Circle Terminal, Accra\nKejetia, Kumasi\nTakoradi Station, Sekondi-Takoradi`}
+                        />
                         <button
                           type="button"
-                          onClick={() => void addTerminal()}
-                          className="font-display inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white sm:w-auto"
+                          onClick={() => void addBulkTerminals()}
+                          className="font-display mt-3 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white"
                           style={{ background: "var(--platform-orange)" }}
                         >
                           <Plus className="size-3.5" />
-                          Add
+                          Add from paste
                         </button>
                       </div>
-                    </div>
 
-                    {draft.terminals.length > 0 ? (
-                      <ul className="mt-4 space-y-2">
+                      <div className="rounded-xl border border-stone-200 bg-white p-4">
+                        <p className="font-display text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                          Add all terminals in one city
+                        </p>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label htmlFor="batch-city" className={labelClass}>
+                              City
+                            </label>
+                            <GhanaCitySelect
+                              id="batch-city"
+                              className={inputClass}
+                              value={terminalDraft.city}
+                              onChange={(city) =>
+                                setTerminalDraft((current) => ({ ...current, city }))
+                              }
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label htmlFor="batch-names" className={labelClass}>
+                              Terminal names (one per line)
+                            </label>
+                            <textarea
+                              id="batch-names"
+                              rows={3}
+                              className={inputClass}
+                              value={cityBatchText}
+                              onChange={(e) => setCityBatchText(e.target.value)}
+                              placeholder={`Circle Terminal\nKaneshie\nMadina`}
+                            />
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void addCityBatchTerminals()}
+                          className="font-display mt-3 inline-flex items-center gap-2 rounded-xl border border-stone-200 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 hover:bg-stone-50"
+                        >
+                          <Plus className="size-3.5" />
+                          Add all to city
+                        </button>
+                      </div>
+
+                      <div className="rounded-xl border border-dashed border-stone-200 bg-stone-50/80 p-4">
+                        <p className="font-display text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                          Or add one at a time
+                        </p>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                          <div>
+                            <label htmlFor="terminal-name" className={labelClass}>
+                              Terminal name
+                            </label>
+                            <input
+                              id="terminal-name"
+                              className={inputClass}
+                              value={terminalDraft.name}
+                              onChange={(e) =>
+                                setTerminalDraft((current) => ({ ...current, name: e.target.value }))
+                              }
+                              placeholder="e.g. Circle Terminal"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="terminal-city" className={labelClass}>
+                              City
+                            </label>
+                            <GhanaCitySelect
+                              id="terminal-city"
+                              className={inputClass}
+                              value={terminalDraft.city}
+                              onChange={(city) =>
+                                setTerminalDraft((current) => ({ ...current, city }))
+                              }
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <button
+                              type="button"
+                              onClick={() => void addTerminal()}
+                              className="font-display inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white sm:w-auto"
+                              style={{ background: "var(--platform-orange)" }}
+                            >
+                              <Plus className="size-3.5" />
+                              Add
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {draft.terminals.length > 0 ? (
+                    <div className="rounded-xl border border-stone-200 bg-white p-4">
+                      <p className="font-display text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                        Terminals added ({draft.terminals.length})
+                      </p>
+                      <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto">
                         {draft.terminals.map((terminal, index) => (
                           <li
                             key={terminal.id}
@@ -1677,13 +1871,8 @@ export function PlatformOperatorsView() {
                           </li>
                         ))}
                       </ul>
-                    ) : (
-                      <p className="font-body mt-3 text-xs text-stone-500">
-                        Choose a city from the list, then type each terminal name (e.g. Circle Terminal).
-                        You can still continue with city/station counts only if you prefer.
-                      </p>
-                    )}
-                  </div>
+                    </div>
+                  ) : null}
 
                   <div>
                     <label htmlFor="op-notes" className={labelClass}>

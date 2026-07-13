@@ -160,6 +160,16 @@ export async function fetchAdminStations(): Promise<AdminStationRow[]> {
   return apiFetch<AdminStationRow[]>("/admin/stations");
 }
 
+export async function createAdminStationApi(body: {
+  name: string;
+  city: string;
+}): Promise<Station> {
+  return apiFetch<Station>("/admin/stations", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export async function fetchAdminLeads(): Promise<AdminLeadAccount[]> {
   return apiFetch<AdminLeadAccount[]>("/admin/leads");
 }

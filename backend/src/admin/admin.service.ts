@@ -17,12 +17,14 @@ import type { StaffAccountRecord } from '../staff/data/staff-accounts';
 import { StaffAuthService, toPublicAccount } from '../staff/staff-auth.service';
 import { StationsService } from '../stations/stations.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
+import { CreateStationDto } from './dto/create-station.dto';
 import {
   OperatorControlsService,
   type OperatorCode,
   type OperatorControlSettings,
   type OperatorLocks,
 } from './operator-controls.service';
+import { resolveGhanaCityName } from '../data/ghana-cities';
 import {
   TransportOperator,
   TransportOperatorDocument,
@@ -264,6 +266,29 @@ export class AdminService {
         totalStaff: staffCount,
       };
     });
+  }
+
+  async createStation(operator: OperatorCode, dto: CreateStationDto) {
+    const name = dto.name.trim();
+    const city = resolveGhanaCityName(dto.city);
+    if (!name || !city) {
+      throw new BadRequestException('Enter the branch name and city before adding.');
+    }
+
+    const { created } = await this.stationsService.seedOperatorTerminals(operator, [
+      { name, city },
+    ]);
+    if (created === 0) {
+      throw new BadRequestException('Could not add this branch. Check the name and city.');
+    }
+
+    const stations = await this.stationsService.findByOperatorCode(operator);
+    const station = stations.find((row) => row.name === name && row.city === city);
+    if (!station) {
+      throw new NotFoundException('Branch was created but could not be loaded.');
+    }
+
+    return station;
   }
 
   listLeads(operator: OperatorCode) {

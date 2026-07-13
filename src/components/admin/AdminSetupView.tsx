@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -18,12 +18,14 @@ import {
 import { PlatformOperatorMark } from "@/components/platform/PlatformOperatorMark";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
 import {
+  createAdminStationApi,
   fetchAdminLeads,
   fetchAdminStations,
   sendAdminLeadCredentialsApi,
   type AdminLeadAccount,
 } from "@/lib/admin-api";
 import { completeAdminSetup } from "@/lib/admin-auth";
+import { nextOperatorStationCode } from "@/lib/operator-station-code";
 import {
   getAdminAccentColor,
   getAdminOperator,
@@ -246,7 +248,8 @@ export function AdminSetupView() {
   const [coverage, setCoverage] = useState<StationLeadCoverage[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(true);
   const [branchesError, setBranchesError] = useState<string | null>(null);
-  const [branchDraft, setBranchDraft] = useState({ name: "", code: "", city: "" });
+  const [branchDraft, setBranchDraft] = useState({ name: "", city: "" });
+  const [branchSaving, setBranchSaving] = useState(false);
   const [activating, setActivating] = useState(false);
   const [branchReloadKey, setBranchReloadKey] = useState(0);
 
@@ -335,37 +338,56 @@ export function AdminSetupView() {
   const isConfigured = admin.operatorConfigured;
   const leadsAssigned = coverage.filter((c) => c.lead).length;
   const missingLeads = coverage.length - leadsAssigned;
+  const nextBranchCode = useMemo(() => {
+    if (!operator) return "";
+    return nextOperatorStationCode(
+      operator,
+      branches.map((branch) => branch.code),
+    );
+  }, [operator, branches]);
 
-  const addBranch = () => {
+  const addBranch = async () => {
+    if (!operator) return;
     const name = branchDraft.name.trim();
-    const code = branchDraft.code.trim().toUpperCase();
     const city = branchDraft.city.trim();
 
-    if (!name || !code || !city) {
+    if (!name || !city) {
       void showValidationAlert({
         title: "Branch details missing",
-        text: "Enter the branch name, a short code, and the city before adding it.",
-      });
-      return;
-    }
-    if (branches.some((b) => b.code === code)) {
-      void showValidationAlert({
-        title: "Duplicate branch code",
-        text: `A branch with code ${code} is already on the list.`,
+        text: "Enter the branch name and city before adding.",
       });
       return;
     }
 
-    setBranches((prev) => [
-      ...prev,
-      {
-        id: `setup-${code}-${Date.now()}`,
-        name,
-        code,
-        city,
-      },
-    ]);
-    setBranchDraft({ name: "", code: "", city: "" });
+    setBranchSaving(true);
+    try {
+      const station = await createAdminStationApi({ name, city });
+      setBranches((prev) => {
+        const next = [
+          ...prev,
+          {
+            id: station.id,
+            name: station.name,
+            code: station.code,
+            city: station.city,
+          },
+        ];
+        return next.sort(
+          (a, b) =>
+            a.city.localeCompare(b.city) ||
+            a.name.localeCompare(b.name) ||
+            a.code.localeCompare(b.code),
+        );
+      });
+      setBranchDraft({ name: "", city: "" });
+    } catch (error) {
+      await showValidationAlert({
+        title: "Could not add branch",
+        text: error instanceof Error ? error.message : "Try again in a moment.",
+      });
+    } finally {
+      setBranchSaving(false);
+    }
   };
 
   const removeBranch = (id: string) => {
@@ -587,7 +609,7 @@ export function AdminSetupView() {
                 do not need, or add a new branch when HQ opens one later.
               </p>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_7rem_1fr_auto]">
+              <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
                 <div>
                   <label htmlFor="setup-branch-name" className={labelClass}>
                     Branch name
@@ -602,22 +624,6 @@ export function AdminSetupView() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="setup-branch-code" className={labelClass}>
-                    Code
-                  </label>
-                  <input
-                    id="setup-branch-code"
-                    type="text"
-                    value={branchDraft.code}
-                    maxLength={8}
-                    onChange={(e) =>
-                      setBranchDraft((d) => ({ ...d, code: e.target.value.toUpperCase() }))
-                    }
-                    placeholder={`${operator}-KNH`}
-                    className={cn(inputClass, "font-mono uppercase")}
-                  />
-                </div>
-                <div>
                   <label htmlFor="setup-branch-city" className={labelClass}>
                     City
                   </label>
@@ -629,16 +635,26 @@ export function AdminSetupView() {
                     placeholder="Accra"
                     className={inputClass}
                   />
+                  {nextBranchCode ? (
+                    <p className="font-body mt-1.5 text-xs text-muted">
+                      Code auto-assigned:{" "}
+                      <span className="font-mono font-semibold text-foreground">{nextBranchCode}</span>
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex items-end">
                   <button
                     type="button"
-                    onClick={addBranch}
-                    className="font-display flex h-[42px] items-center gap-1.5 rounded-xl px-4 text-xs font-bold uppercase tracking-wide text-white"
+                    onClick={() => void addBranch()}
+                    disabled={branchSaving}
+                    className={cn(
+                      "font-display flex h-[42px] items-center gap-1.5 rounded-xl px-4 text-xs font-bold uppercase tracking-wide text-white",
+                      branchSaving && "opacity-60",
+                    )}
                     style={{ background: "var(--staff-accent)" }}
                   >
                     <Plus className="size-4" />
-                    Add
+                    {branchSaving ? "Adding…" : "Add"}
                   </button>
                 </div>
               </div>

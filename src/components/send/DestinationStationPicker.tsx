@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, MapPin, Search, X } from "lucide-react";
+import { OperatorFilter } from "@/components/send/OperatorFilter";
 import { getOperatorLabel, listOperatorFilterOptions, operatorAccentColor } from "@/lib/operators";
 import { filterStationsByOperator, listStationOperatorCodes, searchStations } from "@/lib/stations";
 import type { Station } from "@/types/parcel";
@@ -144,35 +145,7 @@ export function DestinationStationPicker({
               ) : null}
             </div>
 
-            <div className="mb-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setOperator("all")}
-                className={cn(
-                  "font-display rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors",
-                  operator === "all"
-                    ? "border-primary bg-primary text-white"
-                    : "border-border bg-surface text-muted hover:border-primary/30",
-                )}
-              >
-                All
-              </button>
-              {operatorFilters.map(({ code, label }) => (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => setOperator(code)}
-                  className={cn(
-                    "font-display rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors",
-                    operator === code
-                      ? "border-primary bg-primary text-white"
-                      : "border-border bg-surface text-muted hover:border-primary/30",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            <OperatorFilter value={operator} onChange={setOperator} options={operatorFilters} />
 
             <p className="font-body mb-2 text-[11px] text-muted">
               {filtered.length} station{filtered.length === 1 ? "" : "s"}
