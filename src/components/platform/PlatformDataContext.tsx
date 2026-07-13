@@ -22,6 +22,7 @@ import {
   deleteTransportOperatorApi,
   fetchOperatorTerminalsApi,
   fetchPlatformWorkspace,
+  deleteHqAdminApi,
   issueHqCredentialsApi,
   markOperatorConfiguredApi,
   recordConfigurationLetterApi,
@@ -33,6 +34,7 @@ import {
   updatePlatformUserApi,
   type AddOperatorTerminalsResult,
   type CreateTransportOperatorPayload,
+  type DeleteHqAdminResult,
   type DeleteTransportOperatorResult,
   type OperatorTerminalInput,
   type OperatorTerminalRow,
@@ -74,6 +76,7 @@ type PlatformDataContextValue = {
   ) => Promise<PlatformHqAdminRow>;
   issueHqCredentials: (accountId: string) => Promise<PlatformCredentialResult>;
   resetHqPassword: (accountId: string) => Promise<PlatformCredentialResult>;
+  deleteHqAdmin: (accountId: string) => Promise<DeleteHqAdminResult>;
   updateUser: (
     accountId: string,
     payload: Partial<Pick<PlatformUserRow, "displayName" | "email" | "phone" | "status">>,
@@ -227,6 +230,11 @@ export function PlatformDataProvider({ children }: { children: ReactNode }) {
       },
       async resetHqPassword(accountId) {
         const result = await resetHqPasswordApi(accountId);
+        void refresh({ silent: true });
+        return result;
+      },
+      async deleteHqAdmin(accountId) {
+        const result = await deleteHqAdminApi(accountId);
         void refresh({ silent: true });
         return result;
       },

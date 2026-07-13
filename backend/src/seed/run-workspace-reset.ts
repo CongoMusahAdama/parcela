@@ -13,7 +13,7 @@ async function bootstrap() {
     const reset = app.get(WorkspaceResetService);
     const result = await reset.resetForOnboarding();
     console.log('Workspace reset finished:', JSON.stringify(result, null, 2));
-    console.log('Kept: platform_admins, station catalog. Ready for onboard.');
+    console.log('Kept: platform admin login. Ghana station catalog re-seeds on next API startup.');
   } finally {
     await app.close();
   }

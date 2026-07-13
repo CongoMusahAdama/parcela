@@ -218,6 +218,19 @@ export async function resetHqPasswordApi(accountId: string): Promise<PlatformCre
   });
 }
 
+export type DeleteHqAdminResult = {
+  ok: boolean;
+  id: string;
+  email: string;
+  operatorCode: string;
+};
+
+export async function deleteHqAdminApi(accountId: string): Promise<DeleteHqAdminResult> {
+  return apiFetch<DeleteHqAdminResult>(`/platform/hq-admins/${accountId}/remove`, {
+    method: "POST",
+  });
+}
+
 export async function updatePlatformUserApi(
   accountId: string,
   payload: Partial<Pick<PlatformUserRow, "displayName" | "email" | "phone" | "status">>,

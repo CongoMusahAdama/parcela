@@ -228,7 +228,7 @@ export function PlatformConfigurationLetterModal({
               </p>
 
               <div className="rounded-xl border border-stone-200 bg-stone-50/90 px-5 py-4">
-                <p className="font-display text-[11px] font-bold uppercase tracking-[0.14em] text-[#0a0a0a]">
+                <p className="font-display text-[11px] font-bold uppercase tracking-[0.14em] text-[#1e3a5f]">
                   Configuration summary
                 </p>
                 <ul className="mt-3 space-y-2 text-[14px] text-stone-800">
@@ -279,7 +279,7 @@ export function PlatformConfigurationLetterModal({
               </div>
 
               <div className="rounded-xl border border-blue-200 bg-blue-50/70 px-4 py-3">
-                <p className="font-display text-[11px] font-bold uppercase tracking-wide text-[#0a0a0a]">
+                <p className="font-display text-[11px] font-bold uppercase tracking-wide text-[#1e3a5f]">
                   Dedicated support — we are here for everything you need
                 </p>
                 <ul className="mt-2 space-y-1.5 text-sm text-stone-800">

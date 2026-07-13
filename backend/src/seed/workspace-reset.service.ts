@@ -12,11 +12,13 @@ import {
   TransportOperatorDocument,
 } from '../platform/schemas/transport-operator.schema';
 import { StaffAccount, StaffAccountDocument } from '../staff/schemas/staff-account.schema';
+import { Station, StationDocument } from '../stations/schemas/station.schema';
 
 export type WorkspaceResetResult = {
   parcels: number;
   staffAccounts: number;
   transportOperators: number;
+  stations: number;
   platformAudit: number;
   operatorSettings: number;
 };
@@ -38,16 +40,18 @@ export class WorkspaceResetService {
     private readonly auditModel: Model<PlatformAuditDocument>,
     @InjectModel(OperatorSettings.name)
     private readonly operatorSettingsModel: Model<OperatorSettingsDocument>,
+    @InjectModel(Station.name) private readonly stationModel: Model<StationDocument>,
   ) {}
 
   async resetForOnboarding(): Promise<WorkspaceResetResult> {
     this.logger.warn('Workspace reset — removing operators, users, parcels, and audit data');
 
-    const [parcels, staffAccounts, transportOperators, platformAudit, operatorSettings] =
+    const [parcels, staffAccounts, transportOperators, stations, platformAudit, operatorSettings] =
       await Promise.all([
         this.parcelModel.deleteMany({}),
         this.staffModel.deleteMany({}),
         this.operatorModel.deleteMany({}),
+        this.stationModel.deleteMany({}),
         this.auditModel.deleteMany({}),
         this.operatorSettingsModel.deleteMany({}),
       ]);
@@ -56,12 +60,13 @@ export class WorkspaceResetService {
       parcels: parcels.deletedCount ?? 0,
       staffAccounts: staffAccounts.deletedCount ?? 0,
       transportOperators: transportOperators.deletedCount ?? 0,
+      stations: stations.deletedCount ?? 0,
       platformAudit: platformAudit.deletedCount ?? 0,
       operatorSettings: operatorSettings.deletedCount ?? 0,
     };
 
     this.logger.log(
-      `Workspace reset complete — parcels=${result.parcels}, staff=${result.staffAccounts}, operators=${result.transportOperators}, audit=${result.platformAudit}, operator_settings=${result.operatorSettings}`,
+      `Workspace reset complete — parcels=${result.parcels}, staff=${result.staffAccounts}, operators=${result.transportOperators}, stations=${result.stations}, audit=${result.platformAudit}, operator_settings=${result.operatorSettings}`,
     );
 
     return result;

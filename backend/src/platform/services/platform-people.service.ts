@@ -147,6 +147,32 @@ export class PlatformPeopleService {
     return { ok: true, temporaryPassword: tempPassword, email: account.email, smsSent };
   }
 
+  async deleteHqAdmin(accountId: string, actorEmail: string) {
+    const account = this.staffAuth.findAccountById(accountId);
+    if (!account || account.role !== 'operator_admin') {
+      throw new NotFoundException('HQ admin not found');
+    }
+
+    const removed = this.staffAuth.removeAccount(accountId);
+    if (!removed) {
+      throw new NotFoundException('HQ admin not found');
+    }
+
+    await this.audit.record({
+      action: 'HQ admin removed',
+      detail: `${account.displayName} (${account.email})`,
+      actorEmail,
+      operatorCode: account.operator,
+    });
+
+    return {
+      ok: true,
+      id: account.id,
+      email: account.email,
+      operatorCode: account.operator,
+    };
+  }
+
   async listUsers() {
     const operatorRows = await this.operators.list();
     const operatorNames = new Map(operatorRows.map((row) => [row.code, row.name]));

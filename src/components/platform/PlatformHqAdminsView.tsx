@@ -11,6 +11,7 @@ import {
   MapPin,
   Phone,
   Save,
+  Trash2,
   UserCog,
   Users,
 } from "lucide-react";
@@ -64,7 +65,7 @@ function userStatusTone(status: PlatformUserStatus) {
 type DetailTab = "profile" | "organization";
 
 export function PlatformHqAdminsView() {
-  const { hqAdmins, operators, users, updateHqAdmin, issueHqCredentials, resetHqPassword } =
+  const { hqAdmins, operators, users, updateHqAdmin, issueHqCredentials, resetHqPassword, deleteHqAdmin } =
     usePlatformData();
   const rows = hqAdmins;
   const [query, setQuery] = useState("");
@@ -162,7 +163,7 @@ export function PlatformHqAdminsView() {
     await showSuccessAlert({
       title: "HQ admin updated",
       text: "Login and contact details saved.",
-      confirmButtonColor: "#0a0a0a",
+      confirmButtonColor: "#1e3a5f",
     });
   }
 
@@ -171,7 +172,7 @@ export function PlatformHqAdminsView() {
       title: "Issue HQ login?",
       text: `Prepare first-time credentials for ${row.displayName} (${row.email}) on ${row.operatorCode}.`,
       confirmText: "Issue login",
-      confirmButtonColor: "#0a0a0a",
+      confirmButtonColor: "#1e3a5f",
     });
     if (!ok) return;
 
@@ -183,7 +184,7 @@ export function PlatformHqAdminsView() {
     await showSuccessAlert({
       title: result.smsSent ? "HQ login sent" : "HQ login ready",
       text: platformCredentialSuccessText(result),
-      confirmButtonColor: "#0a0a0a",
+      confirmButtonColor: "#1e3a5f",
     });
   }
 
@@ -192,7 +193,7 @@ export function PlatformHqAdminsView() {
       title: "Reset HQ login?",
       text: `Issue a temporary password for ${row.displayName} (${row.email}) on ${row.operatorCode}. Use when they forgot their password or are locked out.`,
       confirmText: "Reset login",
-      confirmButtonColor: "#0a0a0a",
+      confirmButtonColor: "#1e3a5f",
     });
     if (!ok) return;
 
@@ -204,7 +205,29 @@ export function PlatformHqAdminsView() {
     await showSuccessAlert({
       title: result.smsSent ? "Login reset sent" : "Login reset",
       text: platformCredentialSuccessText(result),
-      confirmButtonColor: "#0a0a0a",
+      confirmButtonColor: "#1e3a5f",
+    });
+  }
+
+  async function handleDeleteHqAdmin(row: PlatformHqAdminRow) {
+    const ok = await showConfirmDialog({
+      title: "Remove HQ admin?",
+      text: `Permanently remove ${row.displayName} (${row.email}) from ${row.operatorCode}? They will no longer be able to sign in to HQ.`,
+      confirmText: "Remove admin",
+      cancelText: "Keep account",
+      icon: "warning",
+      confirmButtonColor: "#dc2626",
+    });
+    if (!ok) return;
+
+    await deleteHqAdmin(row.id);
+    if (selected?.id === row.id) {
+      closeModal();
+    }
+    await showSuccessAlert({
+      title: "HQ admin removed",
+      text: `${row.displayName} was deleted from ${row.operatorCode}.`,
+      confirmButtonColor: "#1e3a5f",
     });
   }
 
@@ -348,6 +371,14 @@ export function PlatformHqAdminsView() {
                             Reset
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteHqAdmin(row)}
+                          className="font-display inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-red-700 transition-colors hover:bg-red-50"
+                        >
+                          <Trash2 className="size-3.5" />
+                          Remove
+                        </button>
                       </div>
                     </td>
                   </tr>

@@ -52,6 +52,11 @@ export class PlatformPeopleController {
     return this.people.resetHqPassword(accountId, req.platform.admin.email);
   }
 
+  @Post('hq-admins/:accountId/remove')
+  removeHqAdmin(@Param('accountId') accountId: string, @Req() req: PlatformRequest) {
+    return this.people.deleteHqAdmin(accountId, req.platform.admin.email);
+  }
+
   @Get('users')
   listUsers() {
     return this.people.listUsers();
