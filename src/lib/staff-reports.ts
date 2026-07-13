@@ -1,9 +1,14 @@
-import type { Operator, ParcelTrackStatus } from "@/types/parcel";
+import type { ParcelTrackStatus } from "@/types/parcel";
 import type { StaffParcelSummary } from "@/types/staff-parcel";
 import { getCollectionQueueParcels } from "@/types/staff-parcel";
 import { toStaffParcelDetail } from "@/types/staff-parcel";
 import { getOperatorStaffTheme } from "@/lib/operator-theme";
-import { OPERATOR_LOGOS, OPERATOR_REPORT_BRAND } from "@/lib/operators";
+import {
+  getOperatorLabel,
+  isSupportedOperator,
+  OPERATOR_LOGOS,
+  OPERATOR_REPORT_BRAND,
+} from "@/lib/operators";
 import { TRACK_STATUS_LABELS } from "@/lib/tracking";
 
 export const STORAGE_FEE_PER_DAY_GHS = 5;
@@ -515,7 +520,7 @@ export type StaffReportMeta = {
   accentRgb: [number, number, number];
   stationName: string;
   stationCode: string;
-  operator: Operator;
+  operator: string;
   reportTitle: string;
   periodLabel: string;
   generatedBy: string;
@@ -525,24 +530,34 @@ export type StaffReportMeta = {
 export function buildStaffReportMeta(input: {
   stationName: string;
   stationCode: string;
-  operator: Operator;
+  operator: string;
   reportTitle: string;
   periodLabel: string;
   generatedBy: string;
   generatedAt?: string;
 }): StaffReportMeta {
-  const brand = OPERATOR_REPORT_BRAND[input.operator];
-  const theme = getOperatorStaffTheme(input.operator);
+  const operatorCode = input.operator.trim().toUpperCase();
+  const brand = isSupportedOperator(operatorCode)
+    ? OPERATOR_REPORT_BRAND[operatorCode]
+    : {
+        companyName: getOperatorLabel(operatorCode),
+        companyTagline: `${getOperatorLabel(operatorCode)} terminal parcel operations report`,
+        accentRgb: [13, 148, 136] as [number, number, number],
+      };
+  const theme = getOperatorStaffTheme(operatorCode);
+  const logoSrc = isSupportedOperator(operatorCode)
+    ? OPERATOR_LOGOS[operatorCode]
+    : OPERATOR_LOGOS.STC;
 
   return {
     companyName: brand.companyName,
     companyTagline: brand.companyTagline,
-    logoSrc: OPERATOR_LOGOS[input.operator],
+    logoSrc,
     accentColor: theme.accent,
     accentRgb: brand.accentRgb,
     stationName: input.stationName,
     stationCode: input.stationCode,
-    operator: input.operator,
+    operator: operatorCode,
     reportTitle: input.reportTitle,
     periodLabel: input.periodLabel,
     generatedBy: input.generatedBy,

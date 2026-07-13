@@ -8,11 +8,10 @@ import {
   loadOperatorLockStatus,
   type OperatorControlLocks,
 } from "@/lib/operator-controls";
-import type { Operator } from "@/types/parcel";
 import { cn } from "@/lib/utils";
 
 type OperatorFreezeBannerProps = {
-  operator: Operator;
+  operator: string;
   /** Which lock this portal cares about. */
   mode: "staff" | "lead";
   className?: string;

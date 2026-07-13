@@ -4,7 +4,6 @@ import { useCallback, useRef, useState } from "react";
 import { CheckCircle2, Printer, Tag, X } from "lucide-react";
 import { ParcelTagReceipt } from "@/components/parcel/ParcelTagReceipt";
 import { buildParcelTagFields, type ParcelTagFields } from "@/lib/parcel-tag";
-import type { Operator } from "@/types/parcel";
 import type { StaffParcelItem } from "@/types/staff-parcel";
 
 export type StaffTagFillContext = {
@@ -23,7 +22,7 @@ export type StaffTagFillContext = {
   driverPhone: string;
   driverName?: string;
   loggedAt: string;
-  operator: Operator;
+  operator: string;
 };
 
 type StaffParcelTagFillModalProps = {

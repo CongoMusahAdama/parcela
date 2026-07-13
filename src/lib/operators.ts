@@ -91,6 +91,13 @@ export function getOperatorConfirmedIllustration(operator: string): string {
   return OPERATOR_CONFIRMED_ILLUSTRATION.STC;
 }
 
+export function getOperatorWelcomeBg(operator: string): string {
+  if (isSupportedOperator(operator)) {
+    return OPERATOR_WELCOME_BG[operator];
+  }
+  return OPERATOR_WELCOME_BG.STC;
+}
+
 let brandingByCode: Map<string, PublicOperatorBranding> | null = null;
 let brandingLoadPromise: Promise<Map<string, PublicOperatorBranding>> | null = null;
 

@@ -16,7 +16,7 @@ import { StaffLiveClock } from "@/components/staff/StaffLiveClock";
 import { StaffParcelsTable } from "@/components/staff/StaffParcelsTable";
 import { useStaffSession } from "@/components/staff/StaffOperatorShell";
 import { useStaffParcels } from "@/components/staff/StaffParcelsContext";
-import { OPERATOR_WELCOME_BG } from "@/lib/operators";
+import { getOperatorWelcomeBg } from "@/lib/operators";
 import { computeStaffParcelStats } from "@/types/staff-parcel";
 
 type MetricCard = {
@@ -95,7 +95,7 @@ export function StaffDashboardView() {
       <section className="relative min-h-[220px] overflow-hidden rounded-2xl px-5 py-6 text-white shadow-md sm:min-h-[320px] sm:px-8 sm:py-10 lg:min-h-[420px]">
         <div className="absolute inset-y-0 right-0 flex w-[72%] items-start justify-end sm:w-[68%] lg:w-[62%]">
           <Image
-            src={OPERATOR_WELCOME_BG[staff.operator]}
+            src={getOperatorWelcomeBg(staff.operator)}
             alt=""
             width={1200}
             height={800}

@@ -21,6 +21,7 @@ import { verifyAndLogParcelApi } from "@/lib/staff-api";
 import { runOrQueueStaffMutation } from "@/lib/staff-mutation-queue";
 import { matchesStaffParcelQuery } from "@/lib/staff-parcel-filters";
 import { getStaffFreezeMessage, loadOperatorLockStatus } from "@/lib/operator-controls";
+import { isSupportedOperator } from "@/lib/operators";
 import { showConfirmDialog, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import { getPendingParcelsForVerify, toStaffParcelDetail } from "@/types/staff-parcel";
 import { cn } from "@/lib/utils";
@@ -29,10 +30,18 @@ const TRANSPORT_TYPES = ["Standard", "Express"] as const;
 
 const GHANA_PHONE_PATTERN = /^(\+?233|0)?[2-9]\d{8}$/;
 
-const DEMO_BUSES = {
+const DEMO_BUSES: Record<"VIP" | "STC", readonly string[]> = {
   VIP: ["VIP-4521", "VIP-3310", "VIP-2890"],
   STC: ["STC-1180", "STC-2045", "STC-0922"],
-} as const;
+};
+
+function getDemoBuses(operator: string): readonly string[] {
+  if (isSupportedOperator(operator)) {
+    return DEMO_BUSES[operator];
+  }
+  const code = operator.trim().toUpperCase();
+  return [`${code}-001`, `${code}-002`, `${code}-003`];
+}
 
 export function StaffVerifyView() {
   const router = useRouter();
@@ -63,7 +72,7 @@ export function StaffVerifyView() {
   const selected = pending.find((p) => p.bookingReference === selectedRef) ?? null;
   const detail = selected ? toStaffParcelDetail(selected) : null;
 
-  const buses = DEMO_BUSES[staff.operator];
+  const buses = getDemoBuses(staff.operator);
 
   useEffect(() => {
     const ref = searchParams.get("ref");
