@@ -9,8 +9,9 @@ import { Logo } from "@/components/brand/Logo";
 import { StaffAuthBrandPanel } from "@/components/staff/StaffAuthBrandPanel";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
 import { changeStaffPasswordApi } from "@/lib/staff-api";
-import { restoreStaffSession, saveStaffSession } from "@/lib/staff-auth";
-import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
+import { restoreStaffSession, saveStaffSession, signOutStaff } from "@/lib/staff-auth";
+import { showInfoAlert, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import type { StaffSession } from "@/types/staff";
 
 export function StaffChangePasswordView() {
@@ -40,6 +41,18 @@ export function StaffChangePasswordView() {
       cancelled = true;
     };
   }, [router]);
+
+  useInactivityLogout({
+    enabled: ready && Boolean(session),
+    onIdle: async () => {
+      await signOutStaff();
+      await showInfoAlert({
+        title: "Session expired",
+        text: "You were signed out after 30 minutes of inactivity.",
+      });
+      router.replace("/staff/login");
+    },
+  });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

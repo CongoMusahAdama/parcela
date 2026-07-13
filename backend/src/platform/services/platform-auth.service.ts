@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { SessionRevocationService } from '../../common/services/session-revocation.service';
 import { ensureHashedSecret, verifySecret } from '../../common/utils/password.util';
 import { PlatformAdmin, PlatformAdminDocument } from '../schemas/platform-admin.schema';
 
@@ -30,6 +31,7 @@ export class PlatformAuthService implements OnModuleInit {
 
   constructor(
     private readonly config: ConfigService,
+    private readonly sessionRevocation: SessionRevocationService,
     @InjectModel(PlatformAdmin.name)
     private readonly adminModel: Model<PlatformAdminDocument>,
   ) {}
@@ -121,6 +123,8 @@ export class PlatformAuthService implements OnModuleInit {
     if (payload.typ !== 'platform' || !payload.sub || Date.now() > payload.exp) {
       throw new UnauthorizedException('Platform session expired');
     }
+
+    this.sessionRevocation.assertActive(payload.iat);
 
     return { ...payload, admin: { id: payload.sub, email: '', displayName: '' } };
   }

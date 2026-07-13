@@ -10,9 +10,12 @@ import { restoreAdminSession, signOutAdmin } from "@/lib/admin-auth";
 import { getAdminOperatorName } from "@/lib/admin-operator";
 import { getAdminNavItem } from "@/lib/admin-nav";
 import { adminThemeStyle } from "@/lib/admin-theme";
+import { fetchAdminSession } from "@/lib/admin-api";
 import { prefetchAllAdminViews, prefetchAdminView } from "@/lib/admin-view-prefetch";
 import { ensureStationsLoaded } from "@/lib/stations";
-import { showConfirmDialog, showSuccessAlert } from "@/lib/sweetalert";
+import { showConfirmDialog, showInfoAlert, showSuccessAlert } from "@/lib/sweetalert";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
+import { useSessionValidation } from "@/hooks/use-session-validation";
 import type { AdminSession } from "@/types/admin";
 
 const AdminSessionContext = createContext<AdminSession | null>(null);
@@ -139,6 +142,31 @@ export function AdminOperatorShell({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     prefetchAdminView(pathname);
   }, [pathname]);
+
+  useInactivityLogout({
+    enabled: ready && Boolean(session),
+    onIdle: async () => {
+      await signOutAdmin();
+      await showInfoAlert({
+        title: "Session expired",
+        text: "You were signed out after 30 minutes of inactivity.",
+      });
+      router.replace("/admin/login");
+    },
+  });
+
+  useSessionValidation({
+    enabled: ready && Boolean(session),
+    validate: () => fetchAdminSession(),
+    onInvalid: async () => {
+      await signOutAdmin();
+      await showInfoAlert({
+        title: "Signed out",
+        text: "Your session ended. Sign in again.",
+      });
+      router.replace("/admin/login");
+    },
+  });
 
   async function handleSignOut() {
     if (!session) return;

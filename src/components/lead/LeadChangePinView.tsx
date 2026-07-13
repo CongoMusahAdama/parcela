@@ -8,8 +8,9 @@ import { Logo } from "@/components/brand/Logo";
 import { LeadAuthBrandPanel } from "@/components/lead/LeadAuthBrandPanel";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
 import { changeLeadPinApi } from "@/lib/lead-api";
-import { restoreLeadSession, saveLeadSession } from "@/lib/lead-auth";
-import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
+import { restoreLeadSession, saveLeadSession, signOutLead } from "@/lib/lead-auth";
+import { showInfoAlert, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import type { LeadSession } from "@/types/lead";
 
 export function LeadChangePinView() {
@@ -39,6 +40,18 @@ export function LeadChangePinView() {
       cancelled = true;
     };
   }, [router]);
+
+  useInactivityLogout({
+    enabled: ready && Boolean(session),
+    onIdle: async () => {
+      await signOutLead();
+      await showInfoAlert({
+        title: "Session expired",
+        text: "You were signed out after 30 minutes of inactivity.",
+      });
+      router.replace("/lead/login");
+    },
+  });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

@@ -9,6 +9,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { SessionRevocationService } from '../common/services/session-revocation.service';
 import { ensureHashedSecret, verifySecret } from '../common/utils/password.util';
 import {
   DEMO_STAFF_ACCOUNT_IDS,
@@ -50,6 +51,7 @@ export class StaffAuthService implements OnModuleInit {
 
   constructor(
     private readonly config: ConfigService,
+    private readonly sessionRevocation: SessionRevocationService,
     @InjectModel(StaffAccount.name) private readonly staffModel: Model<StaffAccountDocument>,
   ) {}
 
@@ -206,6 +208,10 @@ export class StaffAuthService implements OnModuleInit {
     }
 
     return { ...payload, staff: toPublicAccount(staff) };
+  }
+
+  clearAllActiveSessions() {
+    this.activeStaffSessions.clear();
   }
 
   recordStaffLogout(accountId: string) {
@@ -420,6 +426,8 @@ export class StaffAuthService implements OnModuleInit {
     if (!payload.exp || Date.now() > payload.exp) {
       throw new UnauthorizedException('Staff session expired');
     }
+
+    this.sessionRevocation.assertActive(payload.iat);
 
     return payload;
   }

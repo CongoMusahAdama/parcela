@@ -8,8 +8,9 @@ import { AdminAuthBrandPanel } from "@/components/admin/AdminAuthBrandPanel";
 import { AdminAuthField } from "@/components/admin/AdminAuthField";
 import { Logo } from "@/components/brand/Logo";
 import { changeAdminPasswordApi } from "@/lib/admin-api";
-import { restoreAdminSession, saveAdminSession } from "@/lib/admin-auth";
-import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
+import { restoreAdminSession, saveAdminSession, signOutAdmin } from "@/lib/admin-auth";
+import { showInfoAlert, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import type { AdminSession } from "@/types/admin";
 
 export function AdminChangePasswordView() {
@@ -39,6 +40,18 @@ export function AdminChangePasswordView() {
       cancelled = true;
     };
   }, [router]);
+
+  useInactivityLogout({
+    enabled: ready && Boolean(session),
+    onIdle: async () => {
+      await signOutAdmin();
+      await showInfoAlert({
+        title: "Session expired",
+        text: "You were signed out after 30 minutes of inactivity.",
+      });
+      router.replace("/admin/login");
+    },
+  });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

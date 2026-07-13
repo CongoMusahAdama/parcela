@@ -114,6 +114,12 @@ export async function fetchPlatformSession(): Promise<PlatformSession> {
   return apiFetch<PlatformSession>("/platform/session");
 }
 
+export async function revokeAllPlatformSessionsApi(): Promise<{ ok: boolean; revokedAt: string }> {
+  return apiFetch<{ ok: boolean; revokedAt: string }>("/platform/sessions/revoke-all", {
+    method: "POST",
+  });
+}
+
 export async function fetchPlatformWorkspace(): Promise<PlatformWorkspace> {
   return apiFetch<PlatformWorkspace>("/platform/workspace");
 }

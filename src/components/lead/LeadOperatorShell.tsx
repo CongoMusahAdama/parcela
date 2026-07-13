@@ -10,10 +10,13 @@ import { OperatorFreezeBanner } from "@/components/shared/OperatorFreezeBanner";
 import { StaffNavProvider, useStaffNav } from "@/components/staff/StaffNavContext";
 import { StaffPreloader } from "@/components/staff/StaffPreloader";
 import { restoreLeadSession, signOutLead } from "@/lib/lead-auth";
+import { fetchLeadSession } from "@/lib/lead-api";
 import { getLeadNavItem } from "@/lib/lead-nav";
 import { prefetchAllLeadViews } from "@/lib/lead-view-prefetch";
 import { operatorStaffThemeStyle } from "@/lib/operator-theme";
-import { showConfirmDialog, showSuccessAlert } from "@/lib/sweetalert";
+import { showConfirmDialog, showInfoAlert, showSuccessAlert } from "@/lib/sweetalert";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
+import { useSessionValidation } from "@/hooks/use-session-validation";
 import type { LeadSession } from "@/types/lead";
 
 const LeadSessionContext = createContext<LeadSession | null>(null);
@@ -131,6 +134,31 @@ export function LeadOperatorShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
+
+  useInactivityLogout({
+    enabled: ready && Boolean(session),
+    onIdle: async () => {
+      await signOutLead();
+      await showInfoAlert({
+        title: "Session expired",
+        text: "You were signed out after 30 minutes of inactivity.",
+      });
+      router.replace("/lead/login");
+    },
+  });
+
+  useSessionValidation({
+    enabled: ready && Boolean(session),
+    validate: () => fetchLeadSession(),
+    onInvalid: async () => {
+      await signOutLead();
+      await showInfoAlert({
+        title: "Signed out",
+        text: "Your session ended. Sign in again.",
+      });
+      router.replace("/lead/login");
+    },
+  });
 
   async function handleSignOut() {
     if (!session) return;

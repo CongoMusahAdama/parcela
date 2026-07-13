@@ -10,10 +10,13 @@ import { StaffPreloader } from "@/components/staff/StaffPreloader";
 import { StaffSidebar } from "@/components/staff/StaffSidebar";
 import { OperatorFreezeBanner } from "@/components/shared/OperatorFreezeBanner";
 import { clearStaffSession, restoreStaffSession, signOutStaff } from "@/lib/staff-auth";
-import { showConfirmDialog, showSuccessAlert } from "@/lib/sweetalert";
+import { fetchStaffSession } from "@/lib/staff-api";
+import { showConfirmDialog, showInfoAlert, showSuccessAlert } from "@/lib/sweetalert";
 import { getStaffNavItem } from "@/lib/staff-nav";
 import { operatorStaffThemeStyle } from "@/lib/operator-theme";
 import { prefetchAllStaffViews } from "@/lib/staff-view-prefetch";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
+import { useSessionValidation } from "@/hooks/use-session-validation";
 import type { StaffSession } from "@/types/staff";
 
 const StaffSessionContext = createContext<StaffSession | null>(null);
@@ -130,6 +133,31 @@ export function StaffOperatorShell({ children }: StaffOperatorShellProps) {
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
+
+  useInactivityLogout({
+    enabled: ready && Boolean(session),
+    onIdle: async () => {
+      await signOutStaff();
+      await showInfoAlert({
+        title: "Session expired",
+        text: "You were signed out after 30 minutes of inactivity.",
+      });
+      router.replace("/staff/login");
+    },
+  });
+
+  useSessionValidation({
+    enabled: ready && Boolean(session),
+    validate: () => fetchStaffSession(),
+    onInvalid: async () => {
+      await signOutStaff();
+      await showInfoAlert({
+        title: "Signed out",
+        text: "Your session ended. Sign in again.",
+      });
+      router.replace("/staff/login");
+    },
+  });
 
   async function handleSignOut() {
     if (!session) return;

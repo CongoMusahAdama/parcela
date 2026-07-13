@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import configuration from './config/configuration';
+import { SessionRevocationModule } from './common/session-revocation.module';
 import { getEnvFilePaths } from './config/env-paths';
 import { AdminModule } from './admin/admin.module';
 import { HealthController } from './health/health.controller';
@@ -39,6 +40,7 @@ import { StationsModule } from './stations/stations.module';
         limit: 10,
       },
     ]),
+    SessionRevocationModule,
     SeedModule,
     StationsModule,
     ParcelsModule,

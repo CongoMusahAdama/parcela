@@ -9,10 +9,13 @@ import { PlatformMainView } from "@/components/platform/PlatformMainView";
 import { PlatformNavProvider } from "@/components/platform/PlatformNavContext";
 import { StaffPreloader } from "@/components/staff/StaffPreloader";
 import { restorePlatformSession, signOutPlatform } from "@/lib/platform-auth";
+import { fetchPlatformSession } from "@/lib/platform-api";
 import { getPlatformNavItem, PLATFORM_NAV_ITEMS } from "@/lib/platform-nav";
 import { prefetchAllPlatformViews } from "@/lib/platform-view-prefetch";
 import { platformThemeStyle } from "@/lib/platform-theme";
-import { showConfirmDialog, showSuccessAlert } from "@/lib/sweetalert";
+import { showConfirmDialog, showInfoAlert, showSuccessAlert } from "@/lib/sweetalert";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
+import { useSessionValidation } from "@/hooks/use-session-validation";
 import type { PlatformSession } from "@/types/platform";
 
 const PlatformSessionContext = createContext<PlatformSession | null>(null);
@@ -104,6 +107,35 @@ export function PlatformShell({ children: _children }: { children: React.ReactNo
     PLATFORM_NAV_ITEMS.forEach(({ href }) => router.prefetch(href));
     void prefetchAllPlatformViews();
   }, [ready, router]);
+
+  useInactivityLogout({
+    enabled: ready && Boolean(session),
+    onIdle: async () => {
+      await signOutPlatform();
+      setSession(null);
+      await showInfoAlert({
+        title: "Session expired",
+        text: "You were signed out after 30 minutes of inactivity.",
+        confirmButtonColor: "#fd7e14",
+      });
+      router.replace("/platform/login");
+    },
+  });
+
+  useSessionValidation({
+    enabled: ready && Boolean(session),
+    validate: () => fetchPlatformSession(),
+    onInvalid: async () => {
+      await signOutPlatform();
+      setSession(null);
+      await showInfoAlert({
+        title: "Signed out",
+        text: "Your session ended. Sign in again.",
+        confirmButtonColor: "#fd7e14",
+      });
+      router.replace("/platform/login");
+    },
+  });
 
   async function handleSignOut() {
     const confirmed = await showConfirmDialog({

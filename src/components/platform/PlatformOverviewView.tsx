@@ -2,12 +2,14 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   ArrowRight,
   Building2,
   CheckCircle2,
   CreditCard,
+  LogOut,
   MapPin,
   Plus,
   ScrollText,
@@ -68,6 +70,8 @@ import {
   type PlatformUserStatus,
 } from "@/lib/platform-demo";
 import { platformCredentialSuccessText } from "@/lib/platform-credentials-message";
+import { revokeAllPlatformSessionsApi } from "@/lib/platform-api";
+import { signOutPlatform } from "@/lib/platform-auth";
 import { platformRowNumber, usePlatformPagination } from "@/lib/platform-pagination";
 import { PLATFORM_THEME } from "@/lib/platform-theme";
 import { cn } from "@/lib/utils";
@@ -150,6 +154,7 @@ function OperatorRow({ row, serialNumber }: { row: PlatformOperatorRow; serialNu
 }
 
 export function PlatformOverviewView() {
+  const router = useRouter();
   const { admin } = usePlatformSession();
   const { operators, hqAdmins, users, audit, stats, sendRenewalReminder, loading } =
     usePlatformData();
@@ -184,6 +189,27 @@ export function PlatformOverviewView() {
         : `${SUBSCRIPTION_REMINDER_DAYS[reminder]}-day reminder recorded, but SMS could not be sent — check the operator contact phone.`,
       confirmButtonColor: "#10367D",
     });
+  }
+
+  async function handleRevokeAllSessions() {
+    const confirmed = await showConfirmDialog({
+      title: "Sign out everyone?",
+      text: "This immediately signs out all HQ, lead, staff, and platform users. Everyone must sign in again.",
+      confirmText: "Sign out all",
+      cancelText: "Cancel",
+      icon: "warning",
+      confirmButtonColor: "#dc2626",
+    });
+    if (!confirmed) return;
+
+    await revokeAllPlatformSessionsApi();
+    await signOutPlatform();
+    await showSuccessAlert({
+      title: "Everyone signed out",
+      text: "All portal sessions were ended. Sign in again to continue.",
+      confirmButtonColor: "#10367D",
+    });
+    router.replace("/platform/login");
   }
 
   const metricCards = [
@@ -487,6 +513,16 @@ export function PlatformOverviewView() {
                 </span>
                 Open audit log
               </Link>
+              <button
+                type="button"
+                onClick={() => void handleRevokeAllSessions()}
+                className="font-display flex w-full items-center gap-3 rounded-xl border border-red-200 px-3 py-3 text-left text-sm font-semibold text-red-800 transition-colors hover:bg-red-50"
+              >
+                <span className="flex size-9 items-center justify-center rounded-lg bg-red-100 text-red-700">
+                  <LogOut className="size-4" />
+                </span>
+                Sign out all users now
+              </button>
             </div>
           </section>
         </div>
