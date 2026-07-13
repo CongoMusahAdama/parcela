@@ -27,7 +27,7 @@ function MainHome() {
     <Screen contentStyle={styles.content}>
       <View style={styles.header}>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>VIP & STC only</Text>
+          <Text style={styles.badgeText}>Partner stations</Text>
         </View>
         <Logo size="lg" />
       </View>

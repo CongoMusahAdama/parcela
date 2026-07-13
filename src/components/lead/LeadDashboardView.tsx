@@ -20,7 +20,7 @@ import { StaffLiveClock } from "@/components/staff/StaffLiveClock";
 import { StaffParcelsTable } from "@/components/staff/StaffParcelsTable";
 import { useLeadSession } from "@/components/lead/LeadOperatorShell";
 import { fetchLeadSummary } from "@/lib/lead-api";
-import { OPERATOR_CONFIRMED_ILLUSTRATION } from "@/lib/operators";
+import { getOperatorConfirmedIllustration } from "@/lib/operators";
 import type { BranchSummary } from "@/types/lead";
 
 type QuickCard = {
@@ -104,6 +104,8 @@ export function LeadDashboardView() {
     { label: "Collected today", shortLabel: "Collected", value: counts?.collected ?? 0, icon: Bus },
   ];
 
+  const heroIllustration = getOperatorConfirmedIllustration(staff.operator);
+
   return (
     <>
       <main className="px-3 py-3 sm:px-6 sm:py-5 lg:px-8 lg:py-8">
@@ -122,7 +124,7 @@ export function LeadDashboardView() {
             </div>
             <div className="flex justify-center px-2 pb-3">
               <Image
-                src={OPERATOR_CONFIRMED_ILLUSTRATION[staff.operator]}
+                src={heroIllustration}
                 alt=""
                 width={1200}
                 height={800}
@@ -136,7 +138,7 @@ export function LeadDashboardView() {
           {/* Desktop: mascot centred in the banner */}
           <div className="pointer-events-none absolute inset-0 z-10 hidden items-end justify-center sm:flex">
             <Image
-              src={OPERATOR_CONFIRMED_ILLUSTRATION[staff.operator]}
+              src={heroIllustration}
               alt=""
               width={1200}
               height={800}

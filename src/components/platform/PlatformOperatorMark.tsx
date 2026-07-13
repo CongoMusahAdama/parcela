@@ -10,7 +10,7 @@ type PlatformOperatorMarkProps = {
   brandColor?: string;
   logoDataUrl?: string | null;
   className?: string;
-  size?: "sm" | "md" | "lg" | "xl" | "letter";
+  size?: "sm" | "md" | "lg" | "xl" | "hero" | "letter";
 };
 
 const SIZE = {
@@ -18,6 +18,7 @@ const SIZE = {
   md: "size-12 text-sm",
   lg: "size-14 text-base",
   xl: "size-20 text-lg",
+  hero: "h-[5rem] w-[9.75rem] text-base",
   letter: "h-28 w-44 min-h-28 min-w-44 text-xl",
 } as const;
 
@@ -34,7 +35,8 @@ export function PlatformOperatorMark({
     return (
       <div
         className={cn(
-          "flex items-center justify-center overflow-hidden rounded-xl border border-stone-200 bg-white p-1.5",
+          "flex items-center justify-center overflow-hidden rounded-xl border border-stone-200 bg-white",
+          size === "hero" ? "p-3 shadow-lg" : "p-1.5",
           SIZE[size],
           className,
         )}
@@ -43,7 +45,10 @@ export function PlatformOperatorMark({
         <img
           src={logoDataUrl}
           alt={name ?? code}
-          className="h-full w-full object-contain"
+          className={cn(
+            "object-contain object-center",
+            size === "hero" ? "max-h-full max-w-full h-full w-full" : "h-full w-full",
+          )}
         />
       </div>
     );
@@ -62,7 +67,13 @@ export function PlatformOperatorMark({
           operator={code}
           className={cn(
             "w-auto max-w-full object-contain",
-            size === "letter" ? "h-16" : size === "xl" ? "h-10" : "h-8",
+            size === "letter"
+              ? "h-16"
+              : size === "hero"
+                ? "h-12"
+                : size === "xl"
+                  ? "h-10"
+                  : "h-8",
           )}
         />
       </div>

@@ -103,6 +103,10 @@ export function AdminOperatorShell({ children }: { children: React.ReactNode }) 
           router.replace("/admin/login");
           return;
         }
+        if (current.admin.mustChangePassword) {
+          router.replace("/admin/change-password");
+          return;
+        }
         setSession(current);
         setReady(true);
       } catch {

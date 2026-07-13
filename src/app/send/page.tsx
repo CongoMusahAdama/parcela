@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { SendStationsView } from "@/components/send/SendStationsView";
 import { AppShell } from "@/components/ui/AppShell";
+import { ensureOperatorBrandingLoaded } from "@/lib/operators";
 import { ensureStationsLoaded } from "@/lib/stations";
 import type { Station } from "@/types/parcel";
 
@@ -11,8 +12,8 @@ export default function SendStationsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    ensureStationsLoaded()
-      .then(setStations)
+    Promise.all([ensureStationsLoaded(), ensureOperatorBrandingLoaded()])
+      .then(([rows]) => setStations(rows))
       .finally(() => setLoading(false));
   }, []);
 

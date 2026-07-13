@@ -13,11 +13,13 @@ import { Input } from "@/components/ui/Input";
 import { getSendLocation, requestSendLocation } from "@/lib/sendLocation";
 import {
   filterStationsByOperator,
+  listStationOperatorCodes,
   searchStations,
   sortStationsAlphabetically,
   sortStationsByDistance,
 } from "@/lib/stations";
-import type { Operator, Station } from "@/types/parcel";
+import { listOperatorFilterOptions } from "@/lib/operators";
+import type { Station } from "@/types/parcel";
 import { cn } from "@/lib/utils";
 
 const StationMapView = dynamic(
@@ -29,7 +31,7 @@ type SendStationsViewProps = {
   stations: Station[];
 };
 
-type OperatorFilterValue = "all" | Operator;
+type OperatorFilterValue = "all" | string;
 type ViewMode = "list" | "map";
 
 export function SendStationsView({ stations: initialStations }: SendStationsViewProps) {
@@ -37,6 +39,11 @@ export function SendStationsView({ stations: initialStations }: SendStationsView
   const [operatorFilter, setOperatorFilter] = useState<OperatorFilterValue>("all");
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
+
+  const operatorFilters = useMemo(
+    () => listOperatorFilterOptions(listStationOperatorCodes(initialStations)),
+    [initialStations],
+  );
 
   useEffect(() => {
     setUserCoords(getSendLocation());
@@ -83,7 +90,7 @@ export function SendStationsView({ stations: initialStations }: SendStationsView
             Choose a station
           </h1>
           <p className="font-body mt-1.5 text-sm text-muted">
-            VIP & STC drop-off stations across Ghana
+            Parcela drop-off stations across Ghana
           </p>
         </div>
 
@@ -92,7 +99,11 @@ export function SendStationsView({ stations: initialStations }: SendStationsView
         </div>
 
         <div className="mt-5">
-          <OperatorFilter value={operatorFilter} onChange={setOperatorFilter} />
+          <OperatorFilter
+            value={operatorFilter}
+            onChange={setOperatorFilter}
+            options={operatorFilters}
+          />
         </div>
 
         <div className="mt-4">
@@ -135,7 +146,6 @@ export function SendStationsView({ stations: initialStations }: SendStationsView
             <p className="font-display text-sm font-semibold text-foreground">
               {stations.length} station{stations.length !== 1 ? "s" : ""} found
             </p>
-            <span className="font-body text-xs text-muted">VIP & STC only</span>
           </div>
         </div>
 

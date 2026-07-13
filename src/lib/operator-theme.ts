@@ -1,4 +1,5 @@
 import type { Operator } from "@/types/parcel";
+import { isSupportedOperator } from "@/lib/operators";
 
 /** Sender / receiver mobile brand green — shared with STC staff portal */
 export const PARCELA_MOBILE_GREEN = {
@@ -34,11 +35,14 @@ export const OPERATOR_STAFF_THEME: Record<Operator, OperatorStaffTheme> = {
   },
 };
 
-export function getOperatorStaffTheme(operator: Operator): OperatorStaffTheme {
-  return OPERATOR_STAFF_THEME[operator];
+export function getOperatorStaffTheme(operator: string): OperatorStaffTheme {
+  if (isSupportedOperator(operator)) {
+    return OPERATOR_STAFF_THEME[operator];
+  }
+  return PARCELA_MOBILE_GREEN;
 }
 
-export function operatorStaffThemeStyle(operator: Operator): React.CSSProperties {
+export function operatorStaffThemeStyle(operator: string): React.CSSProperties {
   const theme = getOperatorStaffTheme(operator);
   return {
     "--staff-accent": theme.accent,

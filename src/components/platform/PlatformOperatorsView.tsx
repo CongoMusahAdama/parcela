@@ -48,6 +48,7 @@ import {
   type SubscriptionPlan,
 } from "@/lib/subscription-term";
 import { ApiError } from "@/lib/api-client";
+import { resolveGhanaCityName } from "@/lib/ghana-cities";
 import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | PlatformOperatorStatus;
@@ -236,6 +237,8 @@ export function PlatformOperatorsView() {
     markConfigured,
     toggleSuspend,
     deleteOperator,
+    fetchOperatorTerminals,
+    addOperatorTerminals,
     patchOperatorLocal,
     recordConfigurationLetter,
     issueHqCredentials,
@@ -256,6 +259,14 @@ export function PlatformOperatorsView() {
   const [letterAgreementDate, setLetterAgreementDate] = useState("");
   const [suspendBusyId, setSuspendBusyId] = useState<string | null>(null);
   const [deleteBusyId, setDeleteBusyId] = useState<string | null>(null);
+  const [terminalsModalOperatorId, setTerminalsModalOperatorId] = useState<string | null>(null);
+  const [existingTerminals, setExistingTerminals] = useState<
+    Array<{ id: string; name: string; city: string; code: string }>
+  >([]);
+  const [pendingTerminals, setPendingTerminals] = useState<OnboardTerminal[]>([]);
+  const [manageTerminalDraft, setManageTerminalDraft] = useState({ name: "", city: "" });
+  const [terminalsLoading, setTerminalsLoading] = useState(false);
+  const [terminalsSaving, setTerminalsSaving] = useState(false);
 
   const isProtectedOperator = (code: string) => code === "VIP" || code === "STC";
 
@@ -297,6 +308,87 @@ export function PlatformOperatorsView() {
 
   const letterOperator =
     operators.find((row) => row.id === letterOperatorId) ?? null;
+
+  const terminalsModalOperator =
+    operators.find((row) => row.id === terminalsModalOperatorId) ?? null;
+
+  function closeTerminalsModal() {
+    setTerminalsModalOperatorId(null);
+    setExistingTerminals([]);
+    setPendingTerminals([]);
+    setManageTerminalDraft({ name: "", city: "" });
+  }
+
+  async function openTerminalsModal(row: PlatformOperatorRow) {
+    setTerminalsModalOperatorId(row.id);
+    setExistingTerminals([]);
+    setPendingTerminals([]);
+    setManageTerminalDraft({ name: "", city: "" });
+    setTerminalsLoading(true);
+    try {
+      const rows = await fetchOperatorTerminals(row.id);
+      setExistingTerminals(rows);
+    } catch (error) {
+      await showValidationAlert({
+        title: "Could not load terminals",
+        text: error instanceof ApiError ? error.message : "Try again in a moment.",
+      });
+      closeTerminalsModal();
+    } finally {
+      setTerminalsLoading(false);
+    }
+  }
+
+  function addPendingTerminal() {
+    const name = manageTerminalDraft.name.trim();
+    const city = resolveGhanaCityName(manageTerminalDraft.city);
+    if (!name || !city) {
+      void showValidationAlert({
+        title: "Terminal details required",
+        text: "Enter the terminal name and choose a city from the list before adding.",
+      });
+      return;
+    }
+
+    setPendingTerminals((current) => [
+      ...current,
+      { id: crypto.randomUUID(), name, city },
+    ]);
+    setManageTerminalDraft({ name: "", city: "" });
+  }
+
+  function removePendingTerminal(terminalId: string) {
+    setPendingTerminals((current) => current.filter((terminal) => terminal.id !== terminalId));
+  }
+
+  async function savePendingTerminals() {
+    if (!terminalsModalOperatorId || pendingTerminals.length === 0) return;
+    setTerminalsSaving(true);
+    try {
+      const result = await addOperatorTerminals(
+        terminalsModalOperatorId,
+        pendingTerminals.map((terminal) => ({ name: terminal.name, city: terminal.city })),
+      );
+      const rows = await fetchOperatorTerminals(terminalsModalOperatorId);
+      setExistingTerminals(rows);
+      setPendingTerminals([]);
+      patchOperatorLocal(terminalsModalOperatorId, {
+        stationCount: result.stationCount,
+        cityCount: result.cityCount,
+      });
+      await showSuccessAlert({
+        title: "Terminals added",
+        text: `${result.created} terminal${result.created === 1 ? "" : "s"} added for ${result.name}.${result.skipped > 0 ? ` ${result.skipped} could not be added.` : ""}`,
+      });
+    } catch (error) {
+      await showValidationAlert({
+        title: "Could not add terminals",
+        text: error instanceof ApiError ? error.message : "Try again in a moment.",
+      });
+    } finally {
+      setTerminalsSaving(false);
+    }
+  }
 
   function openConfigurationLetter(row: PlatformOperatorRow) {
     setLetterOperatorId(row.id);
@@ -566,7 +658,7 @@ export function PlatformOperatorsView() {
 
   async function addTerminal() {
     const name = terminalDraft.name.trim();
-    const city = terminalDraft.city.trim();
+    const city = resolveGhanaCityName(terminalDraft.city);
     if (!name || !city) {
       await showValidationAlert({
         title: "Terminal details required",
@@ -965,6 +1057,14 @@ export function PlatformOperatorsView() {
               </div>
 
               <div className="mt-6 grid gap-2">
+                <button
+                  type="button"
+                  onClick={() => void openTerminalsModal(selected)}
+                  className="font-display inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 hover:bg-stone-50"
+                >
+                  <MapPin className="size-3.5" />
+                  Add stations & terminals
+                </button>
                 {selected.status !== "configured" && selected.status !== "suspended" ? (
                   <button
                     type="button"
@@ -1825,6 +1925,200 @@ export function PlatformOperatorsView() {
                   {!saving ? <Check className="size-3.5" /> : null}
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {terminalsModalOperator ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 p-4 backdrop-blur-sm">
+          <div
+            className="platform-portal flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl"
+            style={
+              {
+                "--platform-orange": PLATFORM_THEME.orange,
+                "--platform-orange-dark": PLATFORM_THEME.orangeDark,
+                "--platform-orange-muted": PLATFORM_THEME.orangeMuted,
+                "--platform-orange-soft": PLATFORM_THEME.orangeSoft,
+              } as React.CSSProperties
+            }
+          >
+            <div
+              className="relative overflow-hidden px-5 py-5 text-white"
+              style={{ background: PLATFORM_THEME.headerGradient }}
+            >
+              <div className="relative flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <PlatformOperatorMark
+                    code={terminalsModalOperator.code}
+                    name={terminalsModalOperator.name}
+                    brandColor={terminalsModalOperator.brandColor}
+                    logoDataUrl={terminalsModalOperator.logoDataUrl}
+                    size="sm"
+                  />
+                  <div>
+                    <h2 className="font-display text-lg font-bold tracking-tight">
+                      Stations & terminals
+                    </h2>
+                    <p className="font-body mt-1 text-sm text-white/85">
+                      {terminalsModalOperator.name} — add more terminals anytime after onboarding.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeTerminalsModal}
+                  className="rounded-lg border border-white/20 bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+                  aria-label="Close"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-5">
+              <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
+                <p className="font-display text-[10px] font-bold uppercase tracking-wide text-stone-500">
+                  Current network
+                </p>
+                {terminalsLoading ? (
+                  <p className="font-body mt-2 flex items-center gap-2 text-sm text-stone-600">
+                    <Loader2 className="size-4 animate-spin" />
+                    Loading terminals…
+                  </p>
+                ) : existingTerminals.length === 0 ? (
+                  <p className="font-body mt-2 text-sm text-stone-600">
+                    No terminals yet — add the first one below.
+                  </p>
+                ) : (
+                  <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto">
+                    {existingTerminals.map((terminal, index) => (
+                      <li
+                        key={terminal.id}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-display truncate text-sm font-semibold text-stone-900">
+                            {index + 1}. {terminal.name}
+                          </p>
+                          <p className="font-body text-xs text-stone-500">{terminal.city}</p>
+                        </div>
+                        <span className="font-mono shrink-0 text-[10px] text-stone-400">
+                          {terminal.code}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="mt-5 rounded-xl border border-stone-200 bg-white p-4">
+                <p className="font-display text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                  Add new terminals
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                  <div>
+                    <label htmlFor="manage-terminal-name" className={labelClass}>
+                      Terminal name
+                    </label>
+                    <input
+                      id="manage-terminal-name"
+                      className={inputClass}
+                      value={manageTerminalDraft.name}
+                      onChange={(event) =>
+                        setManageTerminalDraft((current) => ({
+                          ...current,
+                          name: event.target.value,
+                        }))
+                      }
+                      placeholder="e.g. Circle Terminal"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="manage-terminal-city" className={labelClass}>
+                      City
+                    </label>
+                    <GhanaCitySelect
+                      id="manage-terminal-city"
+                      className={inputClass}
+                      value={manageTerminalDraft.city}
+                      onChange={(city) =>
+                        setManageTerminalDraft((current) => ({ ...current, city }))
+                      }
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={() => addPendingTerminal()}
+                      className="font-display inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white sm:w-auto"
+                      style={{ background: "var(--platform-orange)" }}
+                    >
+                      <Plus className="size-3.5" />
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                {pendingTerminals.length > 0 ? (
+                  <ul className="mt-4 space-y-2">
+                    {pendingTerminals.map((terminal, index) => (
+                      <li
+                        key={terminal.id}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-display truncate text-sm font-semibold text-stone-900">
+                            New {index + 1}. {terminal.name}
+                          </p>
+                          <p className="font-body text-xs text-stone-500">{terminal.city}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removePendingTerminal(terminal.id)}
+                          className="font-display shrink-0 text-[11px] font-bold uppercase tracking-wide text-stone-500 hover:text-red-600"
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="font-body mt-3 text-xs text-stone-500">
+                    Choose a city, enter each terminal name, then save to update this transport&apos;s
+                    network.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-t border-stone-100 bg-white px-5 py-4">
+              <button
+                type="button"
+                onClick={closeTerminalsModal}
+                className="font-display rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-700 transition-colors hover:bg-stone-50"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                disabled={terminalsSaving || pendingTerminals.length === 0}
+                onClick={() => void savePendingTerminals()}
+                className="font-display inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-md transition-opacity hover:opacity-95 disabled:opacity-60"
+                style={{ background: "var(--platform-orange)" }}
+              >
+                {terminalsSaving ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    Save {pendingTerminals.length > 0 ? `${pendingTerminals.length} ` : ""}
+                    terminal{pendingTerminals.length === 1 ? "" : "s"}
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

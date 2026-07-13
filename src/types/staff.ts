@@ -8,7 +8,7 @@ export type StaffAccount = {
   email: string;
   phone?: string;
   role: StaffRole;
-  operator: Operator;
+  operator: Operator | string;
   stationId: string;
   stationName: string;
   stationCode: string;

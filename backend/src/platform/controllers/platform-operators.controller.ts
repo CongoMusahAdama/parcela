@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import {
+  AddOperatorTerminalsDto,
   CreateTransportOperatorDto,
   RecordConfigurationLetterDto,
   SendRenewalReminderDto,
@@ -71,6 +72,20 @@ export class PlatformOperatorsController {
   @Post('operators/:operatorId/toggle-suspend')
   toggleSuspend(@Param('operatorId') operatorId: string, @Req() req: PlatformRequest) {
     return this.operators.toggleSuspend(operatorId, req.platform.admin.email);
+  }
+
+  @Get('operators/:operatorId/terminals')
+  listTerminals(@Param('operatorId') operatorId: string) {
+    return this.operators.listTerminals(operatorId);
+  }
+
+  @Post('operators/:operatorId/terminals')
+  addTerminals(
+    @Param('operatorId') operatorId: string,
+    @Body() dto: AddOperatorTerminalsDto,
+    @Req() req: PlatformRequest,
+  ) {
+    return this.operators.addTerminals(operatorId, dto, req.platform.admin.email);
   }
 
   @Post('operators/:operatorId/remove')

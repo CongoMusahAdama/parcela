@@ -17,7 +17,7 @@ import {
   sortStationsByDistance,
 } from "@/lib/stations";
 import { ensureOperatorBrandingLoaded, getOperatorLabel, listOperatorFilterOptions } from "@/lib/operators";
-import type { Operator, Station } from "@/types/parcel";
+import type { Station } from "@/types/parcel";
 import { colors, fonts, radii, spacing } from "@/constants/theme";
 
 type StationWithDistance = Station & { distanceKm?: number };
@@ -55,7 +55,7 @@ function StationRow({
 export default function SendStationsScreen() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [operator, setOperator] = useState<Operator | "all">("all");
+  const [operator, setOperator] = useState<string | "all">("all");
   const [userCoords, setUserCoords] = useState<UserCoords | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [baseStations, setBaseStations] = useState<Station[]>([]);
@@ -178,7 +178,6 @@ export default function SendStationsScreen() {
           <Text style={styles.countText}>
             {stations.length} station{stations.length !== 1 ? "s" : ""} found
           </Text>
-          <Text style={styles.countHint}>VIP & STC only</Text>
         </View>
       </View>
 

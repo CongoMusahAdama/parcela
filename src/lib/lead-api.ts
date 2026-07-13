@@ -54,6 +54,16 @@ export async function fetchLeadSession(): Promise<LeadSession> {
   return apiFetch<LeadSession>("/lead/session");
 }
 
+export async function changeLeadPinApi(body: {
+  currentPin: string;
+  newPin: string;
+}): Promise<{ ok: boolean; message: string; staff: LeadSession["staff"] }> {
+  return apiFetch("/lead/change-pin", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export async function fetchLeadSummary(demoToken?: string): Promise<BranchSummary> {
   if (shouldUseDemoLeadData(demoToken)) {
     if (!demoToken) throw new Error("Demo session required");

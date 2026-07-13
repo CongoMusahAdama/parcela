@@ -85,8 +85,7 @@ export function listOperatorFilterOptions(
     if (code.trim()) codes.add(code.trim().toUpperCase());
   });
   if (codes.size === 0) {
-    codes.add("VIP");
-    codes.add("STC");
+    return [];
   }
   return Array.from(codes)
     .sort((a, b) => getOperatorLabel(a).localeCompare(getOperatorLabel(b)))

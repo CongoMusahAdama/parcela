@@ -57,7 +57,7 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
     >
       <View style={styles.header}>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>VIP & STC only</Text>
+          <Text style={styles.badgeText}>Partner stations</Text>
         </View>
         <Logo size="lg" />
       </View>
@@ -78,7 +78,7 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
             { opacity: subtitleOpacity, transform: [{ translateY: subtitleY }] },
           ]}
         >
-          Send and track parcels through VIP &amp; STC bus stations.
+          Send and track parcels through partner transport stations across Ghana.
         </Animated.Text>
       </View>
 

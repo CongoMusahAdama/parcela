@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, MapPin, Search, X } from "lucide-react";
-import { operatorAccentColor, SUPPORTED_OPERATORS } from "@/lib/operators";
-import { filterStationsByOperator, searchStations } from "@/lib/stations";
-import type { Operator, Station } from "@/types/parcel";
+import { getOperatorLabel, listOperatorFilterOptions, operatorAccentColor } from "@/lib/operators";
+import { filterStationsByOperator, listStationOperatorCodes, searchStations } from "@/lib/stations";
+import type { Station } from "@/types/parcel";
 import { cn } from "@/lib/utils";
 
 type DestinationStationPickerProps = {
@@ -15,7 +15,7 @@ type DestinationStationPickerProps = {
 };
 
 function stationLabel(station: Station) {
-  return `${station.name}, ${station.city} · ${station.operator}`;
+  return `${station.name}, ${station.city} · ${getOperatorLabel(station.operator)}`;
 }
 
 export function DestinationStationPicker({
@@ -26,9 +26,14 @@ export function DestinationStationPicker({
 }: DestinationStationPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [operator, setOperator] = useState<Operator | "all">("all");
+  const [operator, setOperator] = useState<string | "all">("all");
   const searchRef = useRef<HTMLInputElement>(null);
   const selected = stations.find((s) => s.id === value);
+
+  const operatorFilters = useMemo(
+    () => listOperatorFilterOptions(listStationOperatorCodes(stations)),
+    [stations],
+  );
 
   const filtered = useMemo(() => {
     const byOperator = filterStationsByOperator(stations, operator);
@@ -140,19 +145,31 @@ export function DestinationStationPicker({
             </div>
 
             <div className="mb-3 flex flex-wrap gap-2">
-              {(["all", ...SUPPORTED_OPERATORS] as const).map((op) => (
+              <button
+                type="button"
+                onClick={() => setOperator("all")}
+                className={cn(
+                  "font-display rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors",
+                  operator === "all"
+                    ? "border-primary bg-primary text-white"
+                    : "border-border bg-surface text-muted hover:border-primary/30",
+                )}
+              >
+                All
+              </button>
+              {operatorFilters.map(({ code, label }) => (
                 <button
-                  key={op}
+                  key={code}
                   type="button"
-                  onClick={() => setOperator(op)}
+                  onClick={() => setOperator(code)}
                   className={cn(
                     "font-display rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors",
-                    operator === op
+                    operator === code
                       ? "border-primary bg-primary text-white"
-                      : "border-border bg-surface text-muted hover:border-primary/30"
+                      : "border-border bg-surface text-muted hover:border-primary/30",
                   )}
                 >
-                  {op === "all" ? "All" : op}
+                  {label}
                 </button>
               ))}
             </div>

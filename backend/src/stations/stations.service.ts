@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { GHANA_STATIONS } from '../data/ghana-stations';
-import { GHANA_CITIES, mergeGhanaCities } from '../data/ghana-cities';
+import { GHANA_CITIES, mergeGhanaCities, resolveGhanaCityName } from '../data/ghana-cities';
 import { haversineKm } from '../common/utils/geo.util';
 import { Station, StationDocument } from './schemas/station.schema';
 
@@ -69,32 +69,66 @@ export class StationsService {
     return stations.map((s) => this.toPublic(s));
   }
 
+  async findByOperatorCode(operatorCode: string) {
+    const code = operatorCode.trim().toUpperCase();
+    const stations = await this.stationModel
+      .find({ operator: code, active: true })
+      .sort({ city: 1, name: 1 })
+      .lean();
+    return stations.map((station) => this.toPublic(station));
+  }
+
+  async countNetworkByOperator(operatorCode: string) {
+    const code = operatorCode.trim().toUpperCase();
+    const stations = await this.stationModel.find({ operator: code, active: true }).select('city').lean();
+    const cities = new Set(
+      stations.map((station) => station.city.trim().toLowerCase()).filter(Boolean),
+    );
+    return {
+      stationCount: stations.length,
+      cityCount: cities.size,
+    };
+  }
+
   async seedOperatorTerminals(
     operatorCode: string,
     terminals: Array<{ name: string; city: string }>,
-  ): Promise<number> {
+  ): Promise<{ created: number; skipped: number }> {
     const code = operatorCode.trim().toUpperCase();
     let created = 0;
+    let skipped = 0;
+    const existingCount = await this.stationModel.countDocuments({ operator: code, active: true });
 
     for (const [index, terminal] of terminals.entries()) {
       const name = terminal.name.trim();
-      const city = terminal.city.trim();
-      if (!name || !city) continue;
+      const city = resolveGhanaCityName(terminal.city);
+      if (!name || !city) {
+        skipped += 1;
+        continue;
+      }
 
       const slug = name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '')
         .slice(0, 24);
-      const stationId = `${code.toLowerCase()}-${slug || `terminal-${index + 1}`}`;
-      const existing = await this.stationModel.findOne({ stationId }).lean();
-      if (existing) continue;
+      let stationId = `${code.toLowerCase()}-${slug || `terminal-${index + 1}`}`;
+      let suffix = 0;
+      while (await this.stationModel.findOne({ stationId }).lean()) {
+        suffix += 1;
+        stationId = `${code.toLowerCase()}-${slug || `terminal-${index + 1}`}-${suffix}`;
+        if (suffix > 50) {
+          skipped += 1;
+          break;
+        }
+      }
+      if (suffix > 50) continue;
 
       const coords = this.coordsForCity(city);
       await this.stationModel.create({
         stationId,
         name,
-        code: `${code}-${String(index + 1).padStart(2, '0')}`,
+        code: `${code}-${String(existingCount + created + 1).padStart(2, '0')}`,
         address: `${city}, Ghana`,
         city,
         hours: 'Mon–Sun 6:00–20:00',
@@ -109,7 +143,7 @@ export class StationsService {
     if (created > 0) {
       this.logger.log(`Seeded ${created} terminal(s) for operator ${code}`);
     }
-    return created;
+    return { created, skipped };
   }
 
   async removeByOperator(operatorCode: string): Promise<number> {

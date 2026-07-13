@@ -23,6 +23,7 @@ import { SmsService } from '../sms/sms.service';
 import { AdminAuthGuard } from './admin-auth.guard';
 import { AdminService } from './admin.service';
 import { AdminLoginDto } from './dto/admin-login.dto';
+import { ChangePasswordDto } from '../staff/dto/change-password.dto';
 import { CompleteSetupDto } from './dto/complete-setup.dto';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { OperatorLocksDto } from './dto/operator-locks.dto';
@@ -59,6 +60,27 @@ export class AdminController {
   logout(@Res({ passthrough: true }) res: Response) {
     clearAuthCookie(res, ADMIN_AUTH_COOKIE);
     return { ok: true };
+  }
+
+  @Post('change-password')
+  @UseGuards(AdminAuthGuard)
+  changePassword(@Body() dto: ChangePasswordDto, @Req() req: AdminRequest) {
+    const staff = this.staffAuth.changePasswordForAccount(
+      req.admin.staff.id,
+      dto.currentPassword,
+      dto.newPassword,
+    );
+    return {
+      ok: true,
+      admin: {
+        id: staff.id,
+        email: staff.email,
+        displayName: staff.displayName,
+        operator: staff.operator,
+        mustChangePassword: staff.mustChangePassword ?? false,
+      },
+      message: 'Password updated. You can continue in the HQ portal.',
+    };
   }
 
   @Get('session')

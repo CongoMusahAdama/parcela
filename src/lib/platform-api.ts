@@ -64,6 +64,18 @@ export type OperatorTerminalInput = {
   city: string;
 };
 
+export type OperatorTerminalRow = {
+  id: string;
+  name: string;
+  city: string;
+  code: string;
+};
+
+export type AddOperatorTerminalsResult = PlatformOperatorRow & {
+  created: number;
+  skipped: number;
+};
+
 export type CreateTransportOperatorPayload = {
   name: string;
   code: string;
@@ -128,6 +140,22 @@ export async function markOperatorConfiguredApi(operatorId: string): Promise<Pla
 export async function toggleOperatorSuspendApi(operatorId: string): Promise<PlatformOperatorRow> {
   return apiFetch<PlatformOperatorRow>(`/platform/operators/${operatorId}/toggle-suspend`, {
     method: "POST",
+  });
+}
+
+export async function fetchOperatorTerminalsApi(
+  operatorId: string,
+): Promise<OperatorTerminalRow[]> {
+  return apiFetch<OperatorTerminalRow[]>(`/platform/operators/${operatorId}/terminals`);
+}
+
+export async function addOperatorTerminalsApi(
+  operatorId: string,
+  terminals: OperatorTerminalInput[],
+): Promise<AddOperatorTerminalsResult> {
+  return apiFetch<AddOperatorTerminalsResult>(`/platform/operators/${operatorId}/terminals`, {
+    method: "POST",
+    body: JSON.stringify({ terminals }),
   });
 }
 

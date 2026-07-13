@@ -21,6 +21,7 @@ import {
 } from '../common/utils/auth-cookie.util';
 import { ParcelsService } from '../parcels/parcels.service';
 import { SmsService } from '../sms/sms.service';
+import { ChangePinDto } from './dto/change-pin.dto';
 import { CreateTeamMemberDto } from './dto/create-team-member.dto';
 import { LeadLoginDto } from './dto/lead-login.dto';
 import { UpdateTeamMemberDto } from './dto/update-team-member.dto';
@@ -69,6 +70,21 @@ export class LeadController {
   logout(@Res({ passthrough: true }) res: Response) {
     clearAuthCookie(res, LEAD_AUTH_COOKIE);
     return { ok: true };
+  }
+
+  @Post('change-pin')
+  @UseGuards(LeadAuthGuard)
+  changePin(@Body() dto: ChangePinDto, @Req() req: LeadRequest) {
+    const staff = this.staffAuth.changePinForAccount(
+      req.lead.staff.id,
+      dto.currentPin,
+      dto.newPin,
+    );
+    return {
+      ok: true,
+      staff,
+      message: 'PIN updated. You can continue in the branch lead portal.',
+    };
   }
 
   @Get('session')

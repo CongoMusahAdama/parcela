@@ -451,21 +451,18 @@ export function AdminDashboardView() {
             aria-hidden
           />
           {admin.operatorConfigured && admin.operator && (
-            <div className="pointer-events-none absolute right-4 top-4 z-10 sm:right-5 sm:top-5">
-              <div className="rounded-xl bg-white/95 p-2 shadow-sm">
-                <PlatformOperatorMark
-                  code={admin.operator}
-                  name={operatorDisplayName}
-                  brandColor={admin.brandColor ?? "#fd7e14"}
-                  logoDataUrl={admin.logoDataUrl}
-                  size="md"
-                  className="size-12 rounded-lg border-0 bg-transparent p-0"
-                />
-              </div>
+            <div className="pointer-events-none absolute right-4 top-4 z-10 sm:right-6 sm:top-5">
+              <PlatformOperatorMark
+                code={admin.operator}
+                name={operatorDisplayName}
+                brandColor={admin.brandColor ?? "#fd7e14"}
+                logoDataUrl={admin.logoDataUrl}
+                size="hero"
+              />
             </div>
           )}
 
-          <div className="relative z-10 flex min-h-[120px] flex-col justify-between">
+          <div className="relative z-10 flex min-h-[120px] flex-col justify-between pr-[10.5rem] sm:pr-[11.5rem]">
             <div className="flex items-start justify-between gap-4">
               <StaffLiveClock
                 compact
@@ -480,8 +477,8 @@ export function AdminDashboardView() {
                   <span className="font-semibold text-white/95">Complete transport setup</span>
                 </Link>
               ) : (
-                <p className="hidden max-w-[10rem] text-right text-[10px] leading-snug text-white/70 sm:block sm:text-[11px]">
-                  {overview.operatorLabel}
+                <p className="max-w-[10rem] text-right text-[10px] font-semibold uppercase leading-snug tracking-[0.12em] text-white/80 sm:max-w-[12rem] sm:text-[11px]">
+                  {operatorDisplayName}
                 </p>
               )}
             </div>
@@ -492,7 +489,7 @@ export function AdminDashboardView() {
               </h1>
               {admin.operatorConfigured && (
                 <p className="font-body mt-1 text-xs text-white/80 sm:hidden">
-                  {overview.operatorLabel} · Network overview
+                  {operatorDisplayName} · Network overview
                 </p>
               )}
             </div>

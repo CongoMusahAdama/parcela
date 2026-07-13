@@ -12,7 +12,7 @@ import {
   signInAdmin,
   validateAdminLoginInput,
 } from "@/lib/admin-auth";
-import { showValidationAlert } from "@/lib/sweetalert";
+import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 
 export function AdminLoginView() {
   const router = useRouter();
@@ -39,13 +39,23 @@ export function AdminLoginView() {
 
     setIsSubmitting(true);
     try {
-      await signInAdmin(email, password);
+      const session = await signInAdmin(email, password);
+      if (session.admin.mustChangePassword) {
+        await showSuccessAlert({
+          title: "Temporary password active",
+          text: "Set a new password before using the HQ portal.",
+          confirmText: "Set password",
+        });
+        router.replace("/admin/change-password");
+        return;
+      }
       router.replace("/admin/dashboard");
     } catch (error) {
       await showValidationAlert({
         title: "Unable to sign in",
         text: getAdminLoginFailureMessage(error),
       });
+    } finally {
       setIsSubmitting(false);
     }
   }

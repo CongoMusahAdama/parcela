@@ -89,6 +89,7 @@ export class AdminService {
         operatorName: branding?.operatorName ?? null,
         brandColor: branding?.brandColor ?? null,
         logoDataUrl: branding?.logoDataUrl ?? null,
+        mustChangePassword: staff.mustChangePassword ?? false,
       },
       signedInAt,
     };
@@ -326,6 +327,7 @@ export class AdminService {
       existingLead.email = email;
       existingLead.pin = ensureHashedSecret(tempPin);
       existingLead.active = true;
+      existingLead.mustChangePassword = true;
       existingLead.stationName = station.name;
       existingLead.stationCode = station.code;
       existingLead.location = location;
@@ -353,6 +355,7 @@ export class AdminService {
       stationName: station.name,
       stationCode: station.code,
       location,
+      mustChangePassword: true,
     };
 
     const lead = this.staffAuth.addAccount(record);
@@ -400,6 +403,7 @@ export class AdminService {
 
     const tempPin = this.generateTempPin();
     lead.pin = ensureHashedSecret(tempPin);
+    lead.mustChangePassword = true;
     this.staffAuth.saveAccount(lead);
 
     const smsSent = await this.sendLeadCredentialsSms(lead, tempPin, lead.stationName);

@@ -108,6 +108,16 @@ export async function fetchAdminSession(): Promise<AdminSession> {
   return apiFetch<AdminSession>("/admin/session");
 }
 
+export async function changeAdminPasswordApi(body: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<{ ok: boolean; message: string; admin: AdminSession["admin"] }> {
+  return apiFetch("/admin/change-password", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export async function completeAdminSetupApi(operator: string): Promise<{
   ok: boolean;
   settings: OperatorControlsPayload;

@@ -20,6 +20,16 @@ export function LeadLoginView() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function completeSignIn(session: LeadSession) {
+    if (session.staff.mustChangePassword) {
+      await showSuccessAlert({
+        title: "Temporary PIN active",
+        text: "Please set a new PIN before using the branch lead portal.",
+        confirmText: "Set PIN",
+      });
+      router.push("/lead/change-pin");
+      return;
+    }
+
     await showSuccessAlert({
       title: "Signed in successfully",
       text: `Welcome, ${session.staff.displayName}. You are leading ${session.staff.stationName}.`,

@@ -252,7 +252,9 @@ export class StaffAuthService implements OnModuleInit {
   ): StaffPublicAccount {
     const match = this.accounts.find(
       (account) =>
-        account.id === accountId && account.active && account.role === 'station_staff',
+        account.id === accountId &&
+        account.active &&
+        (account.role === 'station_staff' || account.role === 'operator_admin'),
     );
 
     if (!match || !verifySecret(currentPassword, match.password)) {
@@ -268,6 +270,31 @@ export class StaffAuthService implements OnModuleInit {
     }
 
     match.password = ensureHashedSecret(newPassword);
+    match.mustChangePassword = false;
+    void this.persistAccount(match);
+    return toPublicAccount(match);
+  }
+
+  changePinForAccount(accountId: string, currentPin: string, newPin: string): StaffPublicAccount {
+    const match = this.accounts.find(
+      (account) =>
+        account.id === accountId && account.active && account.role === 'station_lead',
+    );
+
+    if (!match || !verifySecret(currentPin.trim(), match.pin)) {
+      throw new UnauthorizedException('Current PIN is incorrect');
+    }
+
+    const trimmedNewPin = newPin.trim();
+    if (trimmedNewPin.length < 4) {
+      throw new BadRequestException('PIN must be at least 4 characters');
+    }
+
+    if (verifySecret(trimmedNewPin, match.pin)) {
+      throw new BadRequestException('Choose a PIN different from your current one');
+    }
+
+    match.pin = ensureHashedSecret(trimmedNewPin);
     match.mustChangePassword = false;
     void this.persistAccount(match);
     return toPublicAccount(match);

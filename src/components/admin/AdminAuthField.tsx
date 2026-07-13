@@ -14,6 +14,7 @@ type AdminAuthFieldProps = {
   icon: LucideIcon;
   autoComplete?: string;
   trailing?: React.ReactNode;
+  readOnly?: boolean;
 };
 
 export const AdminAuthField = forwardRef<HTMLInputElement, AdminAuthFieldProps>(
@@ -28,6 +29,7 @@ export const AdminAuthField = forwardRef<HTMLInputElement, AdminAuthFieldProps>(
       icon: Icon,
       autoComplete,
       trailing,
+      readOnly = false,
     },
     ref
   ) {
@@ -49,9 +51,11 @@ export const AdminAuthField = forwardRef<HTMLInputElement, AdminAuthFieldProps>(
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             autoComplete={autoComplete}
+            readOnly={readOnly}
             className={cn(
               "font-body w-full min-h-[52px] rounded-xl border border-white/10 bg-white py-3 pl-12 text-base text-[#0f172a] shadow-sm outline-none transition-all placeholder:text-[#94a3b8] focus:border-white/40 focus:shadow-[0_0_0_3px_rgb(255_255_255/0.12)]",
-              trailing ? "pr-16" : "pr-4"
+              trailing ? "pr-16" : "pr-4",
+              readOnly && "cursor-default opacity-90",
             )}
           />
           {trailing ? (

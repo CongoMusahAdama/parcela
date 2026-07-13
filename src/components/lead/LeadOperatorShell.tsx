@@ -105,6 +105,10 @@ export function LeadOperatorShell({ children }: { children: React.ReactNode }) {
         router.replace("/lead/login");
         return;
       }
+      if (current.staff.mustChangePassword) {
+        router.replace("/lead/change-pin");
+        return;
+      }
       setSession(current);
       setReady(true);
     })();

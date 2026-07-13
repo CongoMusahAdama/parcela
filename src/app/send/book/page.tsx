@@ -11,7 +11,6 @@ import { ParcelForm, type ParcelFormData, type ParcelFormHandle } from "@/compon
 import { SendWizardSteps } from "@/components/send/SendWizardSteps";
 import { StationIcon } from "@/components/send/StationIcon";
 import { submitBooking } from "@/lib/booking";
-import { assertSupportedOperator } from "@/lib/operators";
 import { loadOperatorLockStatus } from "@/lib/operator-controls";
 import { showValidationAlert } from "@/lib/sweetalert";
 import type { Station } from "@/types/parcel";
@@ -43,13 +42,6 @@ function BookPageForm({ originStation }: { originStation: NonNullable<ReturnType
   async function handleSubmit(data: ParcelFormData) {
     const destination = getStationById(data.destinationStationId);
     if (!destination) return;
-
-    try {
-      assertSupportedOperator(originStation.operator);
-      assertSupportedOperator(destination.operator);
-    } catch {
-      return;
-    }
 
     try {
       const locks = await loadOperatorLockStatus(originStation.operator);

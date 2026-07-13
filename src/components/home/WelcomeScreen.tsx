@@ -17,7 +17,7 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
     <AppShell variant="hero" className="flex min-h-[calc(100dvh-2.5rem)] flex-col !pb-6">
       <header className="mb-4 flex items-center justify-between gap-3">
         <span className="font-body shrink-0 rounded-full bg-surface/80 px-3 py-1 text-xs font-medium text-muted shadow-sm">
-          VIP &amp; STC only
+          Partner transport stations
         </span>
         <Logo size="lg" className="shrink-0" />
       </header>
@@ -28,7 +28,7 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
           Welcome to Parcela
         </h1>
         <p className="font-body animate-fade-up-delay-1 mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted opacity-0">
-          Send and track parcels through VIP &amp; STC bus stations.
+          Send and track parcels through partner transport stations across Ghana.
         </p>
       </section>
 

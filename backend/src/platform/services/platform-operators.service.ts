@@ -7,6 +7,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { generateTemporaryPassword } from '../../common/utils/temp-password.util';
+import { resolveGhanaCityName } from '../../data/ghana-cities';
 import { normalizeOperatorLogoDataUrl } from '../../common/utils/operator-logo.util';
 import { resolveSubscriptionTerm } from '../../common/utils/subscription-term.util';
 import { isProvisionedPhone } from '../../common/utils/phone.util';
@@ -15,6 +16,7 @@ import { StationsService } from '../../stations/stations.service';
 import { StaffAuthService } from '../../staff/staff-auth.service';
 import type { StaffAccountRecord } from '../../staff/data/staff-accounts';
 import {
+  AddOperatorTerminalsDto,
   CreateTransportOperatorDto,
   RecordConfigurationLetterDto,
   SendRenewalReminderDto,
@@ -68,7 +70,7 @@ export class PlatformOperatorsService {
     const terminals = (dto.terminals ?? [])
       .map((terminal) => ({
         name: terminal.name.trim(),
-        city: terminal.city.trim(),
+        city: resolveGhanaCityName(terminal.city),
       }))
       .filter((terminal) => terminal.name && terminal.city);
     const stationCount =
@@ -257,6 +259,54 @@ export class PlatformOperatorsService {
     });
 
     return this.withHqCount(doc.toObject());
+  }
+
+  async listTerminals(operatorId: string) {
+    const doc = await this.operatorModel.findOne({ operatorId }).lean();
+    if (!doc) throw new NotFoundException('Transport operator not found');
+    const terminals = await this.stations.findByOperatorCode(doc.code);
+    return terminals.map((terminal) => ({
+      id: terminal.id,
+      name: terminal.name,
+      city: terminal.city,
+      code: terminal.code,
+    }));
+  }
+
+  async addTerminals(operatorId: string, dto: AddOperatorTerminalsDto, actorEmail: string) {
+    const doc = await this.operatorModel.findOne({ operatorId });
+    if (!doc) throw new NotFoundException('Transport operator not found');
+
+    const terminals = dto.terminals
+      .map((terminal) => ({
+        name: terminal.name.trim(),
+        city: resolveGhanaCityName(terminal.city),
+      }))
+      .filter((terminal) => terminal.name && terminal.city);
+
+    if (terminals.length === 0) {
+      throw new ConflictException('Add at least one terminal with a name and city');
+    }
+
+    const { created, skipped } = await this.stations.seedOperatorTerminals(doc.code, terminals);
+    if (created === 0) {
+      throw new ConflictException('No new terminals were added — check names and cities');
+    }
+
+    const counts = await this.stations.countNetworkByOperator(doc.code);
+    doc.stationCount = counts.stationCount;
+    doc.cityCount = counts.cityCount;
+    await doc.save();
+
+    await this.audit.record({
+      action: 'Terminals added',
+      detail: `${doc.name} (${doc.code}) — ${created} added${skipped > 0 ? `, ${skipped} skipped` : ''}`,
+      actorEmail,
+      operatorCode: doc.code,
+    });
+
+    const row = await this.withHqCount(doc.toObject());
+    return { ...row, created, skipped };
   }
 
   async remove(operatorId: string, actorEmail: string) {

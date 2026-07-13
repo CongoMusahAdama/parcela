@@ -1,6 +1,7 @@
 import type { Operator } from "@/types/parcel";
+import { fetchPublicOperatorBrandingApi, type PublicOperatorBranding } from "@/lib/api";
 
-/** Only these operators are supported in Parcela for now. */
+/** Legacy built-in operators with bundled assets. */
 export const SUPPORTED_OPERATORS = ["VIP", "STC"] as const satisfies readonly Operator[];
 
 export const OPERATOR_LABELS: Record<Operator, string> = {
@@ -81,4 +82,57 @@ export function assertSupportedOperator(value: string): Operator {
     throw new Error(`Operator "${value}" is not supported. Only VIP and STC are accepted.`);
   }
   return value;
+}
+
+export function getOperatorConfirmedIllustration(operator: string): string {
+  if (isSupportedOperator(operator)) {
+    return OPERATOR_CONFIRMED_ILLUSTRATION[operator];
+  }
+  return OPERATOR_CONFIRMED_ILLUSTRATION.STC;
+}
+
+let brandingByCode: Map<string, PublicOperatorBranding> | null = null;
+let brandingLoadPromise: Promise<Map<string, PublicOperatorBranding>> | null = null;
+
+function toBrandingMap(rows: PublicOperatorBranding[]) {
+  return new Map(rows.map((row) => [row.code.toUpperCase(), row]));
+}
+
+export async function ensureOperatorBrandingLoaded(): Promise<Map<string, PublicOperatorBranding>> {
+  if (brandingByCode) return brandingByCode;
+  if (!brandingLoadPromise) {
+    brandingLoadPromise = (async () => {
+      try {
+        const rows = await fetchPublicOperatorBrandingApi();
+        brandingByCode = toBrandingMap(rows);
+      } catch {
+        brandingByCode = new Map();
+      }
+      return brandingByCode;
+    })().finally(() => {
+      brandingLoadPromise = null;
+    });
+  }
+  return brandingLoadPromise;
+}
+
+export function getOperatorBranding(code: string): PublicOperatorBranding | undefined {
+  return brandingByCode?.get(code.trim().toUpperCase());
+}
+
+export function getOperatorLabel(code: string): string {
+  return getOperatorBranding(code)?.name ?? code.trim().toUpperCase();
+}
+
+export function listOperatorFilterOptions(
+  stationOperators: readonly string[] = [],
+): Array<{ code: string; label: string }> {
+  const codes = new Set<string>();
+  brandingByCode?.forEach((_row, code) => codes.add(code));
+  stationOperators.forEach((code) => {
+    if (code.trim()) codes.add(code.trim().toUpperCase());
+  });
+  return Array.from(codes)
+    .sort((a, b) => getOperatorLabel(a).localeCompare(getOperatorLabel(b)))
+    .map((code) => ({ code, label: getOperatorLabel(code) }));
 }

@@ -17,8 +17,10 @@ import type {
   PlatformUserRow,
 } from "@/lib/platform-demo";
 import {
+  addOperatorTerminalsApi,
   createTransportOperatorApi,
   deleteTransportOperatorApi,
+  fetchOperatorTerminalsApi,
   fetchPlatformWorkspace,
   issueHqCredentialsApi,
   markOperatorConfiguredApi,
@@ -29,8 +31,11 @@ import {
   toggleOperatorSuspendApi,
   updateHqAdminApi,
   updatePlatformUserApi,
+  type AddOperatorTerminalsResult,
   type CreateTransportOperatorPayload,
   type DeleteTransportOperatorResult,
+  type OperatorTerminalInput,
+  type OperatorTerminalRow,
   type PlatformCredentialResult,
   type PlatformWorkspace,
   type PlatformWorkspaceStats,
@@ -50,6 +55,11 @@ type PlatformDataContextValue = {
   markConfigured: (operatorId: string) => Promise<PlatformOperatorRow>;
   toggleSuspend: (operatorId: string) => Promise<PlatformOperatorRow>;
   deleteOperator: (operatorId: string) => Promise<DeleteTransportOperatorResult>;
+  fetchOperatorTerminals: (operatorId: string) => Promise<OperatorTerminalRow[]>;
+  addOperatorTerminals: (
+    operatorId: string,
+    terminals: OperatorTerminalInput[],
+  ) => Promise<AddOperatorTerminalsResult>;
   sendRenewalReminder: (
     operatorId: string,
     reminder: PlatformRenewalReminder,
@@ -186,6 +196,14 @@ export function PlatformDataProvider({ children }: { children: ReactNode }) {
         setOperators((prev) => prev.filter((row) => row.id !== operatorId));
         void refresh({ silent: true });
         return result;
+      },
+      async fetchOperatorTerminals(operatorId) {
+        return fetchOperatorTerminalsApi(operatorId);
+      },
+      async addOperatorTerminals(operatorId, terminals) {
+        const row = await addOperatorTerminalsApi(operatorId, terminals);
+        afterMutation(row);
+        return row;
       },
       async sendRenewalReminder(operatorId, reminder) {
         const row = await sendRenewalReminderApi(operatorId, reminder);

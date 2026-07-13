@@ -158,6 +158,13 @@ export class UpdateTransportOperatorDto {
   subscriptionAmountGhs?: number;
 }
 
+export class AddOperatorTerminalsDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OperatorTerminalDto)
+  terminals!: OperatorTerminalDto[];
+}
+
 export class SendRenewalReminderDto {
   @IsIn(['30d', '14d', '7d', '1d'])
   reminder!: '30d' | '14d' | '7d' | '1d';

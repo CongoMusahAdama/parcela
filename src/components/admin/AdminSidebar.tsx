@@ -241,15 +241,15 @@ export function AdminSidebar({ mobileOpen, onMobileClose, onSignOut }: AdminSide
         <div className="admin-sidebar-operator mt-4">
           <div className="relative overflow-hidden rounded-2xl border border-white/25 bg-gradient-to-br from-white/16 via-white/10 to-white/5 p-3.5 shadow-[0_10px_28px_-10px_rgb(0_0_0_/_0.45)] backdrop-blur-md">
             <div className="relative flex items-center gap-3">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-sm">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-sm">
                 {admin.operatorConfigured && admin.operator ? (
                   <PlatformOperatorMark
                     code={operatorCode}
                     name={operatorLabel}
                     brandColor={admin.brandColor ?? "#fd7e14"}
                     logoDataUrl={admin.logoDataUrl}
-                    size="md"
-                    className="size-full rounded-lg border-0 bg-transparent p-0"
+                    size="lg"
+                    className="size-full rounded-lg border-0 bg-transparent p-0 shadow-none"
                   />
                 ) : (
                   <Network className="size-5 text-[#0f172a]" strokeWidth={2.25} />

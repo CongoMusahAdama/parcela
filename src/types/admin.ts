@@ -13,6 +13,8 @@ export type AdminAccount = {
   brandColor?: string | null;
   /** Uploaded operator logo from platform onboarding. */
   logoDataUrl?: string | null;
+  /** True when a temporary password must be replaced before using HQ. */
+  mustChangePassword?: boolean;
 };
 
 export type AdminSession = {
