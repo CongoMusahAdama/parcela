@@ -246,7 +246,7 @@ export function AdminSidebar({ mobileOpen, onMobileClose, onSignOut }: AdminSide
                   <PlatformOperatorMark
                     code={operatorCode}
                     name={operatorLabel}
-                    brandColor={admin.brandColor ?? "#fd7e14"}
+                    brandColor="#334155"
                     logoDataUrl={admin.logoDataUrl}
                     size="lg"
                     className="size-full rounded-lg border-0 bg-transparent p-0 shadow-none"

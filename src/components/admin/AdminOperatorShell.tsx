@@ -43,8 +43,8 @@ function AdminShellContent({
 
   return (
     <div
-      className="staff-operator-themed admin-portal flex h-dvh overflow-hidden bg-[#eef2f6]"
-      style={adminThemeStyle(admin.operator, admin.operatorConfigured, admin.brandColor)}
+      className="admin-portal flex h-dvh overflow-hidden bg-white"
+      style={adminThemeStyle()}
       data-operator={admin.operator ?? "neutral"}
     >
       <AdminSidebar
@@ -169,7 +169,7 @@ export function AdminOperatorShell({ children }: { children: React.ReactNode }) 
       : "Loading HQ portal";
 
     return (
-      <div className="admin-portal flex h-dvh overflow-hidden bg-[#eef2f6] font-body">
+      <div className="admin-portal flex h-dvh overflow-hidden bg-white font-body">
         <div className="hidden w-[320px] shrink-0 bg-slate-300/25 lg:block" aria-hidden />
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <StaffPreloader message={bootMessage} />

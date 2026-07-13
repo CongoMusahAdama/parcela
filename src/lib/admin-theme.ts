@@ -1,8 +1,4 @@
-import { brandColorStaffTheme } from "@/lib/brand-color-theme";
-import { isLegacyOperator } from "@/lib/admin-operator";
-import { operatorStaffThemeStyle } from "@/lib/operator-theme";
-
-/** Neutral HQ theme before transport setup is complete. */
+/** Neutral HQ command-center theme — not tied to onboarded operator brand colours. */
 export const ADMIN_NEUTRAL_THEME = {
   accent: "#334155",
   accentDark: "#0f172a",
@@ -11,30 +7,8 @@ export const ADMIN_NEUTRAL_THEME = {
   headerGradient: "linear-gradient(155deg, #0f172a 0%, #1e293b 48%, #0f172a 100%)",
 } as const;
 
-function brandThemeStyle(brandColor: string): React.CSSProperties {
-  const theme = brandColorStaffTheme(brandColor);
-  return {
-    "--staff-accent": theme.accent,
-    "--staff-accent-dark": theme.accentDark,
-    "--staff-accent-light": theme.accentLight,
-    "--staff-accent-muted": theme.accentMuted,
-    "--staff-header-gradient": theme.headerGradient,
-  } as React.CSSProperties;
-}
-
-export function adminThemeStyle(
-  operator: string | null,
-  operatorConfigured: boolean,
-  brandColor?: string | null,
-): React.CSSProperties {
-  if (operatorConfigured && brandColor) {
-    return brandThemeStyle(brandColor);
-  }
-
-  if (operatorConfigured && operator && isLegacyOperator(operator)) {
-    return operatorStaffThemeStyle(operator);
-  }
-
+/** HQ portal always uses the neutral dark sidebar + slate accents (custom branding is for lead/staff only). */
+export function adminThemeStyle(): React.CSSProperties {
   return {
     "--staff-accent": ADMIN_NEUTRAL_THEME.accent,
     "--staff-accent-dark": ADMIN_NEUTRAL_THEME.accentDark,

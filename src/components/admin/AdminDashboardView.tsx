@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -21,9 +20,8 @@ import { PlatformOperatorMark } from "@/components/platform/PlatformOperatorMark
 import { AdminDemoWalkthrough } from "@/components/admin/AdminDemoWalkthrough";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
 import { fetchAdminOverview, fetchAdminParcels } from "@/lib/admin-api";
-import { getAdminOperator, getAdminOperatorName, isLegacyOperator } from "@/lib/admin-operator";
-import { brandColorHeroGradient } from "@/lib/brand-color-theme";
-import { OPERATOR_WELCOME_BG } from "@/lib/operators";
+import { getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
+import { ADMIN_NEUTRAL_THEME } from "@/lib/admin-theme";
 import { StaffLiveClock } from "@/components/staff/StaffLiveClock";
 import type {
   AdminBranchSnapshot,
@@ -292,7 +290,6 @@ export function AdminDashboardView() {
   const { admin } = useAdminSession();
   const operator = getAdminOperator(admin);
   const operatorDisplayName = getAdminOperatorName(admin);
-  const customBranding = Boolean(admin.brandColor || admin.logoDataUrl || admin.operatorName);
   const [overview, setOverview] = useState<AdminNetworkOverview>(EMPTY_OVERVIEW);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -411,42 +408,17 @@ export function AdminDashboardView() {
         {loading && (
           <p className="font-body mb-4 text-sm text-muted">Loading live network data…</p>
         )}
-        <section
-          className={cn(
-            "relative min-h-[148px] overflow-hidden rounded-2xl px-5 py-4 text-white shadow-md sm:min-h-[156px] sm:px-6 sm:py-5",
-            !admin.operatorConfigured && "bg-[#0f172a]",
-          )}
-        >
-          {admin.operatorConfigured &&
-            admin.operator &&
-            !customBranding &&
-            isLegacyOperator(admin.operator) && (
-            <div className="absolute inset-y-0 right-0 flex w-[72%] items-start justify-end sm:w-[68%] lg:w-[62%]">
-              <Image
-                src={OPERATOR_WELCOME_BG[admin.operator]}
-                alt=""
-                width={1200}
-                height={800}
-                priority
-                className="h-full w-auto max-w-none object-contain object-right-top"
-              />
-            </div>
-          )}
-          {customBranding && admin.brandColor && (
-            <div
-              className="absolute inset-0 opacity-95"
-              style={{ background: brandColorHeroGradient(admin.brandColor) }}
-              aria-hidden
-            />
-          )}
+        <section className="relative min-h-[148px] overflow-hidden rounded-2xl bg-[#0f172a] px-5 py-4 text-white shadow-md sm:min-h-[156px] sm:px-6 sm:py-5">
           <div
             className="absolute inset-0"
+            style={{ background: ADMIN_NEUTRAL_THEME.headerGradient }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 opacity-90"
             style={{
-              background: admin.operatorConfigured
-                ? customBranding
-                  ? "linear-gradient(90deg, rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.45) 38%, rgb(0 0 0 / 0.12) 62%, transparent 100%), linear-gradient(180deg, transparent 60%, rgb(0 0 0 / 0.22) 100%)"
-                  : "linear-gradient(90deg, rgb(0 0 0 / 0.82) 0%, rgb(0 0 0 / 0.5) 32%, rgb(0 0 0 / 0.08) 58%, transparent 100%), linear-gradient(180deg, transparent 60%, rgb(0 0 0 / 0.2) 100%)"
-                : "linear-gradient(155deg, #0f172a 0%, #1e293b 48%, #0f172a 100%)",
+              background:
+                "linear-gradient(90deg, rgb(0 0 0 / 0.35) 0%, rgb(0 0 0 / 0.12) 45%, transparent 100%)",
             }}
             aria-hidden
           />
@@ -455,7 +427,7 @@ export function AdminDashboardView() {
               <PlatformOperatorMark
                 code={admin.operator}
                 name={operatorDisplayName}
-                brandColor={admin.brandColor ?? "#fd7e14"}
+                brandColor="#334155"
                 logoDataUrl={admin.logoDataUrl}
                 size="hero"
               />
