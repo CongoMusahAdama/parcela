@@ -73,6 +73,11 @@ export class PlatformOperatorsController {
     return this.operators.toggleSuspend(operatorId, req.platform.admin.email);
   }
 
+  @Post('operators/:operatorId/remove')
+  removeOperator(@Param('operatorId') operatorId: string, @Req() req: PlatformRequest) {
+    return this.operators.remove(operatorId, req.platform.admin.email);
+  }
+
   @Delete('operators/:operatorId')
   deleteOperator(@Param('operatorId') operatorId: string, @Req() req: PlatformRequest) {
     return this.operators.remove(operatorId, req.platform.admin.email);

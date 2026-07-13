@@ -134,9 +134,12 @@ export async function toggleOperatorSuspendApi(operatorId: string): Promise<Plat
 export async function deleteTransportOperatorApi(
   operatorId: string,
 ): Promise<DeleteTransportOperatorResult> {
-  return apiFetch<DeleteTransportOperatorResult>(`/platform/operators/${operatorId}`, {
-    method: "DELETE",
-  });
+  return apiFetch<DeleteTransportOperatorResult>(
+    `/platform/operators/${operatorId}/remove`,
+    {
+      method: "POST",
+    },
+  );
 }
 
 export async function sendRenewalReminderApi(
