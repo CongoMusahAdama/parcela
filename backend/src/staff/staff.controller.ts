@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -22,6 +23,7 @@ import { ParcelsService } from '../parcels/parcels.service';
 import { SmsService } from '../sms/sms.service';
 import { ConfirmBusArrivalDto } from './dto/confirm-bus-arrival.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { LoginBrandQueryDto } from './dto/login-brand-query.dto';
 import { ReleaseParcelDto } from './dto/release-parcel.dto';
 import { StaffLoginDto } from './dto/staff-login.dto';
 import { VerifyLogDto } from './dto/verify-log.dto';
@@ -85,6 +87,12 @@ export class StaffController {
 
     clearAuthCookie(res, STAFF_AUTH_COOKIE);
     return { ok: true };
+  }
+
+  @Get('login-brand')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  lookupLoginBrand(@Query() query: LoginBrandQueryDto) {
+    return this.staffAuth.lookupLoginBrand(query.phone, query.portal);
   }
 
   @Post('change-password')

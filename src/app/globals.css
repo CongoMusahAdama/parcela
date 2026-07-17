@@ -695,3 +695,85 @@
     display: none !important;
   }
 }
+
+@layer utilities {
+  /* Mobile: soft diagonal at bottom of hero */
+  .auth-hero-panel {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 97%);
+  }
+
+  .auth-hero-bg {
+    object-position: 72% 48%;
+  }
+
+  @media (min-width: 1024px) {
+    .auth-hero-bg {
+      object-position: 78% 52%;
+    }
+
+    /* Hero + form share one full-height diagonal (58vw → 48.7vw) */
+    .auth-hero-panel {
+      clip-path: polygon(0 0, 100% 0, 84% 100%, 0 100%);
+    }
+
+    .auth-form-panel {
+      left: 48.72vw;
+      clip-path: polygon(18.1% 0, 100% 0, 100% 100%, 0 100%);
+    }
+  }
+
+  .auth-enter-brand {
+    animation: auth-enter-brand 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .auth-enter-copy {
+    animation: auth-enter-copy 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+  }
+
+  .auth-enter-form-inner {
+    animation: auth-enter-form 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.16s both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .auth-enter-brand,
+    .auth-enter-copy,
+    .auth-enter-form-inner {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@keyframes auth-enter-brand {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes auth-enter-copy {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes auth-enter-form {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

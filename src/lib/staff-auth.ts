@@ -1,7 +1,7 @@
 import type { StaffSession } from "@/types/staff";
 import { clearOperatorOfflineState } from "@/lib/operator-offline-state";
 import { ApiError } from "@/lib/api-client";
-import { fetchStaffSession, staffLoginApi, staffLogoutApi } from "@/lib/staff-api";
+import { fetchStaffSession, staffLoginApi, staffLogoutApi, changeStaffPasswordApi } from "@/lib/staff-api";
 
 const SESSION_KEY = "parcela_staff_session";
 
@@ -27,6 +27,55 @@ export function validateStaffLoginInput(phone: string, password: string): string
   }
 
   return null;
+}
+
+export function validateStaffChangePasswordInput(
+  phone: string,
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+  options?: { requirePhone?: boolean },
+): string | null {
+  if (options?.requirePhone !== false) {
+    const loginError = validateStaffLoginInput(phone, currentPassword);
+    if (loginError && loginError !== "Enter your password.") {
+      return loginError;
+    }
+    if (!currentPassword) {
+      return "Enter your current or temporary password.";
+    }
+  } else if (!currentPassword) {
+    return "Enter your current or temporary password.";
+  }
+
+  if (newPassword.length < 8) {
+    return "Choose a new password with at least 8 characters.";
+  }
+
+  if (newPassword !== confirmPassword) {
+    return "New password and confirmation do not match.";
+  }
+
+  if (newPassword === currentPassword) {
+    return "Choose a password different from your current one.";
+  }
+
+  return null;
+}
+
+export async function changeStaffPasswordWithCredentials(
+  phone: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<StaffSession> {
+  const session = await signInStaff(phone.trim(), currentPassword);
+  await changeStaffPasswordApi({ currentPassword, newPassword });
+  const updated: StaffSession = {
+    ...session,
+    staff: { ...session.staff, mustChangePassword: false },
+  };
+  saveStaffSession(updated);
+  return updated;
 }
 
 export function getStaffLoginFailureMessage(error: unknown): string {

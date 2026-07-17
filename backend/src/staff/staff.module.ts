@@ -8,13 +8,20 @@ import { LeadAuthGuard } from './lead-auth.guard';
 import { LeadController } from './lead.controller';
 import { LeadTeamService } from './lead-team.service';
 import { StaffAccount, StaffAccountSchema } from './schemas/staff-account.schema';
+import {
+  TransportOperator,
+  TransportOperatorSchema,
+} from '../platform/schemas/transport-operator.schema';
 import { StaffAuthGuard } from './staff-auth.guard';
 import { StaffAuthService } from './staff-auth.service';
 import { StaffController } from './staff.controller';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: StaffAccount.name, schema: StaffAccountSchema }]),
+    MongooseModule.forFeature([
+      { name: StaffAccount.name, schema: StaffAccountSchema },
+      { name: TransportOperator.name, schema: TransportOperatorSchema },
+    ]),
     ParcelsModule,
     SmsModule,
     StationsModule,

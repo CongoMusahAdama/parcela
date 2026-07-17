@@ -35,6 +35,7 @@ import {
   updateTransportOperatorApi,
   type AddOperatorTerminalsResult,
   type CreateTransportOperatorPayload,
+  type CreateTransportOperatorResult,
   type UpdateTransportOperatorPayload,
   type DeleteHqAdminResult,
   type DeleteTransportOperatorResult,
@@ -55,7 +56,7 @@ type PlatformDataContextValue = {
   refreshing: boolean;
   error: string | null;
   refresh: (options?: { silent?: boolean }) => Promise<void>;
-  createOperator: (payload: CreateTransportOperatorPayload) => Promise<PlatformOperatorRow & { hqSmsSent?: boolean }>;
+  createOperator: (payload: CreateTransportOperatorPayload) => Promise<CreateTransportOperatorResult>;
   updateOperator: (
     operatorId: string,
     payload: UpdateTransportOperatorPayload,

@@ -16,8 +16,6 @@ type BeforeInstallPromptEvent = Event & {
 
 type OperatorInstallBannerProps = {
   className?: string;
-  /** login = above sign-in card; portal = top-right after sign-in */
-  placement?: "login" | "portal";
 };
 
 declare global {
@@ -26,14 +24,10 @@ declare global {
   }
 }
 
-export function OperatorInstallBanner({
-  className,
-  placement = "portal",
-}: OperatorInstallBannerProps) {
+export function OperatorInstallBanner({ className }: OperatorInstallBannerProps) {
   const [visible, setVisible] = useState(false);
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [installing, setInstalling] = useState(false);
-  const isLogin = placement === "login";
 
   useEffect(() => {
     if (isOperatorPwaInstalled() || wasOperatorInstallDismissed()) return;
@@ -70,48 +64,6 @@ export function OperatorInstallBanner({
   function handleDismiss() {
     dismissOperatorInstallPrompt();
     setVisible(false);
-  }
-
-  if (isLogin) {
-    return (
-      <div
-        className={cn("w-full animate-fade-up", className)}
-        role="region"
-        aria-label="Install Parcela Counter"
-      >
-        <div className="flex flex-col gap-2 rounded-xl border border-[#0D9488]/25 bg-white px-3 py-3 shadow-sm ring-1 ring-[#0D9488]/10 sm:flex-row sm:items-center sm:gap-3 sm:px-4">
-          <div className="flex min-w-0 flex-1 items-start gap-2.5 sm:items-center">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#0D9488] text-white">
-              <Download className="size-4" strokeWidth={2.25} />
-            </span>
-            <div className="min-w-0">
-              <p className="font-display text-sm font-bold text-foreground">Install Parcela Counter</p>
-              <p className="font-body text-xs text-muted">
-                Pin to your taskbar — full screen, works offline.
-              </p>
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-2 sm:pl-2">
-            <button
-              type="button"
-              onClick={() => void handleInstall()}
-              disabled={installing}
-              className="font-display flex-1 rounded-lg bg-[#0D9488] px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-white disabled:opacity-60 sm:flex-none"
-            >
-              {installing ? "Installing…" : "Install"}
-            </button>
-            <button
-              type="button"
-              onClick={handleDismiss}
-              className="rounded-lg p-1.5 text-muted hover:bg-slate-100 hover:text-foreground"
-              aria-label="Dismiss"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (

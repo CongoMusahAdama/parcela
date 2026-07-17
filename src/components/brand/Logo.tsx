@@ -2,7 +2,7 @@ import { BRAND_LOGO_SRC, BRAND_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 type LogoProps = {
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "hero";
   showWordmark?: boolean;
   className?: string;
   imageClassName?: string;
@@ -13,6 +13,7 @@ const imageSizes = {
   md: "h-11 w-auto",
   lg: "h-14 w-auto",
   xl: "h-16 w-auto",
+  hero: "h-[4.75rem] w-auto sm:h-[5.5rem] lg:h-24",
 };
 
 const textSizes = {
@@ -20,6 +21,7 @@ const textSizes = {
   md: "text-xs",
   lg: "text-sm",
   xl: "text-base",
+  hero: "text-xl sm:text-2xl lg:text-[1.65rem]",
 };
 
 export function Logo({

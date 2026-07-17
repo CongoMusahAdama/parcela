@@ -88,7 +88,7 @@ function StaffShellContent({
           {children}
         </div>
       </div>
-      <OperatorInstallBanner placement="portal" />
+      <OperatorInstallBanner />
     </div>
   );
 }

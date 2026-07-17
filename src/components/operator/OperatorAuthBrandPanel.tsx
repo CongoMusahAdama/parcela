@@ -1,7 +1,4 @@
-import { AuthIllustration } from "@/components/auth/AuthIllustration";
-import { Logo } from "@/components/brand/Logo";
 import { BarChart3, Bus, MapPin, PackageCheck, ShieldCheck, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { OperatorLoginMode } from "@/lib/operator-auth";
 
 const STAFF_FEATURES = [
@@ -25,53 +22,36 @@ export function OperatorAuthBrandPanel({ mode }: OperatorAuthBrandPanelProps) {
   const features = isStaff ? STAFF_FEATURES : LEAD_FEATURES;
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-[#0D9488] px-6 py-6 text-white lg:px-8 lg:py-7">
-      <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden
-        style={{
-          background:
-            "radial-gradient(ellipse 90% 70% at 50% 0%, rgb(255 255 255 / 0.1), transparent 55%), linear-gradient(180deg, transparent 65%, rgb(15 118 110 / 0.3) 100%)",
-        }}
-      />
+    <div className="text-white">
+      <p className="font-body text-xs font-medium tracking-wide text-white/85">
+        {isStaff ? "Station staff portal" : "Branch lead portal"}
+      </p>
 
-      <div className="relative shrink-0">
-        <Logo size="lg" className="[&_span]:text-white [&_img]:brightness-0 [&_img]:invert" />
-        <p className="font-body mt-1.5 text-xs font-medium tracking-wide text-white/80">
-          {isStaff ? "Station staff portal" : "Branch lead portal"}
-        </p>
-      </div>
+      <h1 className="font-display mt-3 max-w-lg text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-[2.1rem] lg:text-[2.35rem]">
+        {isStaff ? "Run your terminal." : "Lead your branch."}
+        <br />
+        {isStaff ? "Parcel ops made simple." : "Staff & parcels in one place."}
+      </h1>
+      <p className="font-body mt-3 max-w-md text-sm leading-relaxed text-white/90 sm:mt-4 sm:text-base">
+        {isStaff
+          ? "Verify drop-offs, log parcels in transit, and release collections with pickup codes."
+          : "Oversee counter staff, monitor branch parcels, and keep daily operations on track."}
+      </p>
 
-      <div className="relative my-4 flex flex-1 flex-col items-center justify-center bg-transparent">
-        <AuthIllustration
-          priority
-          className="w-full max-w-[280px] [&_img]:max-h-[200px]"
-        />
-
-        <h1 className="font-display mt-4 max-w-[280px] text-center text-xl font-bold leading-snug tracking-tight text-white">
-          {isStaff ? "Station parcel operations" : "Your branch, one dashboard"}
-        </h1>
-        <p className="font-body mt-1.5 max-w-[260px] text-center text-sm leading-relaxed text-white/85">
-          {isStaff
-            ? "Verify, log, and release parcels at your terminal."
-            : "Oversee staff, parcels, and daily ops at your branch."}
-        </p>
-      </div>
-
-      <ul className="relative shrink-0 space-y-2">
+      <ul className="mt-6 space-y-3 lg:mt-8">
         {features.map(({ icon: Icon, text }) => (
-          <li key={text} className="flex items-center gap-2.5">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white">
-              <Icon className="size-3.5" strokeWidth={2.25} />
+          <li key={text} className="flex items-center gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-white/10 text-white backdrop-blur-sm">
+              <Icon className="size-4" strokeWidth={2.25} />
             </span>
-            <p className={cn("font-display text-sm font-semibold text-white")}>{text}</p>
+            <p className="font-display text-sm font-semibold text-white sm:text-base">{text}</p>
           </li>
         ))}
       </ul>
 
-      <p className="relative mt-4 flex items-center gap-2 text-[11px] text-white/65">
+      <p className="font-body mt-6 flex items-center gap-2 text-xs text-white/75 lg:mt-8">
         <MapPin className="size-3.5 shrink-0" />
-        {isStaff ? "Staff sign-in · Your station data" : "Branch lead sign-in · Your branch data"}
+        {isStaff ? "Counter sign-in · Your station data" : "Branch lead sign-in · Your branch data"}
       </p>
     </div>
   );

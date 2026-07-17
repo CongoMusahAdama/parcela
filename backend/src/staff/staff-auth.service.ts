@@ -21,7 +21,20 @@ import {
   type StaffAccountRecord,
 } from './data/staff-accounts';
 import { normalizeGhanaPhone } from '../common/utils/phone.util';
+import {
+  TransportOperator,
+  TransportOperatorDocument,
+} from '../platform/schemas/transport-operator.schema';
 import { StaffAccount, StaffAccountDocument } from './schemas/staff-account.schema';
+
+export type LoginOperatorBrand = {
+  found: boolean;
+  operatorCode?: string;
+  operatorName?: string;
+  brandColor?: string;
+  logoDataUrl?: string | null;
+  stationName?: string | null;
+};
 
 export function toPublicAccount(account: StaffAccountRecord): StaffPublicAccount {
   const { password: _password, pin: _pin, ...staff } = account;
@@ -58,6 +71,8 @@ export class StaffAuthService implements OnModuleInit {
     private readonly config: ConfigService,
     private readonly sessionRevocation: SessionRevocationService,
     @InjectModel(StaffAccount.name) private readonly staffModel: Model<StaffAccountDocument>,
+    @InjectModel(TransportOperator.name)
+    private readonly operatorModel: Model<TransportOperatorDocument>,
   ) {}
 
   async onModuleInit() {
@@ -163,8 +178,23 @@ export class StaffAuthService implements OnModuleInit {
         normalizeGhanaPhone(account.phone) === normalizedPhone,
     );
 
-    if (!match || !verifySecret(password, match.password)) {
+    if (!match) {
       throw new UnauthorizedException('Invalid phone or password');
+    }
+
+    const passwordMatches = verifySecret(password, match.password);
+    const devFirstLogin =
+      useLocalDevCredentials() &&
+      password.trim() === LOCAL_DEV_HQ_PASSWORD &&
+      match.mustChangePassword;
+
+    if (!passwordMatches && !devFirstLogin) {
+      throw new UnauthorizedException('Invalid phone or password');
+    }
+
+    if (devFirstLogin && !passwordMatches) {
+      match.password = ensureHashedSecret(LOCAL_DEV_HQ_PASSWORD);
+      void this.persistAccount(match);
     }
 
     const staff = toPublicAccount(match);
@@ -509,5 +539,55 @@ export class StaffAuthService implements OnModuleInit {
     }
 
     return payload;
+  }
+
+  async lookupLoginBrand(
+    phone: string,
+    portal: 'staff' | 'lead' | 'hq',
+  ): Promise<LoginOperatorBrand> {
+    const normalizedPhone = normalizeGhanaPhone(phone.trim());
+    if (!normalizedPhone || normalizedPhone.replace(/\D/g, '').length < 9) {
+      return { found: false };
+    }
+
+    const roleByPortal = {
+      staff: 'station_staff',
+      lead: 'station_lead',
+      hq: 'operator_admin',
+    } as const;
+
+    const role = roleByPortal[portal];
+    const account = this.accounts.find(
+      (entry) =>
+        entry.active &&
+        entry.role === role &&
+        normalizeGhanaPhone(entry.phone) === normalizedPhone,
+    );
+
+    if (!account) {
+      return { found: false };
+    }
+
+    const operatorCode = account.operator.trim().toUpperCase();
+    const operatorDoc = await this.operatorModel
+      .findOne({ code: operatorCode })
+      .select('code name brandColor logoDataUrl status suspended')
+      .lean();
+
+    if (
+      operatorDoc &&
+      (operatorDoc.status === 'suspended' || operatorDoc.suspended === true)
+    ) {
+      return { found: false };
+    }
+
+    return {
+      found: true,
+      operatorCode,
+      operatorName: operatorDoc?.name ?? operatorCode,
+      brandColor: operatorDoc?.brandColor ?? '#0D9488',
+      logoDataUrl: operatorDoc?.logoDataUrl ?? null,
+      stationName: portal === 'hq' ? null : account.stationName,
+    };
   }
 }
