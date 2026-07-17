@@ -169,7 +169,7 @@ export function LeadTeamView() {
 
   return (
     <>
-      <main className="px-3 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-8">
+      <main className="operator-portal-main">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <div>
             <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">Manage staff</h1>
@@ -210,7 +210,7 @@ export function LeadTeamView() {
           </div>
         ) : (
           <>
-            <div className="space-y-2.5 md:hidden">
+            <div className="space-y-2.5 xl:hidden">
               {paginatedTeam.map((member) => {
                 const inactive = member.active === false;
                 return (
@@ -290,9 +290,9 @@ export function LeadTeamView() {
               />
             </div>
 
-            <div className="hidden overflow-hidden rounded-2xl border border-border bg-surface shadow-sm md:block">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[980px] border-collapse text-left">
+            <div className="hidden overflow-hidden rounded-2xl border border-border bg-surface shadow-sm xl:block">
+            <div className="operator-portal-table-scroll overflow-x-auto">
+              <table className="w-full min-w-[720px] border-collapse text-left xl:min-w-[980px]">
                 <thead>
                   <tr className="border-b border-border text-[11px] uppercase tracking-wider">
                     {["Staff", "Terminal", "Phone", "Account", "Online", "Last login", "Last logout", "Today", "Actions"].map(

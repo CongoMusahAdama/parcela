@@ -17,6 +17,8 @@ export type StaffAccountRecord = {
   mustChangePassword?: boolean;
   lastLoginAt?: string;
   lastLogoutAt?: string;
+  /** Tokens issued before this timestamp (ms) are rejected. */
+  tokensValidAfterMs?: number;
 };
 
 type SeedAccountTemplate = Omit<StaffAccountRecord, 'password' | 'pin'> & {

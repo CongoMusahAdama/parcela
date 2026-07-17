@@ -148,7 +148,7 @@ export function StaffArrivedView() {
   }
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <StaffPageHeader
         title="Arrived"
         description="Destination staff receive parcels from the driver by bus number, confirm the bus has arrived, then recipients can be alerted."

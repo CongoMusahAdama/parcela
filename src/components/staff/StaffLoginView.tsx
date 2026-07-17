@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Lock, Mail } from "lucide-react";
+import { Lock, Phone } from "lucide-react";
 import { AuthIllustration } from "@/components/auth/AuthIllustration";
 import { Logo } from "@/components/brand/Logo";
 import { StaffAuthBrandPanel } from "@/components/staff/StaffAuthBrandPanel";
@@ -20,7 +20,7 @@ import type { StaffSession } from "@/types/staff";
 
 export function StaffLoginView() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +47,7 @@ export function StaffLoginView() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    const validationMessage = validateStaffLoginInput(email, password);
+    const validationMessage = validateStaffLoginInput(phone, password);
     if (validationMessage) {
       await showValidationAlert({
         title: "Check your sign-in details",
@@ -58,7 +58,7 @@ export function StaffLoginView() {
 
     setIsSubmitting(true);
     try {
-      const session = await signInStaff(email.trim(), password);
+      const session = await signInStaff(phone.trim(), password);
       await completeSignIn(session);
     } catch (err) {
       await showValidationAlert({
@@ -82,7 +82,6 @@ export function StaffLoginView() {
             <div className="mb-4 flex justify-center bg-transparent lg:hidden">
               <AuthIllustration
                 priority
-                variant="light"
                 className="w-full max-w-[200px] [&_img]:max-h-[120px]"
               />
             </div>
@@ -100,14 +99,14 @@ export function StaffLoginView() {
 
             <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
               <StaffAuthField
-                id="staff-email"
-                label="Staff email"
-                type="email"
-                value={email}
-                onChange={setEmail}
-                placeholder="you@parcela.staff"
-                icon={Mail}
-                autoComplete="username"
+                id="staff-phone"
+                label="Phone number"
+                type="tel"
+                value={phone}
+                onChange={setPhone}
+                placeholder="0531878243"
+                icon={Phone}
+                autoComplete="tel"
               />
 
               <StaffAuthField

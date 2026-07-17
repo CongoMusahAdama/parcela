@@ -130,7 +130,7 @@ export class SmsService {
     const message = [
       intro,
       `Sign in: ${loginUrl}`,
-      `Email: ${params.email}`,
+      `Phone: ${params.phone}`,
       `Temporary code: ${params.temporaryPassword}`,
       'Sign in with this code, then set a new password from the portal.',
       'Do not share this code with anyone.',
@@ -145,7 +145,7 @@ export class SmsService {
     stationName: string;
     reason: 'new' | 'reset';
   }) {
-    const loginUrl = this.portalUrl('/lead/login');
+    const loginUrl = this.portalUrl('/portal/login');
     const intro =
       params.reason === 'reset'
         ? `Parcela branch lead login reset for ${params.stationName}.`
@@ -168,7 +168,7 @@ export class SmsService {
     stationName: string;
     reason: 'new' | 'reset';
   }) {
-    const loginUrl = this.portalUrl('/staff/login');
+    const loginUrl = this.portalUrl('/portal/login');
     const intro =
       params.reason === 'reset'
         ? `Parcela counter staff login reset for ${params.stationName}.`
@@ -176,7 +176,7 @@ export class SmsService {
     const message = [
       intro,
       `Sign in: ${loginUrl}`,
-      `Email: ${params.email}`,
+      `Phone: ${params.phone}`,
       `Temporary code: ${params.temporaryPassword}`,
       'Sign in with this code, then set a new password from the portal.',
     ].join(' ');

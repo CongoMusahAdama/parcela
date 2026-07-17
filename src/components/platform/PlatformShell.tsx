@@ -64,10 +64,10 @@ function PlatformShellContent({
           </div>
         </header>
 
-        <div className="relative min-h-0 flex-1 overflow-y-auto">
-          <div className="relative min-h-full">
-            <PlatformMainView />
-          </div>
+        <div className="operator-portal-scroll relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="relative flex h-full min-h-0 flex-col">
+          <PlatformMainView />
+        </div>
         </div>
       </div>
     </div>

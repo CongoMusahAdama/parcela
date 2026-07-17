@@ -11,6 +11,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
   const isWebPortal =
     pathname?.startsWith("/staff") ||
     pathname?.startsWith("/lead") ||
+    pathname?.startsWith("/portal") ||
     pathname?.startsWith("/admin") ||
     pathname?.startsWith("/platform");
 

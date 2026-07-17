@@ -17,10 +17,9 @@ import {
 } from "lucide-react";
 import { PlatformOperatorMark } from "@/components/platform/PlatformOperatorMark";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
+import { useAdminData } from "@/components/admin/AdminDataContext";
 import {
   createAdminStationApi,
-  fetchAdminLeads,
-  fetchAdminStations,
   sendAdminLeadCredentialsApi,
   type AdminLeadAccount,
 } from "@/lib/admin-api";
@@ -32,6 +31,7 @@ import {
   getAdminOperatorName,
 } from "@/lib/admin-operator";
 import { showConfirmDialog, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
+import { adminLeadCredentialSuccessText } from "@/lib/admin-credentials-message";
 import { cn } from "@/lib/utils";
 
 type SetupBranch = {
@@ -242,98 +242,58 @@ export function AdminSetupView() {
   const operator = getAdminOperator(admin);
   const companyName = getAdminOperatorName(admin);
   const accentColor = getAdminAccentColor(admin);
+  const { stations, leads, coreLoading: branchesLoading, error: branchesError, refreshCore } =
+    useAdminData();
 
   const [step, setStep] = useState(1);
-  const [branches, setBranches] = useState<SetupBranch[]>([]);
   const [coverage, setCoverage] = useState<StationLeadCoverage[]>([]);
-  const [branchesLoading, setBranchesLoading] = useState(true);
-  const [branchesError, setBranchesError] = useState<string | null>(null);
+  const [hiddenBranchIds, setHiddenBranchIds] = useState<Set<string>>(() => new Set());
   const [branchDraft, setBranchDraft] = useState({ name: "", city: "" });
   const [branchSaving, setBranchSaving] = useState(false);
   const [activating, setActivating] = useState(false);
-  const [branchReloadKey, setBranchReloadKey] = useState(0);
 
-  const refreshCoverage = useCallback(async (branchList: SetupBranch[]) => {
-    try {
-      const leads = await fetchAdminLeads();
-      setCoverage((prev) => buildCoverage(branchList, leads, prev));
-    } catch {
-      // Keep previous coverage if refresh fails.
-    }
-  }, []);
+  const branches = useMemo<SetupBranch[]>(
+    () =>
+      stations
+        .filter((station) => !hiddenBranchIds.has(station.id))
+        .map((station) => ({
+          id: station.id,
+          name: station.name,
+          code: station.code,
+          city: station.city,
+        }))
+        .sort(
+          (a, b) =>
+            a.city.localeCompare(b.city) ||
+            a.name.localeCompare(b.name) ||
+            a.code.localeCompare(b.code),
+        ),
+    [stations, hiddenBranchIds],
+  );
+
+  const refreshCoverage = useCallback(
+    (branchList: SetupBranch[], leadList: AdminLeadAccount[]) => {
+      setCoverage((prev) => buildCoverage(branchList, leadList, prev));
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!operator) {
-      setBranches([]);
       setCoverage([]);
-      setBranchesLoading(false);
       return;
     }
-
-    let cancelled = false;
-
-    async function loadOperatorBranches() {
-      setBranchesLoading(true);
-      setBranchesError(null);
-      try {
-        const stations = await fetchAdminStations();
-        if (cancelled) return;
-        const nextBranches = stations
-          .map((station) => ({
-            id: station.id,
-            name: station.name,
-            code: station.code,
-            city: station.city,
-          }))
-          .sort(
-            (a, b) =>
-              a.city.localeCompare(b.city) ||
-              a.name.localeCompare(b.name) ||
-              a.code.localeCompare(b.code),
-          );
-        setBranches(nextBranches);
-        try {
-          const leads = await fetchAdminLeads();
-          if (cancelled) return;
-          setCoverage(buildCoverage(nextBranches, leads));
-        } catch {
-          if (!cancelled) setCoverage(buildCoverage(nextBranches, []));
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setBranches([]);
-          setCoverage([]);
-          setBranchesError(
-            error instanceof Error
-              ? error.message
-              : `Unable to load ${operator} branches from the system.`,
-          );
-        }
-      } finally {
-        if (!cancelled) setBranchesLoading(false);
-      }
-    }
-
-    void loadOperatorBranches();
-    return () => {
-      cancelled = true;
-    };
-  }, [operator, branchReloadKey]);
+    refreshCoverage(branches, leads);
+  }, [operator, branches, leads, refreshCoverage]);
 
   useEffect(() => {
     if (step !== 2 && step !== 3) return;
-    void refreshCoverage(branches);
-  }, [step, branches, refreshCoverage]);
-
-  useEffect(() => {
     const onFocus = () => {
-      if (step === 2 || step === 3) {
-        void refreshCoverage(branches);
-      }
+      void refreshCore({ silent: true });
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [step, branches, refreshCoverage]);
+  }, [step, refreshCore]);
 
   const isConfigured = admin.operatorConfigured;
   const leadsAssigned = coverage.filter((c) => c.lead).length;
@@ -361,25 +321,9 @@ export function AdminSetupView() {
 
     setBranchSaving(true);
     try {
-      const station = await createAdminStationApi({ name, city });
-      setBranches((prev) => {
-        const next = [
-          ...prev,
-          {
-            id: station.id,
-            name: station.name,
-            code: station.code,
-            city: station.city,
-          },
-        ];
-        return next.sort(
-          (a, b) =>
-            a.city.localeCompare(b.city) ||
-            a.name.localeCompare(b.name) ||
-            a.code.localeCompare(b.code),
-        );
-      });
+      await createAdminStationApi({ name, city });
       setBranchDraft({ name: "", city: "" });
+      await refreshCore({ silent: true });
     } catch (error) {
       await showValidationAlert({
         title: "Could not add branch",
@@ -391,7 +335,7 @@ export function AdminSetupView() {
   };
 
   const removeBranch = (id: string) => {
-    setBranches((prev) => prev.filter((b) => b.id !== id));
+    setHiddenBranchIds((prev) => new Set(prev).add(id));
   };
 
   const sendLeadLogin = async (row: StationLeadCoverage) => {
@@ -422,9 +366,11 @@ export function AdminSetupView() {
       );
       await showSuccessAlert({
         title: result.smsSent ? "Login sent" : "Credentials generated",
-        text: result.smsSent
-          ? `Login sent to ${row.lead.leadPhone}. Branch: ${row.stationName} (${row.stationCode}).`
-          : `A new PIN was generated for ${row.lead.leadName}, but SMS may be unavailable. Resend when messaging is online.`,
+        text: adminLeadCredentialSuccessText(
+          result,
+          row.lead.leadPhone,
+          `${row.stationName} (${row.stationCode})`,
+        ),
         confirmButtonColor: accentColor,
       });
     } catch (error) {
@@ -476,7 +422,7 @@ export function AdminSetupView() {
 
   if (!operator) {
     return (
-      <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main className="operator-portal-main">
         <h1 className="font-display text-xl font-bold text-foreground">Admin setup</h1>
         <p className="font-body mt-2 text-sm text-muted">
           Your HQ account is not linked to a transport yet. Contact Parcela platform support.
@@ -486,7 +432,7 @@ export function AdminSetupView() {
   }
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div>
         <div>
           <h1 className="font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl">
@@ -596,7 +542,7 @@ export function AdminSetupView() {
           })}
         </ol>
 
-        <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="mt-4 grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex max-h-[min(70vh,640px)] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
           <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
           {step === 1 && (
@@ -665,7 +611,7 @@ export function AdminSetupView() {
                 </p>
               ) : branches.length > 0 ? (
                 <div className="mt-5 overflow-hidden rounded-xl border border-border">
-                  <table className="min-w-full text-left text-sm">
+                  <table className="min-w-[720px] w-full text-left text-sm">
                     <thead className="bg-[#0b1220] text-[11px] uppercase tracking-wider text-white">
                       <tr>
                         <th className="w-10 px-3 py-2.5 font-semibold">#</th>
@@ -707,7 +653,7 @@ export function AdminSetupView() {
                   {branchesError ? (
                     <button
                       type="button"
-                      onClick={() => setBranchReloadKey((key) => key + 1)}
+                      onClick={() => void refreshCore({ silent: true })}
                       className="font-display mt-3 inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3.5 py-2 text-[10px] font-bold uppercase tracking-wide text-foreground"
                     >
                       <RefreshCw className="size-3.5" />
@@ -743,9 +689,7 @@ export function AdminSetupView() {
                   </Link>
                   <button
                     type="button"
-                    onClick={() =>
-                      void refreshCoverage(branches)
-                    }
+                    onClick={() => void refreshCore({ silent: true })}
                     className="font-display inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3.5 py-2 text-[10px] font-bold uppercase tracking-wide text-foreground hover:border-[var(--staff-accent)]"
                   >
                     <RefreshCw className="size-3.5" />
@@ -879,7 +823,7 @@ export function AdminSetupView() {
               </div>
 
               <div className="mt-4 overflow-hidden rounded-xl border border-border">
-                <table className="min-w-full text-left text-sm">
+                <table className="min-w-[720px] w-full text-left text-sm">
                   <thead className="bg-[#0b1220] text-[11px] uppercase tracking-wider text-white">
                     <tr>
                       <th className="w-10 px-3 py-2.5 font-semibold">#</th>
@@ -974,7 +918,7 @@ export function AdminSetupView() {
           </div>
         </div>
 
-        <aside className="rounded-2xl border border-border bg-surface p-5 shadow-sm lg:sticky lg:top-4">
+        <aside className="rounded-2xl border border-border bg-surface p-5 shadow-sm xl:sticky xl:top-4">
           <SetupPieChart {...getSetupPieBreakdown(step, branches, coverage)} />
         </aside>
         </div>

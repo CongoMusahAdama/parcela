@@ -13,7 +13,7 @@ export function StaffFeaturePage({ href }: StaffFeaturePageProps) {
   if (!item) notFound();
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <StaffPlaceholderView
         title={item.label}
         description={item.description}

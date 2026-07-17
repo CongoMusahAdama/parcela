@@ -115,6 +115,8 @@ export function buildParcelTagFields(input: {
   destinationStationName: string;
   originStationCode?: string;
   destinationStationCode?: string;
+  originCity?: string;
+  destinationCity?: string;
   items: ParcelTagItem[];
   busNumber?: string;
   driverName?: string;
@@ -126,6 +128,13 @@ export function buildParcelTagFields(input: {
   const destCode =
     input.destinationStationCode ?? resolveStationCode(input.destinationStationId);
 
+  const originRoute =
+    input.originCity?.trim() ||
+    resolveStationCity(input.originStationId, input.originStationName);
+  const destinationRoute =
+    input.destinationCity?.trim() ||
+    resolveStationCity(input.destinationStationId, input.destinationStationName);
+
   return {
     operator: input.operator,
     receiptNumber: buildTagReceiptNumber(originCode, destCode, at, input.bookingReference),
@@ -136,11 +145,8 @@ export function buildParcelTagFields(input: {
     senderPhone: input.senderPhone,
     recipientName: input.recipientName,
     recipientPhone: input.recipientPhone,
-    originRouteLabel: resolveStationCity(input.originStationId, input.originStationName),
-    destinationRouteLabel: resolveStationCity(
-      input.destinationStationId,
-      input.destinationStationName
-    ),
+    originRouteLabel: originRoute.toUpperCase(),
+    destinationRouteLabel: destinationRoute.toUpperCase(),
     originStationName: input.originStationName,
     destinationStationName: input.destinationStationName,
     contents: buildContentsSummary(input.items),

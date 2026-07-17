@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Building2,
@@ -14,11 +14,8 @@ import {
   X,
 } from "lucide-react";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
-import {
-  fetchAdminOverview,
-  fetchAdminStations,
-  upsertAdminLeadApi,
-} from "@/lib/admin-api";
+import { useAdminData } from "@/components/admin/AdminDataContext";
+import { upsertAdminLeadApi } from "@/lib/admin-api";
 import { getAdminAccentColor, getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
 import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import type { AdminBranchStatus } from "@/types/admin";
@@ -180,9 +177,30 @@ export function AdminBranchesView() {
   const operator = getAdminOperator(admin);
   const companyName = getAdminOperatorName(admin);
   const accentColor = getAdminAccentColor(admin);
+  const { overview, stations, coreLoading: loading, refreshCore } = useAdminData();
 
-  const [rows, setRows] = useState<BranchRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const rows = useMemo<BranchRow[]>(() => {
+    const stationById = new Map(stations.map((s) => [s.id, s]));
+    return overview.branches.map((branch) => {
+      const station = stationById.get(branch.id);
+      return {
+        id: branch.id,
+        name: branch.name,
+        code: branch.code,
+        city: branch.city,
+        address: station?.address ?? "",
+        leadName: branch.leadName,
+        leadPhone: station?.leadPhone ?? "",
+        leadEmail: station?.leadEmail ?? "",
+        totalStaff: branch.totalStaff,
+        totalParcels: branch.totalParcels,
+        inTransit: branch.inTransit,
+        staffOnline: branch.staffOnline,
+        status: branch.status,
+      };
+    });
+  }, [overview.branches, stations]);
+
   const [query, setQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<"all" | AdminBranchStatus>("all");
@@ -191,61 +209,6 @@ export function AdminBranchesView() {
   const [actionType, setActionType] = useState<StationAction>(null);
   const [leadDraft, setLeadDraft] = useState({ name: "", phone: "", email: "" });
   const [savingAction, setSavingAction] = useState(false);
-
-  useEffect(() => {
-    if (!operator) {
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      try {
-        const [overview, stations] = await Promise.all([
-          fetchAdminOverview(),
-          fetchAdminStations(),
-        ]);
-        if (cancelled) return;
-        const stationById = new Map(stations.map((s) => [s.id, s]));
-        setRows(
-          overview.branches.map((branch) => {
-            const station = stationById.get(branch.id);
-            return {
-              id: branch.id,
-              name: branch.name,
-              code: branch.code,
-              city: branch.city,
-              address: station?.address ?? "",
-              leadName: branch.leadName,
-              leadPhone: station?.leadPhone ?? "",
-              leadEmail: station?.leadEmail ?? "",
-              totalStaff: branch.totalStaff,
-              totalParcels: branch.totalParcels,
-              inTransit: branch.inTransit,
-              staffOnline: branch.staffOnline,
-              status: branch.status,
-            };
-          }),
-        );
-      } catch (error) {
-        if (!cancelled) {
-          void showValidationAlert({
-            title: "Unable to load branches",
-            text: error instanceof Error ? error.message : "Try again in a moment.",
-          });
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [operator]);
 
   const cities = useMemo(
     () => [...new Set(rows.map((r) => r.city))].sort((a, b) => a.localeCompare(b)),
@@ -269,7 +232,7 @@ export function AdminBranchesView() {
 
   if (!operator) {
     return (
-      <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main className="operator-portal-main">
         <h1 className="font-display text-xl font-bold text-foreground">Branches</h1>
         <p className="font-body mt-2 text-sm text-muted">
           Complete Admin setup first so HQ only shows your transport network.
@@ -336,19 +299,7 @@ export function AdminBranchesView() {
         leadPhone: phone,
         leadEmail: leadDraft.email.trim() || undefined,
       });
-      setRows((prev) =>
-        prev.map((row) =>
-          row.id === actionStation.id
-            ? {
-                ...row,
-                leadName: result.lead.displayName,
-                leadPhone: result.lead.phone,
-                leadEmail: result.lead.email,
-                status: row.status === "attention" && !row.leadName ? "healthy" : row.status,
-              }
-            : row,
-        ),
-      );
+      await refreshCore({ silent: true });
       await showSuccessAlert({
         title: "Lead assigned",
         text: `${result.lead.displayName} is now the lead for ${actionStation.name}. ${
@@ -372,11 +323,6 @@ export function AdminBranchesView() {
   const saveResolveStatus = async () => {
     if (!actionStation) return;
     setSavingAction(true);
-    setRows((prev) =>
-      prev.map((row) =>
-        row.id === actionStation.id ? { ...row, status: "healthy" } : row,
-      ),
-    );
     await showSuccessAlert({
       title: "Station marked healthy",
       text: `${actionStation.name} no longer needs attention.`,
@@ -387,7 +333,7 @@ export function AdminBranchesView() {
   };
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -440,7 +386,7 @@ export function AdminBranchesView() {
           ))}
         </div>
 
-        <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="mt-4 grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
           <section className="rounded-2xl border border-border bg-surface shadow-sm">
             <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 sm:px-5">
               <div className="relative min-w-[12rem] flex-1">
@@ -496,8 +442,89 @@ export function AdminBranchesView() {
               </p>
             ) : (
               <>
-                <div className="max-h-[520px] overflow-auto">
-                  <table className="min-w-full text-left text-sm">
+                <div className="space-y-2.5 p-3 xl:hidden">
+                  {paged.map((row, index) => (
+                    <article
+                      key={row.id}
+                      className="rounded-xl border border-border bg-surface p-3 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-display font-semibold text-foreground">{row.name}</p>
+                          <p className="font-mono text-[10px] text-muted">{row.code}</p>
+                        </div>
+                        <span
+                          className={cn(
+                            "shrink-0 inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ring-1 ring-inset",
+                            statusClass(row.status),
+                          )}
+                        >
+                          {statusLabel(row.status)}
+                        </span>
+                      </div>
+                      <dl className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                        <div>
+                          <dt className="text-[10px] uppercase tracking-wide text-muted">City</dt>
+                          <dd className="font-medium text-foreground">{row.city}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-[10px] uppercase tracking-wide text-muted">Lead</dt>
+                          <dd className="text-foreground">
+                            {row.leadName ?? (
+                              <span className="font-medium text-amber-700">Unassigned</span>
+                            )}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-[10px] uppercase tracking-wide text-muted">Staff</dt>
+                          <dd className="text-foreground">
+                            {row.totalStaff}
+                            <span className="ml-1 text-[10px] text-muted">({row.staffOnline} online)</span>
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-[10px] uppercase tracking-wide text-muted">Parcels</dt>
+                          <dd className="font-semibold text-foreground">
+                            {row.totalParcels.toLocaleString("en-GH")} · {row.inTransit} in transit
+                          </dd>
+                        </div>
+                      </dl>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {!row.leadName ? (
+                          <button
+                            type="button"
+                            onClick={() => openAssignLead(row)}
+                            className="font-display rounded-lg px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-white"
+                            style={{ background: "var(--staff-accent)" }}
+                          >
+                            Assign lead
+                          </button>
+                        ) : row.status === "attention" || row.status === "offline" ? (
+                          <button
+                            type="button"
+                            onClick={() => openResolveStatus(row)}
+                            className="font-display rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-amber-800"
+                          >
+                            Resolve
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openAssignLead(row)}
+                            className="font-display rounded-lg border border-border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-foreground hover:border-[var(--staff-accent)]"
+                          >
+                            Edit lead
+                          </button>
+                        )}
+                      </div>
+                      <p className="font-body mt-2 text-[10px] text-muted">#{pageStart + index + 1}</p>
+                    </article>
+                  ))}
+                </div>
+
+                <div className="hidden xl:block">
+                <div className="operator-portal-table-scroll max-h-[min(520px,60vh)] overflow-auto">
+                  <table className="min-w-[720px] w-full text-left text-sm">
                     <thead className="sticky top-0 z-10 bg-[#0b1220] text-[11px] uppercase tracking-wider text-white">
                       <tr>
                         <th className="w-10 px-3 py-2.5 font-semibold sm:px-4">#</th>
@@ -582,6 +609,7 @@ export function AdminBranchesView() {
                     </tbody>
                   </table>
                 </div>
+                </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 sm:px-5">
                   <p className="font-body text-xs text-muted">
@@ -640,7 +668,7 @@ export function AdminBranchesView() {
             )}
           </section>
 
-          <aside className="rounded-2xl border border-border bg-surface p-5 shadow-sm lg:sticky lg:top-4">
+          <aside className="rounded-2xl border border-border bg-surface p-5 shadow-sm xl:sticky xl:top-4">
             <BranchesPieChart rows={filtered.length ? filtered : rows} />
           </aside>
         </div>

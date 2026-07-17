@@ -127,7 +127,7 @@ export function AdminPlatformView() {
 
   if (!operator) {
     return (
-      <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main className="operator-portal-main">
         <h1 className="font-display text-xl font-bold text-foreground">Operator controls</h1>
         <p className="font-body mt-2 text-sm text-muted">
           Complete Admin setup first so locks apply only to your transport.
@@ -211,14 +211,14 @@ export function AdminPlatformView() {
 
   if (!locks || !settings) {
     return (
-      <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main className="operator-portal-main">
         <p className="font-body text-sm text-muted">Loading operator controls…</p>
       </main>
     );
   }
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -341,7 +341,7 @@ export function AdminPlatformView() {
           ))}
         </div>
 
-        <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="mt-4 grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-4">
             <section className="rounded-2xl border border-border bg-surface shadow-sm">
               <div className="border-b border-border px-4 py-3 sm:px-5">
@@ -508,7 +508,7 @@ export function AdminPlatformView() {
             </section>
           </div>
 
-          <aside className="space-y-4 lg:sticky lg:top-4">
+          <aside className="space-y-4 xl:sticky xl:top-4">
             <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="size-4 text-amber-600" />

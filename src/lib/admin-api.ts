@@ -91,12 +91,13 @@ export type AdminReportResult = {
 export type UpsertLeadResult = {
   lead: AdminLeadAccount;
   smsSent: boolean;
+  temporaryPin?: string;
 };
 
-export async function adminLoginApi(email: string, password: string): Promise<AdminSession> {
+export async function adminLoginApi(phone: string, password: string): Promise<AdminSession> {
   return apiFetch<AdminSession>("/admin/login", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ phone, password }),
   });
 }
 

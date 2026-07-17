@@ -1,3 +1,4 @@
+import { clearOperatorOfflineState } from "@/lib/operator-offline-state";
 import type { LeadSession } from "@/types/lead";
 import { LEAD_USE_DEMO_DATA } from "@/lib/lead-demo";
 import { ApiError } from "@/lib/api-client";
@@ -95,4 +96,5 @@ export async function signOutLead(): Promise<void> {
     // Clear local state even if the API is unreachable.
   }
   clearLeadSession();
+  clearOperatorOfflineState();
 }

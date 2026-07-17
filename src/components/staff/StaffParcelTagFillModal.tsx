@@ -17,6 +17,10 @@ export type StaffTagFillContext = {
   destinationStationId: string;
   originStationName: string;
   destinationStationName: string;
+  originStationCode?: string;
+  destinationStationCode?: string;
+  originCity?: string;
+  destinationCity?: string;
   items: StaffParcelItem[];
   busNumber: string;
   driverPhone: string;
@@ -47,6 +51,10 @@ export function StaffParcelTagFillModal({ context, onDone }: StaffParcelTagFillM
     destinationStationId: context.destinationStationId,
     originStationName: context.originStationName,
     destinationStationName: context.destinationStationName,
+    originStationCode: context.originStationCode,
+    destinationStationCode: context.destinationStationCode,
+    originCity: context.originCity,
+    destinationCity: context.destinationCity,
     items: context.items,
     busNumber: context.busNumber,
     driverPhone: context.driverPhone,
@@ -119,7 +127,7 @@ export function StaffParcelTagFillModal({ context, onDone }: StaffParcelTagFillM
           </button>
         </header>
 
-        <div className="px-4 py-3 sm:px-5">
+        <div className="mobile-scroll max-h-[min(58vh,520px)] overflow-y-auto px-4 py-3 sm:max-h-[62vh] sm:px-5">
           <div ref={printRef}>
             <ParcelTagReceipt
               id="staff-fill-tag"

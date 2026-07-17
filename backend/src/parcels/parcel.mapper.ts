@@ -113,12 +113,13 @@ export type StaffParcelSummaryDto = {
   destinationStationName: string;
   originStationId: string;
   destinationStationId: string;
+  originStationCode: string;
+  destinationStationCode: string;
   itemCount: number;
   direction: 'outgoing' | 'incoming';
   busNumber?: string;
   driverName?: string;
   driverPhone?: string;
-  items: Parcel['items'];
   createdAt: string;
   updatedAt: string;
 };
@@ -148,12 +149,13 @@ export function toStaffParcelSummary(
     destinationStationName: parcel.destinationStationName,
     originStationId: parcel.originStationId,
     destinationStationId: parcel.destinationStationId,
+    originStationCode: parcel.originStationCode,
+    destinationStationCode: parcel.destinationStationCode ?? parcel.originStationCode,
     itemCount: parcel.items.length,
     direction: outgoing ? 'outgoing' : 'incoming',
     busNumber: parcel.busNumber,
     driverName: parcel.driverName,
     driverPhone: parcel.driverPhone,
-    items: parcel.items,
     createdAt: (parcel.createdAt ?? new Date()).toISOString(),
     updatedAt: (parcel.updatedAt ?? parcel.createdAt ?? new Date()).toISOString(),
   };

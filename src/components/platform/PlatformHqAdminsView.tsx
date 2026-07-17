@@ -130,12 +130,15 @@ export function PlatformHqAdminsView() {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       await showValidationAlert({
         title: "Valid email required",
-        text: "Login email must be a valid address.",
+        text: "Work email must be a valid address.",
       });
       return;
     }
-    if (!phone) {
-      await showValidationAlert({ title: "Phone required", text: "Enter a contact phone number." });
+    if (!phone || !/^(\+?233|0)?[2-9]\d{8}$/.test(phone.replace(/\s/g, ""))) {
+      await showValidationAlert({
+        title: "Login phone required",
+        text: "Enter a valid Ghana phone number for HQ sign-in.",
+      });
       return;
     }
 
@@ -170,7 +173,7 @@ export function PlatformHqAdminsView() {
   async function handleIssueLogin(row: PlatformHqAdminRow) {
     const ok = await showConfirmDialog({
       title: "Issue HQ login?",
-      text: `Prepare first-time credentials for ${row.displayName} (${row.email}) on ${row.operatorCode}.`,
+      text: `Prepare first-time credentials for ${row.displayName} (${row.phone}) on ${row.operatorCode}.`,
       confirmText: "Issue login",
       confirmButtonColor: "#1e3a5f",
     });
@@ -191,7 +194,7 @@ export function PlatformHqAdminsView() {
   async function handleResetLogin(row: PlatformHqAdminRow) {
     const ok = await showConfirmDialog({
       title: "Reset HQ login?",
-      text: `Issue a temporary password for ${row.displayName} (${row.email}) on ${row.operatorCode}. Use when they forgot their password or are locked out.`,
+      text: `Issue a temporary password for ${row.displayName} (${row.phone}) on ${row.operatorCode}. Use when they forgot their password or are locked out.`,
       confirmText: "Reset login",
       confirmButtonColor: "#1e3a5f",
     });
@@ -242,7 +245,7 @@ export function PlatformHqAdminsView() {
   ];
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-display text-[11px] font-bold uppercase tracking-wider text-[var(--platform-orange)]">
@@ -288,7 +291,68 @@ export function PlatformHqAdminsView() {
           resultCount={filtered.length}
           totalCount={rows.length}
         />
-        <div className="overflow-x-auto">
+
+        {filtered.length > 0 ? (
+          <div className="space-y-2.5 p-3 xl:hidden">
+            {listPagination.pageItems.map((row, index) => (
+              <article
+                key={row.id}
+                className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-display text-sm font-bold text-stone-900">{row.displayName}</p>
+                    <p className="font-mono truncate text-[11px] text-stone-500">{row.email}</p>
+                    <p className="font-body text-xs text-stone-600">{row.phone}</p>
+                  </div>
+                  <span
+                    className={cn(
+                      "shrink-0 font-display inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ring-1 ring-inset",
+                      hqStatusTone(row.status),
+                    )}
+                  >
+                    {hqStatusLabel(row.status)}
+                  </span>
+                </div>
+                <p className="font-display mt-2 text-xs font-semibold text-stone-800">{row.operatorCode}</p>
+                <p className="font-body mt-1 text-[10px] text-stone-400">
+                  Last sign-in: {formatPlatformWhen(row.lastSignInAt)}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => openAdmin(row)}
+                    className="font-display inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-stone-700 shadow-sm"
+                  >
+                    <Edit2 className="size-3" />
+                    View / Edit
+                  </button>
+                  {row.status === "pending_setup" ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleIssueLogin(row)}
+                      className="font-display inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-900"
+                    >
+                      <KeyRound className="size-3.5" />
+                      Issue login
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void handleResetLogin(row)}
+                      className="font-display inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-stone-600"
+                    >
+                      <KeyRound className="size-3.5" />
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="hidden xl:block operator-portal-table-scroll overflow-x-auto">
           <table className="min-w-[880px] w-full text-left">
             <thead>
               <tr className="bg-[var(--platform-orange)] text-[10px] uppercase tracking-wider text-white">
@@ -531,7 +595,7 @@ export function PlatformHqAdminsView() {
                   </div>
                   <div>
                     <label htmlFor="hq-edit-email" className={labelClass}>
-                      Login email
+                      Work email
                     </label>
                     <input
                       id="hq-edit-email"
@@ -544,7 +608,7 @@ export function PlatformHqAdminsView() {
                   </div>
                   <div>
                     <label htmlFor="hq-edit-phone" className={labelClass}>
-                      Phone
+                      Login phone
                     </label>
                     <input
                       id="hq-edit-phone"
@@ -576,19 +640,19 @@ export function PlatformHqAdminsView() {
                 <div className="divide-y divide-stone-100 rounded-2xl border border-stone-200 px-4 py-2">
                   <div className="flex items-center justify-between gap-3 py-2.5">
                     <div className="flex items-center gap-2 text-stone-500">
+                      <Phone className="size-4 shrink-0" />
+                      <span className="font-body text-xs">Login phone</span>
+                    </div>
+                    <span className="font-mono text-right text-sm text-stone-900">{selected.phone}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="flex items-center gap-2 text-stone-500">
                       <Mail className="size-4 shrink-0" />
-                      <span className="font-body text-xs">Login email</span>
+                      <span className="font-body text-xs">Work email</span>
                     </div>
                     <span className="font-mono text-right text-sm text-stone-900">
                       {selected.email}
                     </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 py-2.5">
-                    <div className="flex items-center gap-2 text-stone-500">
-                      <Phone className="size-4 shrink-0" />
-                      <span className="font-body text-xs">Phone</span>
-                    </div>
-                    <span className="font-body text-sm text-stone-900">{selected.phone}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3 py-2.5">
                     <div className="flex items-center gap-2 text-stone-500">

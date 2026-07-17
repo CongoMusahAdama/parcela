@@ -35,8 +35,7 @@ function ConfirmSuccess({ booking }: { booking: PreBooking }) {
 
   return (
     <AppShell
-      shellClassName="h-dvh max-h-dvh overflow-hidden"
-      className="flex min-h-0 flex-1 flex-col overflow-hidden !px-0 !pb-0 !pt-0 bg-surface"
+      className="bg-surface"
       footer={
         <div className="no-print space-y-2">
           <p className="font-body text-center text-xs leading-relaxed text-muted">
@@ -108,7 +107,7 @@ function ConfirmSuccess({ booking }: { booking: PreBooking }) {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-border">
+      <div className="mobile-scroll min-h-0 flex-1 border-t border-border">
         <BookingReceiptCard booking={booking} />
       </div>
     </AppShell>
@@ -134,7 +133,7 @@ function ConfirmPageContent() {
 
   if (loading) {
     return (
-      <AppShell shellClassName="h-dvh max-h-dvh overflow-hidden" className="!px-0 !pt-0">
+      <AppShell viewport className="!px-0 !pt-0">
         <div className="animate-pulse px-5 py-4">
           <div className="h-4 w-12 rounded bg-border" />
           <div className="mx-auto mt-3 h-[130px] rounded-xl bg-border" />
@@ -172,7 +171,7 @@ export default function ConfirmPage() {
   return (
     <Suspense
       fallback={
-        <AppShell shellClassName="h-dvh max-h-dvh overflow-hidden" className="!px-0 !pt-0">
+        <AppShell viewport className="!px-0 !pt-0">
           <div className="animate-pulse px-5 py-4">
             <div className="h-4 w-12 rounded bg-border" />
             <div className="mx-auto mt-3 h-[130px] rounded-xl bg-border" />

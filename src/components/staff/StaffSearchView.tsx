@@ -58,7 +58,7 @@ export function StaffSearchView() {
     query.trim().length > 0 || statusFilter !== "all" || directionFilter !== "all";
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <StaffPageHeader
         title="Search parcels"
         description="Find any parcel linked to your station by reference, name, phone, bus number, or destination."

@@ -1,5 +1,6 @@
-import { LeadLoginView } from "@/components/lead/LeadLoginView";
+import { redirect } from "next/navigation";
+import { OPERATOR_LOGIN_PATH } from "@/lib/operator-auth";
 
 export default function LeadLoginPage() {
-  return <LeadLoginView />;
+  redirect(OPERATOR_LOGIN_PATH);
 }

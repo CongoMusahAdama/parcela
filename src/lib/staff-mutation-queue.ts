@@ -82,6 +82,10 @@ export function getStaffMutationQueue(): StaffQueuedMutation[] {
   return readQueue();
 }
 
+export function clearStaffMutationQueue() {
+  writeQueue([]);
+}
+
 export function subscribeStaffMutationQueue(listener: QueueListener): () => void {
   listeners.add(listener);
   listener(readQueue());

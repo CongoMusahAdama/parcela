@@ -21,7 +21,14 @@ export function prefetchAdminView(href: string) {
 }
 
 export function prefetchAllAdminViews() {
-  return Promise.all(Object.values(ADMIN_VIEW_LOADERS).map((load) => load())).catch(
-    () => undefined,
-  );
+  const priority = [
+    "/admin/dashboard",
+    "/admin/branches",
+    "/admin/leads",
+    "/admin/people",
+    "/admin/analytics",
+  ];
+  return Promise.all(
+    priority.map((href) => ADMIN_VIEW_LOADERS[href]?.()).filter(Boolean),
+  ).catch(() => undefined);
 }

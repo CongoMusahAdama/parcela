@@ -46,7 +46,7 @@ export class AdminController {
   @Post('login')
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   async login(@Body() dto: AdminLoginDto, @Res({ passthrough: true }) res: Response) {
-    const result = this.staffAuth.loginAdmin(dto.email, dto.password);
+    const result = this.staffAuth.loginAdmin(dto.phone, dto.password);
     setAuthCookie(res, ADMIN_AUTH_COOKIE, result.token, this.staffAuth.getTokenTtlMs());
     void this.sms.sendSecureLoginAlert({
       phone: result.staff.phone,

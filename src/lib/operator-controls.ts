@@ -24,6 +24,7 @@ const DEFAULT_LOCKS: OperatorControlLocks = {
 
 /** In-memory cache so staff/lead banners can read sync helpers after a poll. */
 const lockCache = new Map<string, OperatorControlLocks>();
+const lockLoadPromises = new Map<string, Promise<OperatorControlLocks>>();
 
 export function countActiveLocks(locks: OperatorControlLocks) {
   return [locks.bookingsLocked, locks.staffOpsLocked, locks.leadOpsLocked].filter(Boolean)
@@ -49,14 +50,25 @@ export async function loadOperatorControls(): Promise<OperatorControlsPayload> {
 }
 
 export async function loadOperatorLockStatus(operator: string): Promise<OperatorControlLocks> {
-  const status = await fetchOperatorLockStatus(operator);
-  const locks: OperatorControlLocks = {
-    bookingsLocked: status.bookingsLocked,
-    staffOpsLocked: status.staffOpsLocked,
-    leadOpsLocked: status.leadOpsLocked,
-  };
-  cacheOperatorLocks(operator, locks);
-  return locks;
+  const key = operator.toUpperCase();
+  const existing = lockLoadPromises.get(key);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    const status = await fetchOperatorLockStatus(operator);
+    const locks: OperatorControlLocks = {
+      bookingsLocked: status.bookingsLocked,
+      staffOpsLocked: status.staffOpsLocked,
+      leadOpsLocked: status.leadOpsLocked,
+    };
+    cacheOperatorLocks(operator, locks);
+    return locks;
+  })().finally(() => {
+    lockLoadPromises.delete(key);
+  });
+
+  lockLoadPromises.set(key, promise);
+  return promise;
 }
 
 export async function setOperatorLock(

@@ -39,7 +39,7 @@ export function StaffInTransitTable({ parcels, pageSize = 8 }: StaffInTransitTab
 
   return (
     <>
-      <div className="space-y-2.5 md:hidden">
+      <div className="space-y-2.5 xl:hidden">
         {paginatedParcels.map((parcel) => (
           <StaffInTransitParcelCard
             key={parcel.bookingReference}
@@ -57,9 +57,9 @@ export function StaffInTransitTable({ parcels, pageSize = 8 }: StaffInTransitTab
         />
       </div>
 
-      <div className="hidden overflow-hidden rounded-2xl border border-border bg-surface shadow-sm md:block">
-        <div className="max-h-[min(62vh,720px)] overflow-auto">
-          <table className="w-full min-w-[1020px] border-collapse text-left">
+      <div className="hidden overflow-hidden rounded-2xl border border-border bg-surface shadow-sm xl:block">
+        <div className="operator-portal-table-scroll max-h-[min(62vh,720px)] overflow-y-auto">
+          <table className="w-full min-w-[720px] border-collapse text-left xl:min-w-[1020px]">
             <thead>
               <tr className="border-b border-border text-[11px] uppercase tracking-wider">
                 {["Reference", "Bus", "Direction", "Sender", "Recipient", "Route", "Items", "Updated", "Actions"].map((label) => (

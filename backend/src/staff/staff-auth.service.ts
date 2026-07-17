@@ -12,6 +12,11 @@ import { Model } from 'mongoose';
 import { SessionRevocationService } from '../common/services/session-revocation.service';
 import { ensureHashedSecret, verifySecret } from '../common/utils/password.util';
 import {
+  LOCAL_DEV_HQ_PASSWORD,
+  LOCAL_DEV_LEAD_PIN,
+  useLocalDevCredentials,
+} from '../common/utils/temp-password.util';
+import {
   DEMO_STAFF_ACCOUNT_IDS,
   type StaffAccountRecord,
 } from './data/staff-accounts';
@@ -90,6 +95,7 @@ export class StaffAuthService implements OnModuleInit {
   removeAccount(accountId: string): boolean {
     const index = this.accounts.findIndex((account) => account.id === accountId);
     if (index === -1) return false;
+    this.invalidateAccountTokens(accountId);
     this.accounts.splice(index, 1);
     this.activeStaffSessions.delete(accountId);
     void this.deleteAccount(accountId);
@@ -124,25 +130,48 @@ export class StaffAuthService implements OnModuleInit {
     return this.config.get<number>('staff.tokenTtlMs') ?? 8 * 60 * 60 * 1000;
   }
 
+  /** Staff + lead stay signed in until they log out manually. */
+  private get persistentTokenTtlMs() {
+    return 10 * 365 * 24 * 60 * 60 * 1000;
+  }
+
+  private isPersistentStaffRole(role: StaffAccountRecord['role']) {
+    return role === 'station_staff' || role === 'station_lead';
+  }
+
   getTokenTtlMs() {
     return this.tokenTtlMs;
   }
 
-  login(email: string, password: string) {
-    const normalized = email.trim().toLowerCase();
+  getLoginCookieTtlMs(role: StaffAccountRecord['role']) {
+    return this.isPersistentStaffRole(role) ? this.persistentTokenTtlMs : this.tokenTtlMs;
+  }
+
+  invalidateAccountTokens(accountId: string) {
+    const account = this.findAccountById(accountId);
+    if (!account) return;
+    account.tokensValidAfterMs = Date.now();
+    void this.persistAccount(account);
+  }
+
+  login(phone: string, password: string) {
+    const normalizedPhone = normalizeGhanaPhone(phone);
     const match = this.accounts.find(
       (account) =>
         account.active &&
         account.role === 'station_staff' &&
-        account.email.toLowerCase() === normalized,
+        normalizeGhanaPhone(account.phone) === normalizedPhone,
     );
 
     if (!match || !verifySecret(password, match.password)) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid phone or password');
     }
 
     const staff = toPublicAccount(match);
-    const token = this.signToken({ sub: staff.id, stationId: staff.stationId });
+    const token = this.signToken(
+      { sub: staff.id, stationId: staff.stationId },
+      this.persistentTokenTtlMs,
+    );
     this.recordStaffLogin(staff.id);
     return {
       token,
@@ -151,17 +180,32 @@ export class StaffAuthService implements OnModuleInit {
     };
   }
 
-  loginAdmin(email: string, password: string) {
-    const normalized = email.trim().toLowerCase();
+  loginAdmin(phone: string, password: string) {
+    const normalizedPhone = normalizeGhanaPhone(phone);
     const match = this.accounts.find(
       (account) =>
         account.active &&
         account.role === 'operator_admin' &&
-        account.email.toLowerCase() === normalized,
+        normalizeGhanaPhone(account.phone) === normalizedPhone,
     );
 
-    if (!match || !verifySecret(password, match.password)) {
-      throw new UnauthorizedException('Invalid email or password');
+    if (!match) {
+      throw new UnauthorizedException('Invalid phone or password');
+    }
+
+    const passwordMatches = verifySecret(password, match.password);
+    const devFirstLogin =
+      useLocalDevCredentials() &&
+      password.trim() === LOCAL_DEV_HQ_PASSWORD &&
+      match.mustChangePassword;
+
+    if (!passwordMatches && !devFirstLogin) {
+      throw new UnauthorizedException('Invalid phone or password');
+    }
+
+    if (devFirstLogin && !passwordMatches) {
+      match.password = ensureHashedSecret(LOCAL_DEV_HQ_PASSWORD);
+      void this.persistAccount(match);
     }
 
     const staff = toPublicAccount(match);
@@ -183,12 +227,30 @@ export class StaffAuthService implements OnModuleInit {
         normalizeGhanaPhone(account.phone) === normalizedPhone,
     );
 
-    if (!match || !verifySecret(trimmedPin, match.pin)) {
+    if (!match) {
       throw new UnauthorizedException('Invalid phone or PIN');
     }
 
+    const pinMatches = verifySecret(trimmedPin, match.pin);
+    const devFirstLogin =
+      useLocalDevCredentials() &&
+      trimmedPin === LOCAL_DEV_LEAD_PIN &&
+      match.mustChangePassword;
+
+    if (!pinMatches && !devFirstLogin) {
+      throw new UnauthorizedException('Invalid phone or PIN');
+    }
+
+    if (devFirstLogin && !pinMatches) {
+      match.pin = ensureHashedSecret(LOCAL_DEV_LEAD_PIN);
+      void this.persistAccount(match);
+    }
+
     const staff = toPublicAccount(match);
-    const token = this.signToken({ sub: staff.id, stationId: staff.stationId });
+    const token = this.signToken(
+      { sub: staff.id, stationId: staff.stationId },
+      this.persistentTokenTtlMs,
+    );
     return {
       token,
       staff,
@@ -277,6 +339,7 @@ export class StaffAuthService implements OnModuleInit {
 
     match.password = ensureHashedSecret(newPassword);
     match.mustChangePassword = false;
+    this.invalidateAccountTokens(match.id);
     void this.persistAccount(match);
     return toPublicAccount(match);
   }
@@ -302,6 +365,7 @@ export class StaffAuthService implements OnModuleInit {
 
     match.pin = ensureHashedSecret(trimmedNewPin);
     match.mustChangePassword = false;
+    this.invalidateAccountTokens(match.id);
     void this.persistAccount(match);
     return toPublicAccount(match);
   }
@@ -313,6 +377,7 @@ export class StaffAuthService implements OnModuleInit {
     }
     match.password = ensureHashedSecret(newPassword);
     match.mustChangePassword = requireChange;
+    this.invalidateAccountTokens(accountId);
     void this.persistAccount(match);
     return toPublicAccount(match);
   }
@@ -344,6 +409,7 @@ export class StaffAuthService implements OnModuleInit {
       mustChangePassword: doc.mustChangePassword,
       lastLoginAt: doc.lastLoginAt?.toISOString(),
       lastLogoutAt: doc.lastLogoutAt?.toISOString(),
+      tokensValidAfterMs: doc.tokensValidAfterMs ?? 0,
     };
   }
 
@@ -363,6 +429,7 @@ export class StaffAuthService implements OnModuleInit {
       stationCode: record.stationCode,
       location: record.location,
       mustChangePassword: record.mustChangePassword ?? false,
+      tokensValidAfterMs: record.tokensValidAfterMs ?? 0,
       ...(record.lastLoginAt ? { lastLoginAt: new Date(record.lastLoginAt) } : {}),
       ...(record.lastLogoutAt ? { lastLogoutAt: new Date(record.lastLogoutAt) } : {}),
     };
@@ -388,12 +455,12 @@ export class StaffAuthService implements OnModuleInit {
     }
   }
 
-  private signToken(payload: Omit<StaffTokenPayload, 'iat' | 'exp'>) {
+  private signToken(payload: Omit<StaffTokenPayload, 'iat' | 'exp'>, ttlMs = this.tokenTtlMs) {
     const now = Date.now();
     const body: StaffTokenPayload = {
       ...payload,
       iat: now,
-      exp: now + this.tokenTtlMs,
+      exp: now + ttlMs,
     };
     const encoded = Buffer.from(JSON.stringify(body)).toString('base64url');
     const signature = createHmac('sha256', this.secret).update(encoded).digest('base64url');
@@ -423,11 +490,23 @@ export class StaffAuthService implements OnModuleInit {
       throw new UnauthorizedException('Invalid staff token');
     }
 
-    if (!payload.exp || Date.now() > payload.exp) {
-      throw new UnauthorizedException('Staff session expired');
+    const account = this.accounts.find((entry) => entry.id === payload.sub);
+    if (!account) {
+      throw new UnauthorizedException('Invalid staff token');
     }
 
     this.sessionRevocation.assertActive(payload.iat);
+
+    const validAfter = account.tokensValidAfterMs ?? 0;
+    if (payload.iat < validAfter) {
+      throw new UnauthorizedException('Session ended — sign in again');
+    }
+
+    if (!payload.exp || Date.now() > payload.exp) {
+      if (!this.isPersistentStaffRole(account.role)) {
+        throw new UnauthorizedException('Staff session expired');
+      }
+    }
 
     return payload;
   }

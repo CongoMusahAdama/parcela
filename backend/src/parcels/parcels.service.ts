@@ -91,6 +91,7 @@ export class ParcelsService {
       operator: origin.operator,
       destinationStationId: destination.id,
       destinationStationName: destination.name,
+      destinationStationCode: destination.code,
       destinationOperator: destination.operator,
       senderName: dto.senderName.trim(),
       senderPhone: dto.senderPhone.trim(),

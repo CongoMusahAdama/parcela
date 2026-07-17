@@ -7,6 +7,7 @@ import {
   completeAdminSetupApi,
   fetchAdminSession,
 } from "@/lib/admin-api";
+import { validateStaffLoginInput } from "@/lib/staff-auth";
 
 const SESSION_KEY = "parcela_admin_session";
 
@@ -21,24 +22,8 @@ export type DemoAdminLogin = {
 /** HQ accounts are created via the platform portal — no demo quick-fill logins. */
 export const DEMO_ADMIN_LOGINS: DemoAdminLogin[] = [];
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-export function validateAdminLoginInput(email: string, password: string): string | null {
-  const trimmedEmail = email.trim().toLowerCase();
-
-  if (!trimmedEmail) {
-    return "Enter your work email.";
-  }
-
-  if (!EMAIL_PATTERN.test(trimmedEmail)) {
-    return "Enter a valid email address.";
-  }
-
-  if (!password) {
-    return "Enter your password.";
-  }
-
-  return null;
+export function validateAdminLoginInput(phone: string, password: string): string | null {
+  return validateStaffLoginInput(phone, password);
 }
 
 export function getAdminLoginFailureMessage(error?: unknown): string {
@@ -51,7 +36,7 @@ export function getAdminLoginFailureMessage(error?: unknown): string {
     }
     if (error.message) return error.message;
   }
-  return "Invalid email or password. Use credentials issued by Parcela during operator onboarding.";
+  return "Invalid phone or password. Use the phone number and temporary code issued by Parcela during operator onboarding.";
 }
 
 export function getAdminSession(): AdminSession | null {
@@ -76,8 +61,8 @@ export function saveAdminSession(session: AdminSession): void {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
-export async function signInAdmin(email: string, password: string): Promise<AdminSession> {
-  const session = await adminLoginApi(email, password);
+export async function signInAdmin(phone: string, password: string): Promise<AdminSession> {
+  const session = await adminLoginApi(phone, password);
   saveAdminSession(session);
   return session;
 }

@@ -19,7 +19,8 @@ import type { LucideIcon } from "lucide-react";
 import { PlatformOperatorMark } from "@/components/platform/PlatformOperatorMark";
 import { AdminDemoWalkthrough } from "@/components/admin/AdminDemoWalkthrough";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
-import { fetchAdminOverview, fetchAdminParcels } from "@/lib/admin-api";
+import { useAdminData } from "@/components/admin/AdminDataContext";
+import { fetchAdminParcels } from "@/lib/admin-api";
 import { getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
 import { ADMIN_NEUTRAL_THEME } from "@/lib/admin-theme";
 import { StaffLiveClock } from "@/components/staff/StaffLiveClock";
@@ -273,26 +274,11 @@ function buildMetricCards(overview: AdminNetworkOverview): MetricCard[] {
   ];
 }
 
-const EMPTY_OVERVIEW: AdminNetworkOverview = {
-  operatorLabel: "Operator",
-  branchCount: 0,
-  activeLeads: 0,
-  activeStaff: 0,
-  totalParcels: 0,
-  inTransit: 0,
-  readyForCollection: 0,
-  totalCollected: 0,
-  alerts: [],
-  branches: [],
-};
-
 export function AdminDashboardView() {
   const { admin } = useAdminSession();
   const operator = getAdminOperator(admin);
   const operatorDisplayName = getAdminOperatorName(admin);
-  const [overview, setOverview] = useState<AdminNetworkOverview>(EMPTY_OVERVIEW);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { overview, coreLoading: loading, error: loadError } = useAdminData();
   const metricCards = buildMetricCards(overview);
   const [activeTab, setActiveTab] = useState<OverviewTab>("performance");
   const [page, setPage] = useState(1);
@@ -304,33 +290,6 @@ export function AdminDashboardView() {
   const [parcelQuery, setParcelQuery] = useState("");
   const [parcelStatus, setParcelStatus] = useState("all");
   const [parcelSearch, setParcelSearch] = useState("");
-
-  useEffect(() => {
-    if (!operator) {
-      setOverview(EMPTY_OVERVIEW);
-      setLoading(false);
-      setLoadError(null);
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      setLoading(true);
-      setLoadError(null);
-      try {
-        const data = await fetchAdminOverview();
-        if (!cancelled) setOverview(data);
-      } catch (error) {
-        if (!cancelled) {
-          setLoadError(error instanceof Error ? error.message : "Failed to load overview");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [operator]);
 
   useEffect(() => {
     if (activeTab !== "parcels" || !operator) return;
@@ -398,7 +357,7 @@ export function AdminDashboardView() {
   };
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div>
         {loadError && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -408,7 +367,7 @@ export function AdminDashboardView() {
         {loading && (
           <p className="font-body mb-4 text-sm text-muted">Loading live network data…</p>
         )}
-        <section className="relative min-h-[148px] overflow-hidden rounded-2xl bg-[#0f172a] px-5 py-4 text-white shadow-md sm:min-h-[156px] sm:px-6 sm:py-5">
+        <section className="relative min-h-[148px] overflow-hidden rounded-2xl bg-[#0f172a] px-4 py-4 text-white shadow-md sm:min-h-[156px] sm:px-6 sm:py-5">
           <div
             className="absolute inset-0"
             style={{ background: ADMIN_NEUTRAL_THEME.headerGradient }}
@@ -423,7 +382,7 @@ export function AdminDashboardView() {
             aria-hidden
           />
           {admin.operatorConfigured && admin.operator && (
-            <div className="pointer-events-none absolute right-4 top-4 z-10 sm:right-6 sm:top-5">
+            <div className="relative z-10 mb-3 flex justify-end sm:pointer-events-none sm:absolute sm:right-4 sm:top-4 sm:mb-0 sm:right-6 sm:top-5">
               <PlatformOperatorMark
                 code={admin.operator}
                 name={operatorDisplayName}
@@ -434,7 +393,7 @@ export function AdminDashboardView() {
             </div>
           )}
 
-          <div className="relative z-10 flex min-h-[120px] flex-col justify-between pr-[10.5rem] sm:pr-[11.5rem]">
+          <div className="relative z-10 flex min-h-[120px] flex-col justify-between sm:pr-[11.5rem]">
             <div className="flex items-start justify-between gap-4">
               <StaffLiveClock
                 compact
@@ -537,7 +496,7 @@ export function AdminDashboardView() {
           <p className="font-body mt-1 text-sm text-muted">
             Same numbers as the cards above — broken down by branch where it helps.
           </p>
-          <div className="mt-4 inline-flex max-w-full flex-wrap gap-1 rounded-2xl border border-border bg-background p-1.5">
+          <div className="operator-portal-tabs mt-4 inline-flex max-w-full gap-1 rounded-2xl border border-border bg-background p-1.5">
             {OVERVIEW_TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -578,10 +537,10 @@ export function AdminDashboardView() {
           </div>
         ) : (
           <>
-          <div className="grid lg:grid-cols-[minmax(0,1fr)_380px]">
-          <div className="max-h-[420px] overflow-auto">
+          <div className="grid xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="operator-portal-table-scroll max-h-[min(420px,55vh)] overflow-auto">
             {activeTab === "performance" && (
-              <table className="min-w-full text-left text-sm">
+              <table className="min-w-[720px] w-full text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-[#0b1220] text-[11px] uppercase tracking-wider text-white">
                   <tr>
                     <th className="w-10 px-3 py-2.5 font-semibold sm:px-4">#</th>
@@ -654,7 +613,7 @@ export function AdminDashboardView() {
             )}
 
             {activeTab === "summary" && (
-              <table className="min-w-full text-left text-sm">
+              <table className="min-w-[720px] w-full text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-[#0b1220] text-[11px] uppercase tracking-wider text-white">
                   <tr>
                     <th className="w-10 px-3 py-2.5 font-semibold sm:px-4">#</th>
@@ -679,7 +638,7 @@ export function AdminDashboardView() {
             )}
 
             {activeTab === "branches" && (
-              <table className="min-w-full text-left text-sm">
+              <table className="min-w-[720px] w-full text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-[#0b1220] text-[11px] uppercase tracking-wider text-white">
                   <tr>
                     <th className="w-10 px-3 py-2.5 font-semibold sm:px-4">#</th>
@@ -736,7 +695,7 @@ export function AdminDashboardView() {
             )}
 
             {activeTab === "people" && (
-              <table className="min-w-full text-left text-sm">
+              <table className="min-w-[720px] w-full text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-[#0b1220] text-[11px] uppercase tracking-wider text-white">
                   <tr>
                     <th className="w-10 px-3 py-2.5 font-semibold sm:px-4">#</th>
@@ -829,7 +788,7 @@ export function AdminDashboardView() {
                     Full report
                   </Link>
                 </div>
-                <table className="min-w-full text-left text-sm">
+                <table className="min-w-[720px] w-full text-left text-sm">
                   <thead className="sticky top-0 z-10 bg-[#0b1220] text-[11px] uppercase tracking-wider text-white">
                     <tr>
                       <th className="w-10 px-3 py-2.5 font-semibold sm:px-4">#</th>
@@ -914,7 +873,7 @@ export function AdminDashboardView() {
             )}
 
             {activeTab === "pipeline" && (
-              <table className="min-w-full text-left text-sm">
+              <table className="min-w-[720px] w-full text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-[#0b1220] text-[11px] uppercase tracking-wider text-white">
                   <tr>
                     <th className="w-10 px-3 py-2.5 font-semibold sm:px-4">#</th>

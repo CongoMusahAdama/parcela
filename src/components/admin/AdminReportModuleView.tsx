@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -12,7 +12,8 @@ import {
   Search,
 } from "lucide-react";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
-import { fetchAdminOverview, fetchAdminReport } from "@/lib/admin-api";
+import { useAdminData } from "@/components/admin/AdminDataContext";
+import { fetchAdminReport } from "@/lib/admin-api";
 import { getAdminOperator } from "@/lib/admin-operator";
 import {
   buildAdminReportMeta,
@@ -25,22 +26,8 @@ import {
   type AdminReportResult,
 } from "@/lib/admin-reports";
 import { showInfoAlert, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
-import type { AdminNetworkOverview } from "@/types/admin";
 
 const PREVIEW_PAGE_SIZE = 8;
-
-const EMPTY_OVERVIEW: AdminNetworkOverview = {
-  operatorLabel: "Operator",
-  branchCount: 0,
-  activeLeads: 0,
-  activeStaff: 0,
-  totalParcels: 0,
-  inTransit: 0,
-  readyForCollection: 0,
-  totalCollected: 0,
-  alerts: [],
-  branches: [],
-};
 
 type AdminReportModuleViewProps = {
   /** Serializable module id — icon is resolved on the client. */
@@ -51,8 +38,8 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
   const reportModule = getAdminReportModule(moduleId);
   const { admin } = useAdminSession();
   const operator = getAdminOperator(admin);
+  const { overview } = useAdminData();
   const defaults = getDefaultAdminReportDateRange();
-  const [overview, setOverview] = useState<AdminNetworkOverview>(EMPTY_OVERVIEW);
 
   const [dateFrom, setDateFrom] = useState(defaults.dateFrom);
   const [dateTo, setDateTo] = useState(defaults.dateTo);
@@ -68,25 +55,6 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState<"pdf" | "excel" | null>(null);
   const [generating, setGenerating] = useState(false);
-
-  useEffect(() => {
-    if (!operator) {
-      setOverview(EMPTY_OVERVIEW);
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      try {
-        const data = await fetchAdminOverview();
-        if (!cancelled) setOverview(data);
-      } catch {
-        // Filters stay empty until overview loads.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [operator]);
 
   const cities = useMemo(
     () => [...new Set(overview.branches.map((b) => b.city))].sort((a, b) => a.localeCompare(b)),
@@ -131,7 +99,7 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
 
   if (!operator) {
     return (
-      <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main className="operator-portal-main">
         <p className="font-body text-sm text-muted">
           Complete Admin setup first so reports only include your transport network.
         </p>
@@ -148,7 +116,7 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
 
   if (!reportModule) {
     return (
-      <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main className="operator-portal-main">
         <p className="font-body text-sm text-muted">Report module not found.</p>
       </main>
     );
@@ -274,7 +242,7 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
 
   return (
     <>
-      <main className="admin-reports-screen px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:hidden">
+      <main className="admin-reports-screen operator-portal-main print:hidden">
         <Link
           href="/admin/reports"
           className="font-display inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted transition-colors hover:text-foreground"
@@ -507,7 +475,7 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
                   </div>
                 ) : (
                   <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
-                    <div className="max-h-[min(52vh,560px)] overflow-auto">
+                    <div className="operator-portal-table-scroll max-h-[min(52vh,560px)] overflow-auto">
                       <table className="w-full min-w-[720px] border-collapse text-left">
                         <thead>
                           <tr className="text-[11px] uppercase tracking-wider text-white">

@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, useLayoutEffect, useState } from 
 import { usePathname, useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminDataProvider } from "@/components/admin/AdminDataContext";
+import { OperatorPortalWelcomeGate } from "@/components/operator/OperatorPortalWelcomeGate";
 import { StaffNavProvider, useStaffNav } from "@/components/staff/StaffNavContext";
 import { StaffPreloader } from "@/components/staff/StaffPreloader";
 import { restoreAdminSession, signOutAdmin } from "@/lib/admin-auth";
@@ -56,8 +58,8 @@ function AdminShellContent({
         onSignOut={onSignOut}
       />
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:ml-[320px]">
-        <header className="z-30 flex shrink-0 items-center gap-3 border-b border-border bg-surface/95 px-4 py-3 backdrop-blur-sm lg:hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:ml-[320px]">
+        <header className="z-30 flex shrink-0 items-center gap-3 border-b border-border bg-surface/95 px-4 py-3 backdrop-blur-sm md:hidden">
           <button
             type="button"
             onClick={() => setMobileNavOpen(true)}
@@ -76,7 +78,7 @@ function AdminShellContent({
           </div>
         </header>
 
-        <div className="relative min-h-0 flex-1 overflow-y-auto">
+        <div className="operator-portal-scroll relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           {isNavigating && (
             <StaffPreloader variant="overlay" message={navMessage ?? "Loading page"} />
           )}
@@ -198,7 +200,7 @@ export function AdminOperatorShell({ children }: { children: React.ReactNode }) 
 
     return (
       <div className="admin-portal flex h-dvh overflow-hidden bg-white font-body">
-        <div className="hidden w-[320px] shrink-0 bg-slate-300/25 lg:block" aria-hidden />
+        <div className="hidden w-[320px] shrink-0 bg-slate-300/25 md:block" aria-hidden />
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <StaffPreloader message={bootMessage} />
         </div>
@@ -208,16 +210,25 @@ export function AdminOperatorShell({ children }: { children: React.ReactNode }) 
 
   return (
     <AdminSessionContext.Provider value={session}>
-      <StaffNavProvider>
-        <AdminShellContent
-          session={session}
-          mobileNavOpen={mobileNavOpen}
-          setMobileNavOpen={setMobileNavOpen}
-          onSignOut={handleSignOut}
-        >
-          {children}
-        </AdminShellContent>
-      </StaffNavProvider>
+      <AdminDataProvider>
+        <StaffNavProvider>
+          <AdminShellContent
+            session={session}
+            mobileNavOpen={mobileNavOpen}
+            setMobileNavOpen={setMobileNavOpen}
+            onSignOut={handleSignOut}
+          >
+            {children}
+          </AdminShellContent>
+          <OperatorPortalWelcomeGate
+            portal="admin"
+            accountId={session.admin.id}
+            displayName={session.admin.displayName}
+            subtitle={getAdminOperatorName(session.admin)}
+            operatorLabel={session.admin.operator ?? undefined}
+          />
+        </StaffNavProvider>
+      </AdminDataProvider>
     </AdminSessionContext.Provider>
   );
 }

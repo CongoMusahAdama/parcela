@@ -52,6 +52,10 @@ export class StaffAccount {
 
   @Prop()
   lastLogoutAt?: Date;
+
+  /** Reject JWTs issued before this time (password reset, deactivation, etc.). */
+  @Prop({ default: 0 })
+  tokensValidAfterMs!: number;
 }
 
 export const StaffAccountSchema = SchemaFactory.createForClass(StaffAccount);

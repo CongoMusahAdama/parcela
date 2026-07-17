@@ -89,6 +89,13 @@
     touch-action: manipulation;
   }
 
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+  }
+
   .mesh-hero {
     background-color: #f4f7fb;
     background-image:
@@ -166,6 +173,75 @@
   .staff-portal .staff-field-input,
   .lead-portal .staff-field-input {
     font-family: var(--font-body);
+  }
+
+  /* Operator portal — shared responsive page shell (staff, lead, HQ, platform) */
+  .operator-portal-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  .staff-portal .operator-portal-main,
+  .lead-portal .operator-portal-main,
+  .admin-portal .operator-portal-main,
+  .platform-portal .operator-portal-main {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 1440px;
+    padding: 0.875rem 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .staff-portal .operator-portal-main,
+    .lead-portal .operator-portal-main,
+    .admin-portal .operator-portal-main,
+    .platform-portal .operator-portal-main {
+      padding: 1.25rem 1.25rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .staff-portal .operator-portal-main,
+    .lead-portal .operator-portal-main,
+    .admin-portal .operator-portal-main,
+    .platform-portal .operator-portal-main {
+      padding: 1.5rem 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .staff-portal .operator-portal-main,
+    .lead-portal .operator-portal-main,
+    .admin-portal .operator-portal-main,
+    .platform-portal .operator-portal-main {
+      padding: 2rem 2rem;
+    }
+  }
+
+  .admin-portal .operator-portal-main {
+    max-width: 1600px;
+  }
+
+  .platform-portal .operator-portal-main {
+    max-width: 1600px;
+  }
+
+  .operator-portal-table-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .operator-portal-tabs {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .operator-portal-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   /* Staff dashboard — operator theme (VIP red, STC green) */

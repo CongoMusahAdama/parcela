@@ -52,7 +52,7 @@ export function PlatformUserRoleTabs({
   counts: Record<PlatformUserRole, number>;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-1 border-b border-stone-100 bg-stone-50/60 px-4 py-3">
+    <div className="operator-portal-tabs flex items-center gap-1 border-b border-stone-100 bg-stone-50/60 px-4 py-3">
       {USER_ROLE_TABS.map((tab) => {
         const active = activeRole === tab.id;
         const Icon = tab.icon;
@@ -62,7 +62,7 @@ export function PlatformUserRoleTabs({
             type="button"
             onClick={() => onChange(tab.id)}
             className={cn(
-              "font-display inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all",
+              "font-display shrink-0 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all",
               active
                 ? "text-white shadow-md"
                 : "text-stone-500 hover:bg-[var(--platform-orange-soft)] hover:text-[var(--platform-orange-dark)]",

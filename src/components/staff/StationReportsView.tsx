@@ -190,7 +190,7 @@ export function StationReportsView({
 
   return (
     <>
-      <main className="staff-reports-screen px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+      <main className="operator-portal-main staff-reports-screen">
         <StaffPageHeader
           title={title}
           description={description}
@@ -395,7 +395,7 @@ export function StationReportsView({
                   </div>
                 ) : (
                   <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
-                    <div className="max-h-[min(52vh,560px)] overflow-auto">
+                    <div className="operator-portal-table-scroll max-h-[min(52vh,560px)] overflow-auto">
                       <table className="w-full min-w-[900px] border-collapse text-left">
                         <thead>
                           <tr className="border-b border-border text-[11px] uppercase tracking-wider">

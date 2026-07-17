@@ -76,7 +76,6 @@ export function LeadLoginView() {
             <div className="mb-4 flex justify-center bg-transparent lg:hidden">
               <AuthIllustration
                 priority
-                variant="dark"
                 className="w-full max-w-[200px] [&_img]:max-h-[120px]"
               />
             </div>

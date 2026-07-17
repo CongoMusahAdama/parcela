@@ -252,80 +252,79 @@ export function PlatformOverviewView() {
   ] as const;
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main flex min-h-0 flex-1 flex-col overflow-hidden">
       <section
-        className="relative overflow-hidden rounded-2xl px-6 py-7 text-white shadow-md sm:px-8 sm:py-9"
+        className="relative shrink-0 overflow-hidden rounded-2xl px-4 py-4 text-white shadow-md sm:px-5 sm:py-4"
         style={{ background: PLATFORM_THEME.headerGradient }}
       >
         <div
-          className="pointer-events-none absolute -right-8 -top-14 size-52 rounded-full bg-white/15 blur-3xl"
+          className="pointer-events-none absolute -right-8 -top-14 size-40 rounded-full bg-white/15 blur-3xl"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute -bottom-16 left-1/4 size-44 rounded-full bg-black/10 blur-3xl"
+          className="pointer-events-none absolute -bottom-12 left-1/4 size-32 rounded-full bg-black/10 blur-3xl"
           aria-hidden
         />
 
-        <div className="relative flex items-start justify-between gap-4">
-          <div
-            className={cn(
-              "rounded-2xl border px-4 py-3 backdrop-blur-sm min-w-[148px]",
-              subscriptionStats.remindersDue > 0
-                ? "border-amber-200/60 bg-amber-400/20"
-                : "border-white/25 bg-white/10",
-            )}
-          >
-            <p className="font-display text-3xl font-bold leading-none tracking-tight text-white">
-              {subscriptionStats.remindersDue}
+        <div className="relative flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-[10px] font-bold uppercase tracking-[0.18em] text-white/75">
+              Platform control
             </p>
-            <p className="font-display mt-2 text-[10px] font-bold uppercase tracking-wide text-white/80">
-              Reminders due
+            <h1 className="font-display mt-1 text-xl font-bold tracking-tight sm:text-2xl">
+              Welcome back, {firstName}
+            </h1>
+            <p className="font-body mt-1.5 max-w-lg text-xs leading-snug text-white/85 sm:text-sm">
+              Onboard transport services, configure them, and hand over HQ logins.
             </p>
-            <p className="font-body mt-0.5 text-[11px] text-white/70">
-              Countdown emails to send
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-right backdrop-blur-sm min-w-[148px]">
-            <div className="[&_p]:!mt-0 [&_p]:!text-3xl [&_p]:!font-bold [&_p]:!text-white [&_p]:!tracking-tight">
-              <StaffLiveClock compact timeFirst showDate={false} />
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link
+                href="/platform/operators"
+                className="font-display inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--platform-orange-dark)] shadow-sm"
+              >
+                <Plus className="size-3.5" />
+                Onboard transport
+              </Link>
+              <Link
+                href="/platform/hq-admins"
+                className="font-display inline-flex items-center gap-1.5 rounded-lg border border-white/40 bg-white/15 px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-white"
+              >
+                Manage HQ admins
+              </Link>
             </div>
-            <p className="font-display mt-2 text-[10px] font-bold uppercase tracking-wide text-white/80">
-              Accra time
-            </p>
           </div>
-        </div>
 
-        <div className="relative mt-6 max-w-xl">
-          <p className="font-display text-[11px] font-bold uppercase tracking-[0.2em] text-white/75">
-            Platform control
-          </p>
-          <h1 className="font-display mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-            Welcome back, {firstName}
-          </h1>
-          <p className="font-body mt-3 max-w-md text-sm leading-relaxed text-white/90">
-            Onboard any transport service, configure them fully, then hand over HQ logins. Branch
-            leads are created by their HQ — or they contact you.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/platform/operators"
-              className="font-display inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-[var(--platform-orange-dark)] shadow-sm"
+          <div className="flex shrink-0 flex-row gap-2 sm:gap-3">
+            <div
+              className={cn(
+                "rounded-xl border px-3 py-2 sm:min-w-[120px]",
+                subscriptionStats.remindersDue > 0
+                  ? "border-amber-200/60 bg-amber-500/30"
+                  : "border-white/25 bg-white/15",
+              )}
             >
-              <Plus className="size-3.5" />
-              Onboard transport
-            </Link>
-            <Link
-              href="/platform/hq-admins"
-              className="font-display inline-flex items-center gap-2 rounded-xl border border-white/40 bg-white/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white backdrop-blur-sm"
-            >
-              Manage HQ admins
-            </Link>
+              <p className="font-display text-2xl font-bold leading-none tracking-tight text-white">
+                {subscriptionStats.remindersDue}
+              </p>
+              <p className="font-display mt-1 text-[9px] font-bold uppercase tracking-wide text-white/80">
+                Reminders due
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-white/25 bg-white/15 px-3 py-2 text-left sm:min-w-[120px] sm:text-right">
+              <div className="[&_p]:!mt-0 [&_p]:!text-2xl [&_p]:!font-bold [&_p]:!text-white [&_p]:!tracking-tight">
+                <StaffLiveClock compact timeFirst showDate={false} />
+              </div>
+              <p className="font-display mt-1 text-[9px] font-bold uppercase tracking-wide text-white/80">
+                Accra time
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain bg-[var(--platform-canvas)] pt-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6">
         {metricCards.map(({ label, value, hint, icon: Icon }) => (
           <div
             key={label}
@@ -527,6 +526,7 @@ export function PlatformOverviewView() {
           </section>
         </div>
       </div>
+      </div>
     </main>
   );
 }
@@ -635,14 +635,14 @@ function OverviewTabPanel({
   return (
     <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
       {/* Tab bar */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-stone-100 bg-stone-50/60 px-4 py-3">
+      <div className="operator-portal-tabs flex items-center gap-1 border-b border-stone-100 bg-stone-50/60 px-4 py-3">
         {OVERVIEW_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "font-display rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all",
+              "font-display shrink-0 rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all",
               activeTab === tab.id
                 ? "text-white shadow-md"
                 : "text-stone-500 hover:bg-[var(--platform-orange-soft)] hover:text-[var(--platform-orange-dark)]",
@@ -680,7 +680,7 @@ function OverviewTabPanel({
             resultCount={filteredTransports.length}
             totalCount={operators.length}
           />
-          <div className="overflow-x-auto">
+          <div className="operator-portal-table-scroll overflow-x-auto">
             <table className="min-w-[720px] w-full text-left">
               <thead>
                 <tr className="bg-[var(--platform-orange)] text-[10px] uppercase tracking-wider text-white">
@@ -748,7 +748,7 @@ function OverviewTabPanel({
             resultCount={filteredSubscriptions.length}
             totalCount={operators.length}
           />
-          <div className="overflow-x-auto">
+          <div className="operator-portal-table-scroll overflow-x-auto">
             <table className="min-w-[960px] w-full text-left">
               <thead>
                 <tr className="bg-[var(--platform-orange)] text-[10px] uppercase tracking-wider text-white">
@@ -879,7 +879,7 @@ function OverviewTabPanel({
             resultCount={filteredSupport.length}
             totalCount={supportQueue.length}
           />
-          <div className="overflow-x-auto">
+          <div className="operator-portal-table-scroll overflow-x-auto">
             {filteredSupport.length === 0 ? (
               <div className="flex items-start gap-2 px-5 pb-6 pt-2">
                 <div className="flex w-full items-start gap-2 rounded-xl bg-stone-50 px-4 py-4 text-stone-600">
@@ -982,7 +982,7 @@ function OverviewTabPanel({
             resultCount={filteredHqAdmins.length}
             totalCount={hqAdmins.length}
           />
-          <div className="overflow-x-auto">
+          <div className="operator-portal-table-scroll overflow-x-auto">
             <table className="min-w-[520px] w-full text-left">
               <thead>
                 <tr className="bg-[var(--platform-orange)] text-[10px] uppercase tracking-wider text-white">
@@ -1226,7 +1226,7 @@ function PlatformUsersSection({
         totalCount={roleUsers.length}
       />
 
-      <div className="overflow-x-auto">
+      <div className="operator-portal-table-scroll overflow-x-auto">
         <table className="min-w-[880px] w-full text-left">
           <thead>
             <tr className="bg-[var(--platform-orange)] text-[10px] uppercase tracking-wider text-white">

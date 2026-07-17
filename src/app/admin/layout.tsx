@@ -1,3 +1,5 @@
+import { OnlinePortalGuard } from "@/components/operator/OnlinePortalGuard";
+
 export default function AdminRootLayout({
   children,
 }: Readonly<{
@@ -5,6 +7,7 @@ export default function AdminRootLayout({
 }>) {
   return (
     <div className="admin-portal min-h-dvh w-full bg-white font-body text-foreground">
+      <OnlinePortalGuard />
       {children}
     </div>
   );

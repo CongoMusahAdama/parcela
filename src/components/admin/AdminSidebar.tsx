@@ -231,7 +231,7 @@ export function AdminSidebar({ mobileOpen, onMobileClose, onSignOut }: AdminSide
           <button
             type="button"
             onClick={onMobileClose}
-            className="rounded-lg p-1.5 text-white/75 hover:bg-white/10 lg:hidden"
+            className="rounded-lg p-1.5 text-white/75 hover:bg-white/10 md:hidden"
             aria-label="Close menu"
           >
             <X className="size-5" />
@@ -326,7 +326,7 @@ export function AdminSidebar({ mobileOpen, onMobileClose, onSignOut }: AdminSide
       {mobileOpen && (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-foreground/40 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-40 bg-foreground/40 backdrop-blur-[2px] md:hidden"
           onClick={onMobileClose}
           aria-label="Close menu overlay"
         />
@@ -334,8 +334,8 @@ export function AdminSidebar({ mobileOpen, onMobileClose, onSignOut }: AdminSide
 
       <aside
         className={cn(
-          "admin-sidebar fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(92vw,320px)] flex-col shadow-2xl transition-transform duration-300 sm:w-[320px] lg:translate-x-0 lg:shadow-none",
-          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          "admin-sidebar fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(92vw,320px)] flex-col shadow-2xl transition-transform duration-300 sm:w-[320px] md:translate-x-0 md:shadow-none",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
         style={{ background: "var(--staff-header-gradient)" }}
       >

@@ -10,7 +10,7 @@ export function TrackCollectIllustration() {
         height={1024}
         unoptimized
         priority
-        className="h-auto max-h-[360px] w-full object-contain"
+        className="h-auto max-h-[140px] w-full object-contain sm:max-h-[200px] lg:max-h-[260px]"
         sizes="(max-width: 448px) 100vw, 448px"
       />
     </div>

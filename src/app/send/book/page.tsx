@@ -88,8 +88,46 @@ function BookPageForm({ originStation }: { originStation: NonNullable<ReturnType
 
   return (
     <AppShell
-      shellClassName="h-dvh max-h-dvh overflow-hidden"
-      className="flex min-h-0 flex-1 flex-col overflow-hidden !px-0 !pb-0 !pt-0"
+      className="bg-background"
+      footer={
+        <div className="flex items-center justify-between gap-3">
+          {formStep > 0 ? (
+            <button
+              type="button"
+              onClick={handleBack}
+              className="font-display text-sm font-medium text-muted transition-colors hover:text-foreground"
+            >
+              Back
+            </button>
+          ) : (
+            <span aria-hidden />
+          )}
+
+          {isReviewStep ? (
+            <Button
+              type="submit"
+              form="parcel-form"
+              variant="primary"
+              size="md"
+              disabled={isSubmitting}
+              className="ml-auto !min-h-11 !rounded-xl !px-5 !text-sm"
+            >
+              {isSubmitting ? "Creating..." : "Get reference"}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              onClick={handleContinue}
+              className="ml-auto !min-h-11 !rounded-xl !px-5 !text-sm"
+            >
+              Continue
+              <ChevronRight className="size-4" />
+            </Button>
+          )}
+        </div>
+      }
     >
       <header className="z-10 shrink-0 border-b border-border bg-surface px-5 pb-3 pt-2">
         <Link
@@ -138,7 +176,7 @@ function BookPageForm({ originStation }: { originStation: NonNullable<ReturnType
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-background px-5 pt-2 pb-6 md:px-8 lg:px-10">
+      <div className="mobile-scroll min-h-0 flex-1 bg-background px-5 pt-2 pb-6 md:px-8 lg:px-10">
         <ParcelForm
           ref={formRef}
           step={formStep}
@@ -148,44 +186,6 @@ function BookPageForm({ originStation }: { originStation: NonNullable<ReturnType
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
         />
-
-        <div className="mt-4 flex items-center justify-between gap-3">
-          {formStep > 0 ? (
-            <button
-              type="button"
-              onClick={handleBack}
-              className="font-display text-sm font-medium text-muted transition-colors hover:text-foreground"
-            >
-              Back
-            </button>
-          ) : (
-            <span aria-hidden />
-          )}
-
-          {isReviewStep ? (
-            <Button
-              type="submit"
-              form="parcel-form"
-              variant="primary"
-              size="md"
-              disabled={isSubmitting}
-              className="ml-auto !min-h-10 !rounded-xl !px-5 !py-2 !text-sm"
-            >
-              {isSubmitting ? "Creating..." : "Get reference"}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              onClick={handleContinue}
-              className="ml-auto !min-h-10 !rounded-xl !px-5 !py-2 !text-sm"
-            >
-              Continue
-              <ChevronRight className="size-4" />
-            </Button>
-          )}
-        </div>
       </div>
     </AppShell>
   );
@@ -213,7 +213,7 @@ function BookPageContent() {
 
   if (originStation === undefined) {
     return (
-      <AppShell shellClassName="h-dvh max-h-dvh overflow-hidden" className="!px-0 !pt-0">
+      <AppShell viewport className="!px-0 !pt-0">
         <div className="animate-pulse px-5 py-4">
           <div className="h-4 w-12 rounded bg-border" />
           <div className="mx-auto mt-3 h-[200px] rounded-xl bg-border" />
@@ -250,7 +250,7 @@ export default function BookPage() {
   return (
     <Suspense
       fallback={
-        <AppShell shellClassName="h-dvh max-h-dvh overflow-hidden" className="!px-0 !pt-0">
+        <AppShell viewport className="!px-0 !pt-0">
           <div className="animate-pulse shrink-0 border-b border-border bg-surface px-5 pb-4 pt-2">
             <div className="mb-3 h-4 w-12 rounded bg-border" />
             <div className="mx-auto h-[240px] w-full max-w-[380px] rounded-xl bg-border" />

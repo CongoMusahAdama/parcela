@@ -53,7 +53,7 @@ export class LeadController {
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   login(@Body() dto: LeadLoginDto, @Res({ passthrough: true }) res: Response) {
     const result = this.staffAuth.loginByPhonePin(dto.phone, dto.pin);
-    setAuthCookie(res, LEAD_AUTH_COOKIE, result.token, this.staffAuth.getTokenTtlMs());
+    setAuthCookie(res, LEAD_AUTH_COOKIE, result.token, this.staffAuth.getLoginCookieTtlMs('station_lead'));
     void this.sms.sendSecureLoginAlert({
       phone: result.staff.phone,
       displayName: result.staff.displayName,

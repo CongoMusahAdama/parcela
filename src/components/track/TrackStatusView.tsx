@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, ChevronRight, Clock, MapPin, Package } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, ChevronRight, Clock, MapPin, Package } from "lucide-react";
 import { ParcelStatusTimeline } from "@/components/track/ParcelStatusTimeline";
 import { ParcelTransportInfo } from "@/components/track/ParcelTransportInfo";
 import { PenaltyNotice } from "@/components/track/PenaltyNotice";
@@ -14,6 +14,7 @@ import { TrackWizardSteps } from "@/components/track/TrackWizardSteps";
 import { AppShell } from "@/components/ui/AppShell";
 import { Button } from "@/components/ui/Button";
 import { ScrollMoreHint } from "@/components/ui/ScrollMoreHint";
+import { getTrackStatusStepLabel } from "@/lib/track-navigation";
 import { lookupParcelAsync, resolveStationCoords, TRACK_STATUS_LABELS } from "@/lib/tracking";
 import { formatExpectedArrival } from "@/lib/tracking-shared";
 import { formatItemLabel } from "@/lib/bookingItems";
@@ -36,22 +37,11 @@ function formatUpdatedAt(iso: string) {
 
 function StatusLoadingShell() {
   return (
-    <AppShell
-      shellClassName="h-dvh max-h-dvh overflow-hidden"
-      className="flex min-h-0 flex-1 flex-col overflow-hidden !px-0 !pb-0 !pt-0 bg-background"
-    >
+    <AppShell viewport className="bg-background">
       <div className="animate-pulse shrink-0 border-b border-border bg-surface px-5 pb-3 pt-2">
         <div className="h-4 w-12 rounded bg-border" />
-        <div className="mt-3 flex gap-3">
-          <div className="h-[150px] w-[150px] shrink-0 rounded-xl bg-border" />
-          <div className="flex-1 space-y-2 pt-1">
-            <div className="h-5 w-24 rounded-full bg-border" />
-            <div className="h-6 w-32 rounded bg-border" />
-          </div>
-        </div>
-      </div>
-      <div className="animate-pulse shrink-0 px-5 py-3">
-        <div className="h-40 rounded-xl bg-border" />
+        <div className="mx-auto mt-3 h-[120px] max-w-[200px] rounded-xl bg-border" />
+        <div className="mt-3 h-6 w-32 rounded bg-border" />
       </div>
     </AppShell>
   );
@@ -103,12 +93,12 @@ function TrackStatusContent() {
 
   const canCollect =
     parcel.status === "ready_for_collection" || parcel.status === "arrived";
+  const isCollected = parcel.status === "collected";
   const coords = resolveStationCoords(parcel);
 
   return (
     <AppShell
-      shellClassName="h-dvh max-h-dvh overflow-hidden"
-      className="flex min-h-0 flex-1 flex-col overflow-hidden !px-0 !pb-0 !pt-0 bg-background"
+      className="bg-background"
       footer={
         canCollect ? (
           <Button
@@ -118,6 +108,10 @@ function TrackStatusContent() {
           >
             Collection details
             <ChevronRight className="size-4" />
+          </Button>
+        ) : isCollected ? (
+          <Button href="/track" fullWidth className="!min-h-11 !text-sm">
+            Track another parcel
           </Button>
         ) : coords ? (
           <Button
@@ -141,15 +135,25 @@ function TrackStatusContent() {
           Back
         </button>
 
-        <TrackStatusIllustration className="mb-3" />
+        <TrackStatusIllustration compact className="mb-2" />
 
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <span className="font-display inline-block rounded-full bg-primary px-2 py-px text-[9px] font-bold uppercase tracking-wider text-white">
-              Step 2 of 4
+            <span
+              className={cn(
+                "font-display inline-block rounded-full px-2 py-px text-[9px] font-bold uppercase tracking-wider text-white",
+                isCollected ? "bg-success" : "bg-primary",
+              )}
+            >
+              {getTrackStatusStepLabel(parcel.status)}
             </span>
-            <h1 className="font-display mt-1 text-lg font-bold tracking-tight text-foreground">
-              Parcel status
+            <h1
+              className={cn(
+                "font-display mt-1 text-lg font-bold tracking-tight",
+                isCollected ? "text-success" : "text-foreground",
+              )}
+            >
+              {isCollected ? "Parcel collected" : "Parcel status"}
             </h1>
           </div>
 
@@ -158,7 +162,9 @@ function TrackStatusContent() {
             <p
               className={cn(
                 "font-display mt-0.5 text-[10px] font-bold uppercase tracking-wide",
-                parcel.status === "ready_for_collection" ? "text-success" : "text-primary"
+                parcel.status === "ready_for_collection" || isCollected
+                  ? "text-success"
+                  : "text-primary",
               )}
             >
               {TRACK_STATUS_LABELS[parcel.status]}
@@ -179,11 +185,23 @@ function TrackStatusContent() {
         <div className="mt-2.5">
           <TrackWizardSteps current={2} code={parcel.pickupCode} />
         </div>
+      </header>
 
-        {coords ? (
+      <ScrollMoreHint scrollClassName="px-5 py-3 md:px-8">
+        {isCollected ? (
+          <div className="rounded-2xl border border-success/25 bg-success/5 p-4 text-center">
+            <CheckCircle2 className="mx-auto size-8 text-success" />
+            <p className="font-display mt-3 text-sm font-bold text-success">Handover complete</p>
+            <p className="font-body mt-2 text-xs leading-relaxed text-muted">
+              Tracking ID {parcel.pickupCode} was released at {parcel.destinationStationName}.
+            </p>
+          </div>
+        ) : null}
+
+        {!isCollected && coords ? (
           <Link
             href={`/track/station?code=${encodeURIComponent(parcel.pickupCode)}`}
-            className="mt-3 flex items-center gap-3 rounded-xl border border-primary/25 bg-primary/5 p-3 transition-colors hover:bg-primary/10"
+            className="mb-3 flex items-center gap-3 rounded-xl border border-primary/25 bg-primary/5 p-3 transition-colors hover:bg-primary/10"
           >
             <TrackMapIllustration size={52} />
             <div className="min-w-0 flex-1">
@@ -195,33 +213,27 @@ function TrackStatusContent() {
             <ChevronRight className="size-5 shrink-0 text-primary" />
           </Link>
         ) : null}
-      </header>
 
-      {canCollect ? (
-        <section className="shrink-0 border-b border-border bg-background px-5 py-3 md:px-8">
-          <PenaltyNotice
-            arrivedAt={parcel.arrivedAt}
-            status={parcel.status}
-            embedded
-          />
-        </section>
-      ) : null}
+        {canCollect ? (
+          <div className="mb-3">
+            <PenaltyNotice arrivedAt={parcel.arrivedAt} status={parcel.status} embedded />
+          </div>
+        ) : null}
 
-      <section className="shrink-0 border-b border-border bg-background px-5 py-2">
-        <ParcelTransportInfo parcel={parcel} compact />
-      </section>
-
-      <section className="shrink-0 border-b border-border bg-background px-5 py-3">
-        <p className="font-display mb-2 text-xs font-semibold text-foreground">Timeline</p>
-        <div className="rounded-2xl border border-border bg-surface px-4 py-3 shadow-[var(--shadow-soft)]">
-          <ParcelStatusTimeline status={parcel.status} />
+        <div className="mb-3">
+          <ParcelTransportInfo parcel={parcel} compact />
         </div>
-        <p className="font-body mt-2 text-center text-[10px] text-muted">
-          Updated {formatUpdatedAt(parcel.updatedAt)}
-        </p>
-      </section>
 
-      <ScrollMoreHint scrollClassName="px-5 py-3 md:px-8">
+        <div className="mb-3">
+          <p className="font-display mb-2 text-xs font-semibold text-foreground">Timeline</p>
+          <div className="rounded-2xl border border-border bg-surface px-4 py-3 shadow-[var(--shadow-soft)]">
+            <ParcelStatusTimeline status={parcel.status} />
+          </div>
+          <p className="font-body mt-2 text-center text-[10px] text-muted">
+            Updated {formatUpdatedAt(parcel.updatedAt)}
+          </p>
+        </div>
+
         <div className="rounded-xl border border-border bg-surface p-3 md:p-4">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
             <span className="font-body inline-flex items-center gap-1">
@@ -260,7 +272,7 @@ function TrackStatusContent() {
             <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
               <p className="font-display text-[10px] font-semibold uppercase tracking-wide text-muted">
-                Collect at
+                {isCollected ? "Collected at" : "Collect at"}
               </p>
               <p className="font-display text-sm font-bold text-foreground">
                 {parcel.destinationStationName}

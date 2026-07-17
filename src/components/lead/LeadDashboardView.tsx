@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -19,9 +19,9 @@ import { OperatorLogo } from "@/components/brand/OperatorLogo";
 import { StaffLiveClock } from "@/components/staff/StaffLiveClock";
 import { StaffParcelsTable } from "@/components/staff/StaffParcelsTable";
 import { useLeadSession } from "@/components/lead/LeadOperatorShell";
-import { fetchLeadSummary } from "@/lib/lead-api";
-import { getOperatorConfirmedIllustration } from "@/lib/operators";
-import type { BranchSummary } from "@/types/lead";
+import { getOperatorWelcomeBg } from "@/lib/operators";
+import { computeBranchSummaryCounts } from "@/types/staff-parcel";
+import { cn } from "@/lib/utils";
 
 type QuickCard = {
   label: string;
@@ -40,21 +40,15 @@ const TAB_LABELS: Record<ParcelTab, { full: string; short: string }> = {
 };
 
 export function LeadDashboardView() {
-  const { staff, token } = useLeadSession();
+  const { staff } = useLeadSession();
   const { parcels, loading: parcelsLoading, error: parcelsError } = useLeadParcels();
-  const [summary, setSummary] = useState<BranchSummary | null>(null);
-  const [loading, setLoading] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ParcelTab>("all");
 
-  useEffect(() => {
-    void fetchLeadSummary(token)
-      .then(setSummary)
-      .catch(() => setSummary(null))
-      .finally(() => setLoading(false));
-  }, [token]);
-
-  const counts = summary?.counts;
+  const counts = useMemo(
+    () => computeBranchSummaryCounts(parcels, staff.stationId),
+    [parcels, staff.stationId],
+  );
 
   const tabConfig = useMemo(
     () => ({
@@ -87,42 +81,45 @@ export function LeadDashboardView() {
   const currentTab = tabConfig[activeTab];
 
   const metrics: QuickCard[] = [
-    { label: "All parcels", shortLabel: "All", value: counts?.total ?? 0, icon: Package },
+    { label: "All parcels", shortLabel: "All", value: counts.total, icon: Package },
     {
       label: "Awaiting drop-off",
       shortLabel: "Drop-off",
-      value: counts?.pending_dropoff ?? 0,
+      value: counts.pending_dropoff,
       icon: Package,
     },
-    { label: "In transit", shortLabel: "Transit", value: counts?.in_transit ?? 0, icon: Truck },
+    { label: "In transit", shortLabel: "Transit", value: counts.in_transit, icon: Truck },
     {
       label: "Ready to collect",
       shortLabel: "Collect",
-      value: counts?.ready_for_collection ?? 0,
+      value: counts.ready_for_collection,
       icon: PackageCheck,
     },
-    { label: "Collected today", shortLabel: "Collected", value: counts?.collected ?? 0, icon: Bus },
+    { label: "Collected today", shortLabel: "Collected", value: counts.updatedToday, icon: Bus },
   ];
 
-  const heroIllustration = getOperatorConfirmedIllustration(staff.operator);
+  const heroIllustration = getOperatorWelcomeBg(staff.operator);
 
   return (
     <>
-      <main className="px-3 py-3 sm:px-6 sm:py-5 lg:px-8 lg:py-8">
-        {/* Welcome hero */}
-        <section className="overflow-hidden rounded-xl border border-border bg-white shadow-sm sm:relative sm:min-h-[380px] sm:rounded-2xl lg:min-h-[420px]">
-          {/* Mobile: stacked greeting + mascot */}
-          <div className="sm:hidden">
-            <div className="relative z-20 px-3.5 pt-3.5 pb-2">
-              <StaffLiveClock variant="light" compact className="mb-2" />
-              <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
+      <main className="operator-portal-main">
+        <section className="overflow-hidden rounded-xl border border-border bg-white shadow-sm sm:rounded-2xl">
+          <div className="flex flex-col md:flex-row md:items-stretch">
+            <div className="relative flex flex-1 flex-col justify-end px-4 py-5 sm:px-6 sm:py-7 md:max-w-[55%] lg:max-w-[50%] lg:py-9">
+              <div className="pointer-events-none absolute right-4 top-4 md:right-6 md:top-6">
+                <div className="rounded-xl border border-border bg-white/95 p-2 shadow-sm">
+                  <OperatorLogo operator={staff.operator} className="h-7 w-auto sm:h-8" />
+                </div>
+              </div>
+              <StaffLiveClock variant="light" compact className="mb-3 md:mb-4" />
+              <h1 className="font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
                 Hello, {staff.displayName.split(" ")[0]}
               </h1>
-              <p className="font-body mt-1 text-xs text-muted">
-                {staff.stationName} · Branch overview
+              <p className="font-body mt-1.5 text-xs text-muted sm:mt-2 sm:text-sm">
+                {staff.stationName} · Branch overview and staff management.
               </p>
             </div>
-            <div className="flex justify-center px-2 pb-3">
+            <div className="flex shrink-0 items-end justify-center border-t border-border/60 px-3 pb-4 pt-2 md:flex-1 md:justify-end md:border-t-0 md:border-l md:px-4 md:pb-0 md:pt-0 lg:pr-8">
               <Image
                 src={heroIllustration}
                 alt=""
@@ -130,49 +127,13 @@ export function LeadDashboardView() {
                 height={800}
                 priority
                 unoptimized
-                className="h-[140px] w-auto max-w-[min(88%,280px)] object-contain object-bottom"
+                className="h-[130px] w-auto max-w-[min(88%,260px)] object-contain object-bottom sm:h-[160px] md:h-[min(240px,32vw)] lg:h-[min(320px,360px)] lg:max-w-[min(100%,420px)]"
               />
             </div>
           </div>
-
-          {/* Desktop: mascot centred in the banner */}
-          <div className="pointer-events-none absolute inset-0 z-10 hidden items-end justify-center sm:flex">
-            <Image
-              src={heroIllustration}
-              alt=""
-              width={1200}
-              height={800}
-              priority
-              unoptimized
-              className="h-[min(92%,400px)] w-auto max-w-[min(70%,460px)] object-contain object-bottom lg:h-[min(98%,440px)] lg:max-w-[min(68%,500px)]"
-            />
-          </div>
-          <div
-            className="pointer-events-none absolute inset-y-0 left-0 z-[8] hidden w-[50%] sm:block"
-            style={{
-              background:
-                "linear-gradient(90deg, rgb(255 255 255 / 1) 0%, rgb(255 255 255 / 0.96) 58%, transparent 100%)",
-            }}
-            aria-hidden
-          />
-          <div className="pointer-events-none absolute right-4 top-4 z-[12] hidden sm:block sm:right-8 sm:top-8">
-            <div className="rounded-xl border border-border bg-white/95 p-2 shadow-sm">
-              <OperatorLogo operator={staff.operator} className="h-8 w-auto" />
-            </div>
-          </div>
-          <div className="relative z-20 hidden min-h-[380px] max-w-[52%] flex-col justify-end px-8 py-10 sm:flex lg:min-h-[420px]">
-            <StaffLiveClock variant="light" className="mb-4" />
-            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
-              Hello, {staff.displayName.split(" ")[0]}
-            </h1>
-            <p className="font-body mt-2 text-sm text-muted">
-              {staff.stationName} · Branch overview and staff management.
-            </p>
-          </div>
         </section>
 
-        {/* Metric snapshot */}
-        <section className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
+        <section className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
           {metrics.map(({ label, shortLabel, value, icon: Icon }) => (
             <div
               key={label}
@@ -186,22 +147,21 @@ export function LeadDashboardView() {
               </div>
               <div className="min-w-0">
                 <p className="font-display text-lg font-bold leading-none text-foreground sm:text-xl">
-                  {loading ? "—" : value}
+                  {parcelsLoading ? "—" : value}
                 </p>
                 <p className="font-body mt-0.5 truncate text-[10px] leading-tight text-muted sm:mt-1 sm:whitespace-normal sm:text-[11px]">
-                  <span className="sm:hidden">{shortLabel}</span>
-                  <span className="hidden sm:inline">{label}</span>
+                  <span className="lg:hidden">{shortLabel}</span>
+                  <span className="hidden lg:inline">{label}</span>
                 </p>
               </div>
             </div>
           ))}
         </section>
 
-        {/* Quick actions */}
-        <section className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3 lg:grid-cols-4">
+        <section className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3 md:grid-cols-4">
           <Link
             href="/lead/team"
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3.5 sm:text-left lg:rounded-2xl"
+            className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3.5 sm:text-left md:rounded-2xl"
           >
             <span
               className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white sm:size-10 sm:rounded-xl"
@@ -217,7 +177,7 @@ export function LeadDashboardView() {
           <button
             type="button"
             onClick={() => setAddModalOpen(true)}
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3.5 sm:text-left lg:rounded-2xl"
+            className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3.5 sm:text-left md:rounded-2xl"
           >
             <span
               className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white sm:size-10 sm:rounded-xl"
@@ -232,7 +192,7 @@ export function LeadDashboardView() {
 
           <Link
             href="/lead/analytics"
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3.5 sm:text-left lg:rounded-2xl"
+            className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3.5 sm:text-left md:rounded-2xl"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 sm:size-10 sm:rounded-xl">
               <Truck className="size-4" />
@@ -246,7 +206,7 @@ export function LeadDashboardView() {
             href="/staff/dashboard"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-border bg-surface p-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3.5 sm:text-left lg:rounded-2xl"
+            className="flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-border bg-surface p-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3.5 sm:text-left md:rounded-2xl"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 sm:size-10 sm:rounded-xl">
               <ExternalLink className="size-4" />
@@ -257,7 +217,6 @@ export function LeadDashboardView() {
           </a>
         </section>
 
-        {/* Branch parcels */}
         <section className="mt-4 sm:mt-5">
           <div className="mb-2.5 flex items-center justify-between gap-2 sm:mb-4 sm:items-end">
             <div className="min-w-0">
@@ -273,18 +232,19 @@ export function LeadDashboardView() {
             </p>
           </div>
 
-          <div className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
+          <div className="operator-portal-tabs -mx-1 px-1 pb-1 md:overflow-visible">
             <div className="inline-flex min-w-full gap-1 rounded-xl border border-border bg-surface p-1 sm:min-w-max sm:rounded-2xl sm:p-1.5">
               {(Object.keys(tabConfig) as ParcelTab[]).map((tab) => (
                 <button
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`font-display flex-1 rounded-lg px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide transition-all sm:flex-none sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-xs ${
+                  className={cn(
+                    "font-display flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide transition-all sm:flex-none sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-xs",
                     activeTab === tab
                       ? "text-white shadow-md"
-                      : "text-[var(--staff-accent-dark)] hover:bg-[var(--staff-accent-muted)] hover:text-[var(--staff-accent)]"
-                  }`}
+                      : "text-[var(--staff-accent-dark)] hover:bg-[var(--staff-accent-muted)] hover:text-[var(--staff-accent)]",
+                  )}
                   style={
                     activeTab === tab
                       ? {
@@ -294,8 +254,8 @@ export function LeadDashboardView() {
                       : undefined
                   }
                 >
-                  <span className="sm:hidden">{TAB_LABELS[tab].short}</span>
-                  <span className="hidden sm:inline">{TAB_LABELS[tab].full}</span>
+                  <span className="md:hidden">{TAB_LABELS[tab].short}</span>
+                  <span className="hidden md:inline">{TAB_LABELS[tab].full}</span>
                 </button>
               ))}
             </div>

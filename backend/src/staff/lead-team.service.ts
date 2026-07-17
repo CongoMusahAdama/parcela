@@ -186,11 +186,11 @@ export class LeadTeamService {
 
     const staff = this.staffAuth.addAccount(record);
 
-    const loginUrl = `${webUrl}/staff/login`;
+    const loginUrl = `${webUrl}/portal/login`;
     const message = [
       `Parcela counter staff account for ${station.name} is ready.`,
       `Sign in: ${loginUrl}`,
-      `Email: ${email}`,
+      `Phone: ${input.phone.trim()}`,
       `Temporary code: ${temporaryPassword}`,
       `Sign in with this code, then set a new password from the portal.`,
     ].join(' ');

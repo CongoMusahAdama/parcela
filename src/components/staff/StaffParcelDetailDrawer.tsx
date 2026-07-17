@@ -148,25 +148,32 @@ function ParcelDetailContent({
             Items in booking
           </p>
           <ul className="mt-3 space-y-2">
-            {parcel.items.map((item, index) => (
-              <li
-                key={`${parcel.bookingReference}-item-${index}`}
-                className="flex items-start gap-3 rounded-lg bg-background px-3 py-2.5"
-              >
-                <Package className="mt-0.5 size-4 shrink-0 text-muted" />
-                <div>
-                  <p className="font-body text-sm font-medium capitalize text-foreground">
-                    {item.parcelType}
-                    {item.fragile && (
-                      <span className="ml-2 text-[10px] font-bold uppercase text-amber-600">
-                        Fragile
-                      </span>
-                    )}
-                  </p>
-                  <p className="font-body text-xs text-muted">{item.description}</p>
-                </div>
+            {parcel.items?.length ? (
+              parcel.items.map((item, index) => (
+                <li
+                  key={`${parcel.bookingReference}-item-${index}`}
+                  className="flex items-start gap-3 rounded-lg bg-background px-3 py-2.5"
+                >
+                  <Package className="mt-0.5 size-4 shrink-0 text-muted" />
+                  <div>
+                    <p className="font-body text-sm font-medium capitalize text-foreground">
+                      {item.parcelType}
+                      {item.fragile && (
+                        <span className="ml-2 text-[10px] font-bold uppercase text-amber-600">
+                          Fragile
+                        </span>
+                      )}
+                    </p>
+                    <p className="font-body text-xs text-muted">{item.description}</p>
+                  </div>
+                </li>
+              ))
+            ) : (
+              <li className="rounded-lg bg-background px-3 py-2.5 text-xs text-muted">
+                {parcel.itemCount} item{parcel.itemCount === 1 ? "" : "s"} — open verify for full
+                breakdown when online.
               </li>
-            ))}
+            )}
           </ul>
         </section>
 

@@ -30,12 +30,13 @@ export type PlatformWorkspace = {
 export type PlatformCredentialResult = {
   ok: boolean;
   temporaryPassword: string;
-  email: string;
+  phone: string;
   smsSent: boolean;
 };
 
 export type CreateTransportOperatorResult = PlatformOperatorRow & {
   hqSmsSent?: boolean;
+  hqTemporaryPassword?: string;
 };
 
 export type OperatorReminderResult = PlatformOperatorRow & {
@@ -99,6 +100,23 @@ export type CreateTransportOperatorPayload = {
   subscriptionAmountGhs?: number;
 };
 
+export type UpdateTransportOperatorPayload = {
+  name?: string;
+  region?: string;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  brandColor?: string;
+  logoDataUrl?: string | null;
+  notes?: string;
+  agreementDate?: string;
+  status?: PlatformOperatorRow['status'];
+  hqConfigured?: boolean;
+  subscriptionPlan?: 'annual' | 'trial' | null;
+  subscriptionPaidAt?: string;
+  subscriptionExpiresAt?: string;
+  subscriptionAmountGhs?: number;
+};
+
 export async function platformLoginApi(email: string, password: string): Promise<PlatformSession> {
   return apiFetch<PlatformSession>("/platform/login", {
     method: "POST",
@@ -133,6 +151,16 @@ export async function createTransportOperatorApi(
 ): Promise<CreateTransportOperatorResult> {
   return apiFetch<CreateTransportOperatorResult>("/platform/operators", {
     method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateTransportOperatorApi(
+  operatorId: string,
+  payload: UpdateTransportOperatorPayload,
+): Promise<PlatformOperatorRow> {
+  return apiFetch<PlatformOperatorRow>(`/platform/operators/${operatorId}`, {
+    method: "PATCH",
     body: JSON.stringify(payload),
   });
 }

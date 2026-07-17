@@ -3,20 +3,22 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
+import { OperatorInstallBanner } from "@/components/operator/OperatorInstallBanner";
+import { OperatorLocksProvider } from "@/components/operator/OperatorLocksContext";
+import { OperatorPortalWelcomeGate } from "@/components/operator/OperatorPortalWelcomeGate";
 import { StaffApiBanner } from "@/components/staff/StaffApiBanner";
 import { StaffNavProvider, useStaffNav } from "@/components/staff/StaffNavContext";
 import { StaffParcelsProvider } from "@/components/staff/StaffParcelsContext";
 import { StaffPreloader } from "@/components/staff/StaffPreloader";
 import { StaffSidebar } from "@/components/staff/StaffSidebar";
 import { OperatorFreezeBanner } from "@/components/shared/OperatorFreezeBanner";
-import { clearStaffSession, restoreStaffSession, signOutStaff } from "@/lib/staff-auth";
-import { fetchStaffSession } from "@/lib/staff-api";
-import { showConfirmDialog, showInfoAlert, showSuccessAlert } from "@/lib/sweetalert";
+import { restoreStaffSession, signOutStaff } from "@/lib/staff-auth";
+import { OPERATOR_LOGIN_PATH } from "@/lib/operator-auth";
+import { showConfirmDialog, showSuccessAlert } from "@/lib/sweetalert";
 import { getStaffNavItem } from "@/lib/staff-nav";
 import { operatorStaffThemeStyle } from "@/lib/operator-theme";
+import { ensureOperatorBrandingLoaded } from "@/lib/operators";
 import { prefetchAllStaffViews } from "@/lib/staff-view-prefetch";
-import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
-import { useSessionValidation } from "@/hooks/use-session-validation";
 import type { StaffSession } from "@/types/staff";
 
 const StaffSessionContext = createContext<StaffSession | null>(null);
@@ -79,13 +81,14 @@ function StaffShellContent({
           </div>
         </header>
 
-        <div className="relative min-h-0 flex-1 overflow-y-auto">
+        <div className="operator-portal-scroll relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           <OperatorFreezeBanner operator={staff.operator} mode="staff" />
           <StaffApiBanner />
           {isNavigating && <StaffPreloader variant="overlay" message={navMessage ?? "Loading page"} />}
           {children}
         </div>
       </div>
+      <OperatorInstallBanner placement="portal" />
     </div>
   );
 }
@@ -101,10 +104,11 @@ export function StaffOperatorShell({ children }: StaffOperatorShellProps) {
     let cancelled = false;
 
     void (async () => {
+      await ensureOperatorBrandingLoaded();
       const current = await restoreStaffSession();
       if (cancelled) return;
       if (!current) {
-        router.replace("/staff/login");
+        router.replace(OPERATOR_LOGIN_PATH);
         return;
       }
       if (current.staff.mustChangePassword) {
@@ -134,31 +138,6 @@ export function StaffOperatorShell({ children }: StaffOperatorShellProps) {
     setMobileNavOpen(false);
   }, [pathname]);
 
-  useInactivityLogout({
-    enabled: ready && Boolean(session),
-    onIdle: async () => {
-      await signOutStaff();
-      await showInfoAlert({
-        title: "Session expired",
-        text: "You were signed out after 30 minutes of inactivity.",
-      });
-      router.replace("/staff/login");
-    },
-  });
-
-  useSessionValidation({
-    enabled: ready && Boolean(session),
-    validate: () => fetchStaffSession(),
-    onInvalid: async () => {
-      await signOutStaff();
-      await showInfoAlert({
-        title: "Signed out",
-        text: "Your session ended. Sign in again.",
-      });
-      router.replace("/staff/login");
-    },
-  });
-
   async function handleSignOut() {
     if (!session) return;
 
@@ -179,7 +158,7 @@ export function StaffOperatorShell({ children }: StaffOperatorShellProps) {
       text: "You have been signed out safely.",
       confirmText: "OK",
     });
-    router.push("/staff/login");
+    router.push(OPERATOR_LOGIN_PATH);
   }
 
   if (!ready || !session) {
@@ -200,18 +179,27 @@ export function StaffOperatorShell({ children }: StaffOperatorShellProps) {
 
   return (
     <StaffSessionContext.Provider value={session}>
-      <StaffParcelsProvider>
-        <StaffNavProvider>
-          <StaffShellContent
-            session={session}
-            mobileNavOpen={mobileNavOpen}
-            setMobileNavOpen={setMobileNavOpen}
-            onSignOut={handleSignOut}
-          >
-            {children}
-          </StaffShellContent>
-        </StaffNavProvider>
-      </StaffParcelsProvider>
+      <OperatorLocksProvider operator={session.staff.operator}>
+        <StaffParcelsProvider>
+          <StaffNavProvider>
+            <StaffShellContent
+              session={session}
+              mobileNavOpen={mobileNavOpen}
+              setMobileNavOpen={setMobileNavOpen}
+              onSignOut={handleSignOut}
+            >
+              {children}
+            </StaffShellContent>
+            <OperatorPortalWelcomeGate
+              portal="staff"
+              accountId={session.staff.id}
+              displayName={session.staff.displayName}
+              subtitle={`${session.staff.stationName} · ${session.staff.stationCode}`}
+              operatorLabel={String(session.staff.operator)}
+            />
+          </StaffNavProvider>
+        </StaffParcelsProvider>
+      </OperatorLocksProvider>
     </StaffSessionContext.Provider>
   );
 }

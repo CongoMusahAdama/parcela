@@ -4,14 +4,15 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Lock, Mail } from "lucide-react";
+import { Lock, Phone } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { StaffAuthBrandPanel } from "@/components/staff/StaffAuthBrandPanel";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
 import { changeStaffPasswordApi } from "@/lib/staff-api";
 import { restoreStaffSession, saveStaffSession, signOutStaff } from "@/lib/staff-auth";
-import { showInfoAlert, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
-import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
+import { queuePortalWelcome } from "@/lib/operator-portal-welcome";
+import { OPERATOR_LOGIN_PATH } from "@/lib/operator-auth";
+import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import type { StaffSession } from "@/types/staff";
 
 export function StaffChangePasswordView() {
@@ -31,7 +32,7 @@ export function StaffChangePasswordView() {
       const current = await restoreStaffSession();
       if (cancelled) return;
       if (!current) {
-        router.replace("/staff/login");
+        router.replace(OPERATOR_LOGIN_PATH);
         return;
       }
       setSession(current);
@@ -41,18 +42,6 @@ export function StaffChangePasswordView() {
       cancelled = true;
     };
   }, [router]);
-
-  useInactivityLogout({
-    enabled: ready && Boolean(session),
-    onIdle: async () => {
-      await signOutStaff();
-      await showInfoAlert({
-        title: "Session expired",
-        text: "You were signed out after 30 minutes of inactivity.",
-      });
-      router.replace("/staff/login");
-    },
-  });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -92,6 +81,7 @@ export function StaffChangePasswordView() {
         ...session,
         staff: { ...session.staff, mustChangePassword: false },
       });
+      queuePortalWelcome("staff", session.staff.id);
       await showSuccessAlert({
         title: "Password updated",
         text: result.message,
@@ -123,10 +113,11 @@ export function StaffChangePasswordView() {
           <div className="mx-auto w-full max-w-[380px]">
             <div className="mb-6 flex justify-center lg:hidden">
               <Image
-                src="/Auth.jpg"
+                src="/sender.png"
                 alt=""
-                width={320}
-                height={320}
+                width={1536}
+                height={1024}
+                unoptimized
                 priority
                 className="h-36 w-auto object-contain"
               />
@@ -138,21 +129,21 @@ export function StaffChangePasswordView() {
                 Set your password
               </h2>
               <p className="font-body mt-2 text-sm text-muted">
-                Signed in as {session.staff.email}. Enter your temporary password, then choose a
+                Signed in as {session.staff.phone}. Enter your temporary password, then choose a
                 private password for your counter account.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
               <StaffAuthField
-                id="change-email"
-                label="Staff email"
-                type="email"
-                value={session.staff.email}
+                id="change-phone"
+                label="Phone number"
+                type="tel"
+                value={session.staff.phone}
                 onChange={() => undefined}
-                placeholder="you@parcela.staff"
-                icon={Mail}
-                autoComplete="username"
+                placeholder="0531878243"
+                icon={Phone}
+                autoComplete="tel"
                 readOnly
               />
 
@@ -218,7 +209,7 @@ export function StaffChangePasswordView() {
 
             <p className="font-body mt-6 text-center text-sm text-muted">
               Wrong account?{" "}
-              <Link href="/staff/login" className="font-semibold text-[#0D9488] hover:underline">
+              <Link href={OPERATOR_LOGIN_PATH} className="font-semibold text-[#0D9488] hover:underline">
                 Sign in again
               </Link>
             </p>

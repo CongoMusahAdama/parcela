@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { generateTemporaryPassword } from '../../common/utils/temp-password.util';
+import { generateHqTemporaryPassword, generateTemporaryPassword, shouldSkipCredentialSms } from '../../common/utils/temp-password.util';
 import { resolveGhanaCityName } from '../../data/ghana-cities';
 import { normalizeOperatorLogoDataUrl } from '../../common/utils/operator-logo.util';
 import { resolveSubscriptionTerm } from '../../common/utils/subscription-term.util';
@@ -121,7 +121,7 @@ export class PlatformOperatorsService {
     let hqTempPassword: string | null = null;
 
     if (!existingAccount) {
-      const tempPassword = generateTemporaryPassword();
+      const tempPassword = generateHqTemporaryPassword();
       hqTempPassword = tempPassword;
       const account: StaffAccountRecord = {
         id: `hq-${code.toLowerCase()}-${Date.now()}`,
@@ -146,7 +146,12 @@ export class PlatformOperatorsService {
         operatorCode: code,
       });
 
-      if (dto.issueLoginsNow && hqTempPassword && isProvisionedPhone(account.phone)) {
+      if (
+        dto.issueLoginsNow &&
+        hqTempPassword &&
+        !shouldSkipCredentialSms() &&
+        isProvisionedPhone(account.phone)
+      ) {
         hqSmsSent = await this.sms.sendHqAdminCredentials({
           phone: account.phone,
           displayName: account.displayName,
@@ -157,10 +162,10 @@ export class PlatformOperatorsService {
         });
       }
     } else if (dto.issueLoginsNow) {
-      const tempPassword = generateTemporaryPassword();
+      const tempPassword = generateHqTemporaryPassword();
       hqTempPassword = tempPassword;
       this.staffAuth.updatePasswordForAccount(existingAccount.id, tempPassword, true);
-      if (isProvisionedPhone(existingAccount.phone)) {
+      if (!shouldSkipCredentialSms() && isProvisionedPhone(existingAccount.phone)) {
         hqSmsSent = await this.sms.sendHqAdminCredentials({
           phone: existingAccount.phone,
           displayName: existingAccount.displayName,
@@ -184,7 +189,11 @@ export class PlatformOperatorsService {
     });
 
     const row = await this.withHqCount(operator.toObject());
-    return { ...row, hqSmsSent };
+    return {
+      ...row,
+      hqSmsSent,
+      ...(hqTempPassword && !hqSmsSent ? { hqTemporaryPassword: hqTempPassword } : {}),
+    };
   }
 
   async update(operatorId: string, dto: UpdateTransportOperatorDto, actorEmail: string) {
@@ -192,6 +201,14 @@ export class PlatformOperatorsService {
     if (!doc) throw new NotFoundException('Transport operator not found');
 
     if (dto.status) doc.status = dto.status;
+    if (dto.name !== undefined) doc.name = dto.name.trim();
+    if (dto.region !== undefined) doc.region = dto.region.trim() || 'Ghana';
+    if (dto.contactEmail !== undefined) {
+      doc.contactEmail = dto.contactEmail?.trim() || undefined;
+    }
+    if (dto.contactPhone !== undefined) {
+      doc.contactPhone = dto.contactPhone?.trim() || undefined;
+    }
     if (dto.hqConfigured !== undefined) doc.hqConfigured = dto.hqConfigured;
     if (dto.agreementDate !== undefined) doc.agreementDate = dto.agreementDate;
     if (dto.notes !== undefined) doc.notes = dto.notes;
@@ -217,6 +234,13 @@ export class PlatformOperatorsService {
     }
 
     await doc.save();
+
+    await this.audit.record({
+      action: 'Transport updated',
+      detail: `${doc.name} (${doc.code})`,
+      actorEmail,
+      operatorCode: doc.code,
+    });
 
     if (dto.status === 'configured') {
       await this.audit.record({

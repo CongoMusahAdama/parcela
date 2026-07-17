@@ -1,20 +1,21 @@
 import type { StaffSession } from "@/types/staff";
+import { clearOperatorOfflineState } from "@/lib/operator-offline-state";
 import { ApiError } from "@/lib/api-client";
 import { fetchStaffSession, staffLoginApi, staffLogoutApi } from "@/lib/staff-api";
 
 const SESSION_KEY = "parcela_staff_session";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^(\+?233|0)?[2-9]\d{8}$/;
 
-export function validateStaffLoginInput(email: string, password: string): string | null {
-  const trimmedEmail = email.trim();
+export function validateStaffLoginInput(phone: string, password: string): string | null {
+  const trimmedPhone = phone.replace(/\s/g, "");
 
-  if (!trimmedEmail) {
-    return "Enter your staff email address.";
+  if (!trimmedPhone) {
+    return "Enter your phone number.";
   }
 
-  if (!EMAIL_PATTERN.test(trimmedEmail)) {
-    return "Enter a valid email address (for example, you@parcela.staff).";
+  if (!PHONE_PATTERN.test(trimmedPhone)) {
+    return "Enter a valid Ghana phone number (e.g. 0244555666).";
   }
 
   if (!password) {
@@ -42,7 +43,7 @@ export function getStaffLoginFailureMessage(error: unknown): string {
     }
   }
 
-  return "Check your email and password, then try again.";
+  return "Check your phone and password, then try again.";
 }
 
 export function getStaffSession(): StaffSession | null {
@@ -65,8 +66,8 @@ export function saveStaffSession(session: StaffSession): void {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
-export async function signInStaff(email: string, password: string): Promise<StaffSession> {
-  const session = await staffLoginApi(email, password);
+export async function signInStaff(phone: string, password: string): Promise<StaffSession> {
+  const session = await staffLoginApi(phone, password);
   saveStaffSession(session);
   return session;
 }
@@ -94,6 +95,7 @@ export async function signOutStaff(): Promise<void> {
     // Clear local state even if the API is unreachable.
   }
   clearStaffSession();
+  clearOperatorOfflineState();
 }
 
 export function formatStaffServerDate(date = new Date()): string {

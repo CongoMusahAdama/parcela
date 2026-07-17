@@ -8,7 +8,7 @@ type AdminPlaceholderViewProps = {
 
 export function AdminPlaceholderView({ title, description, icon: Icon }: AdminPlaceholderViewProps) {
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div className="mx-auto max-w-2xl">
         <div className="rounded-2xl border border-border bg-surface p-8 text-center shadow-sm sm:p-10">
           <div

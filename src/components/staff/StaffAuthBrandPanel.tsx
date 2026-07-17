@@ -30,7 +30,6 @@ export function StaffAuthBrandPanel() {
       <div className="relative my-4 flex flex-1 flex-col items-center justify-center bg-transparent">
         <AuthIllustration
           priority
-          variant="dark"
           className="w-full max-w-[280px] [&_img]:max-h-[200px]"
         />
 

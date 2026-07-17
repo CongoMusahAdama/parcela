@@ -173,7 +173,7 @@ export function StaffSidebar({ mobileOpen, onMobileClose, onSignOut }: StaffSide
 
       <aside
         className={cn(
-          "staff-sidebar fixed inset-y-0 left-0 z-50 flex h-dvh w-[272px] flex-col shadow-xl transition-transform duration-300 md:translate-x-0 md:shadow-none",
+          "staff-sidebar fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(88vw,272px)] flex-col shadow-xl transition-transform duration-300 sm:w-[272px] md:translate-x-0 md:shadow-none",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
         style={{ background: "var(--staff-header-gradient)" }}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Mail } from "lucide-react";
+import { Lock, Phone } from "lucide-react";
 import { AdminAuthBrandPanel } from "@/components/admin/AdminAuthBrandPanel";
 import { AdminAuthField } from "@/components/admin/AdminAuthField";
 import { Logo } from "@/components/brand/Logo";
@@ -12,11 +12,12 @@ import {
   signInAdmin,
   validateAdminLoginInput,
 } from "@/lib/admin-auth";
+import { hasSeenPortalWelcome, queuePortalWelcome } from "@/lib/operator-portal-welcome";
 import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 
 export function AdminLoginView() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,7 +29,7 @@ export function AdminLoginView() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    const validationMessage = validateAdminLoginInput(email, password);
+    const validationMessage = validateAdminLoginInput(phone, password);
     if (validationMessage) {
       await showValidationAlert({
         title: "Check your sign-in details",
@@ -39,7 +40,7 @@ export function AdminLoginView() {
 
     setIsSubmitting(true);
     try {
-      const session = await signInAdmin(email, password);
+      const session = await signInAdmin(phone.trim(), password);
       if (session.admin.mustChangePassword) {
         await showSuccessAlert({
           title: "Temporary password active",
@@ -48,6 +49,9 @@ export function AdminLoginView() {
         });
         router.replace("/admin/change-password");
         return;
+      }
+      if (!hasSeenPortalWelcome("admin", session.admin.id)) {
+        queuePortalWelcome("admin", session.admin.id);
       }
       router.replace("/admin/dashboard");
     } catch (error) {
@@ -102,14 +106,14 @@ export function AdminLoginView() {
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
               <AdminAuthField
-                id="admin-email"
-                label="Work email"
-                type="email"
-                value={email}
-                onChange={setEmail}
-                placeholder="you@company.com"
-                icon={Mail}
-                autoComplete="username"
+                id="admin-phone"
+                label="Phone number"
+                type="tel"
+                value={phone}
+                onChange={setPhone}
+                placeholder="0244555666"
+                icon={Phone}
+                autoComplete="tel"
               />
 
               <AdminAuthField

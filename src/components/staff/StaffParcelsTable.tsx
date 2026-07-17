@@ -57,7 +57,7 @@ export function StaffParcelsTable({ parcels, pageSize = 6 }: StaffParcelsTablePr
 
   return (
     <>
-      <div className="space-y-2.5 md:hidden">
+      <div className="space-y-2.5 xl:hidden">
         {paginatedParcels.map((parcel) => (
           <article
             key={parcel.bookingReference}
@@ -130,9 +130,9 @@ export function StaffParcelsTable({ parcels, pageSize = 6 }: StaffParcelsTablePr
         />
       </div>
 
-      <div className="hidden overflow-hidden rounded-xl border border-border bg-surface shadow-sm md:block md:rounded-2xl">
-        <div className="max-h-[min(58vh,680px)] overflow-auto">
-          <table className="w-full min-w-[640px] border-collapse text-left md:min-w-[880px]">
+      <div className="hidden overflow-hidden rounded-xl border border-border bg-surface shadow-sm xl:block xl:rounded-2xl">
+        <div className="operator-portal-table-scroll max-h-[min(58vh,680px)] overflow-y-auto">
+          <table className="w-full min-w-[720px] border-collapse text-left xl:min-w-[880px]">
             <thead>
               <tr className="border-b border-border text-[11px] uppercase tracking-wider">
                 <th
@@ -160,7 +160,7 @@ export function StaffParcelsTable({ parcels, pageSize = 6 }: StaffParcelsTablePr
                   Destination
                 </th>
                 <th
-                  className="font-display sticky top-0 z-10 hidden px-4 py-3 font-bold text-foreground/80 shadow-[inset_0_-1px_0_var(--color-border)] md:table-cell"
+                  className="font-display sticky top-0 z-10 hidden px-4 py-3 font-bold text-foreground/80 shadow-[inset_0_-1px_0_var(--color-border)] xl:table-cell"
                   style={{ background: "var(--staff-accent-muted)" }}
                 >
                   Items
@@ -216,7 +216,7 @@ export function StaffParcelsTable({ parcels, pageSize = 6 }: StaffParcelsTablePr
                       {parcel.direction === "outgoing" ? "out" : "in"}
                     </span>
                   </td>
-                  <td className="font-body hidden px-4 py-3.5 text-sm text-muted md:table-cell">{parcel.itemCount}</td>
+                  <td className="font-body hidden px-4 py-3.5 text-sm text-muted xl:table-cell">{parcel.itemCount}</td>
                   <td className="px-4 py-3.5">
                     <span
                       className={cn(

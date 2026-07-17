@@ -34,7 +34,7 @@ export function LeadAnalyticsView() {
   ];
 
   return (
-    <main className="px-3 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div className="mb-4 sm:mb-5">
         <h1 className="font-display text-lg font-bold text-foreground sm:text-2xl">Branch analytics</h1>
         <p className="font-body mt-0.5 text-xs text-muted sm:mt-1 sm:text-sm">

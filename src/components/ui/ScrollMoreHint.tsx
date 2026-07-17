@@ -59,7 +59,7 @@ export function ScrollMoreHint({
         ref={scrollRef}
         onScroll={handleScroll}
         className={cn(
-          "h-full overflow-y-auto overscroll-contain",
+          "mobile-scroll h-full min-h-0",
           showHint && "pb-10",
           scrollClassName
         )}

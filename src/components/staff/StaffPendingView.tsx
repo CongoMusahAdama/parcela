@@ -21,7 +21,7 @@ export function StaffPendingView() {
   }, [parcels, query]);
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <StaffPageHeader
         title="Awaiting drop-off"
         description="Pre-booked parcels where the sender will drop off at your counter (outgoing only). Verify the physical parcel, then log it to a bus."

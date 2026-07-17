@@ -176,7 +176,7 @@ export function StaffReleaseView() {
   }
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <StaffPageHeader
         title="Recipient pickup"
         description="Final handover step. Find the parcel in the collection queue, verify the pickup code, then release it to the recipient."

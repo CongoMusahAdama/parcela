@@ -8,9 +8,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { randomInt } from 'crypto';
 import { ensureHashedSecret } from '../common/utils/password.util';
 import { normalizeGhanaPhone } from '../common/utils/phone.util';
+import {
+  generateLeadTemporaryPin,
+  shouldSkipCredentialSms,
+} from '../common/utils/temp-password.util';
 import { Parcel, ParcelDocument } from '../parcels/schemas/parcel.schema';
 import { SmsService } from '../sms/sms.service';
 import type { StaffAccountRecord } from '../staff/data/staff-accounts';
@@ -363,7 +366,11 @@ export class AdminService {
         tempPin,
         station.name,
       );
-      return { lead: toPublicAccount(existingLead), smsSent };
+      return {
+        lead: toPublicAccount(existingLead),
+        smsSent,
+        ...this.leadCredentialExtras(tempPin, smsSent),
+      };
     }
 
     const record: StaffAccountRecord = {
@@ -389,7 +396,11 @@ export class AdminService {
       tempPin,
       station.name,
     );
-    return { lead, smsSent };
+    return {
+      lead,
+      smsSent,
+      ...this.leadCredentialExtras(tempPin, smsSent),
+    };
   }
 
   async removeLead(operator: OperatorCode, stationId: string) {
@@ -407,6 +418,7 @@ export class AdminService {
     }
 
     lead.active = false;
+    this.staffAuth.invalidateAccountTokens(lead.id);
     this.staffAuth.saveAccount(lead);
     return { ok: true, lead: toPublicAccount(lead) };
   }
@@ -432,7 +444,11 @@ export class AdminService {
     this.staffAuth.saveAccount(lead);
 
     const smsSent = await this.sendLeadCredentialsSms(lead, tempPin, lead.stationName);
-    return { lead: toPublicAccount(lead), smsSent };
+    return {
+      lead: toPublicAccount(lead),
+      smsSent,
+      ...this.leadCredentialExtras(tempPin, smsSent),
+    };
   }
 
   listPeople(operator: OperatorCode, query?: string) {
@@ -1026,7 +1042,14 @@ export class AdminService {
   }
 
   private generateTempPin() {
-    return String(randomInt(100000, 1000000));
+    return generateLeadTemporaryPin();
+  }
+
+  private leadCredentialExtras(tempPin: string, smsSent: boolean) {
+    if (smsSent && !shouldSkipCredentialSms()) {
+      return {};
+    }
+    return { temporaryPin: tempPin };
   }
 
   private async sendLeadCredentialsSms(
@@ -1034,12 +1057,15 @@ export class AdminService {
     tempPin: string,
     stationName: string,
   ) {
+    if (shouldSkipCredentialSms()) {
+      return false;
+    }
     const webUrl = (
       this.config.get<string>('app.publicWebUrl') ?? 'http://localhost:3001'
     ).replace(/\/$/, '');
     const message = [
       `Parcela branch lead access for ${stationName} is ready.`,
-      `Sign in: ${webUrl}/lead/login`,
+      `Sign in: ${webUrl}/portal/login`,
       `Phone: ${lead.phone}`,
       `Temporary PIN: ${tempPin}`,
     ].join(' ');

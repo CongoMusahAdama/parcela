@@ -16,7 +16,7 @@ export function PlatformPlaceholderView({
   icon: Icon,
 }: PlatformPlaceholderViewProps) {
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <Link
         href="/platform/dashboard"
         className="font-display inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-stone-500 transition-colors hover:text-[var(--platform-orange)]"

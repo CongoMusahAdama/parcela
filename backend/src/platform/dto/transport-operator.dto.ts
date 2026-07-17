@@ -115,6 +115,26 @@ export class CreateTransportOperatorDto {
 
 export class UpdateTransportOperatorDto {
   @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  region?: string;
+
+  @IsOptional()
+  @IsEmail()
+  contactEmail?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  contactPhone?: string | null;
+
+  @IsOptional()
   @IsIn(['configure', 'configured', 'suspended', 'draft'])
   status?: 'configure' | 'configured' | 'suspended' | 'draft';
 

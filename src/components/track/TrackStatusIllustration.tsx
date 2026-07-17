@@ -7,7 +7,7 @@ type TrackStatusIllustrationProps = {
 };
 
 export function TrackStatusIllustration({
-  compact = false,
+  compact = true,
   className,
 }: TrackStatusIllustrationProps) {
   return (

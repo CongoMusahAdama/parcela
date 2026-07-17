@@ -18,7 +18,15 @@ export class ApiError extends Error {
 const NETWORK_ERROR_MESSAGE =
   'Connection problem — check your network and try again. Station actions can be queued and will sync when you are back online.';
 
-export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+const inFlightGetRequests = new Map<string, Promise<unknown>>();
+
+function inFlightKey(path: string, init?: RequestInit) {
+  const method = (init?.method ?? 'GET').toUpperCase();
+  const body = typeof init?.body === 'string' ? init.body : '';
+  return `${method}:${path}:${body}`;
+}
+
+async function apiFetchInternal<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (!headers.has('Content-Type') && init?.body) {
     headers.set('Content-Type', 'application/json');
@@ -58,4 +66,23 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   }
 
   return response.json() as Promise<T>;
+}
+
+export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = (init?.method ?? 'GET').toUpperCase();
+  if (method !== 'GET') {
+    return apiFetchInternal<T>(path, init);
+  }
+
+  const key = inFlightKey(path, init);
+  const existing = inFlightGetRequests.get(key);
+  if (existing) {
+    return existing as Promise<T>;
+  }
+
+  const promise = apiFetchInternal<T>(path, init).finally(() => {
+    inFlightGetRequests.delete(key);
+  });
+  inFlightGetRequests.set(key, promise);
+  return promise;
 }

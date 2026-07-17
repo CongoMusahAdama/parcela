@@ -32,8 +32,10 @@ import {
   toggleOperatorSuspendApi,
   updateHqAdminApi,
   updatePlatformUserApi,
+  updateTransportOperatorApi,
   type AddOperatorTerminalsResult,
   type CreateTransportOperatorPayload,
+  type UpdateTransportOperatorPayload,
   type DeleteHqAdminResult,
   type DeleteTransportOperatorResult,
   type OperatorTerminalInput,
@@ -54,6 +56,10 @@ type PlatformDataContextValue = {
   error: string | null;
   refresh: (options?: { silent?: boolean }) => Promise<void>;
   createOperator: (payload: CreateTransportOperatorPayload) => Promise<PlatformOperatorRow & { hqSmsSent?: boolean }>;
+  updateOperator: (
+    operatorId: string,
+    payload: UpdateTransportOperatorPayload,
+  ) => Promise<PlatformOperatorRow>;
   markConfigured: (operatorId: string) => Promise<PlatformOperatorRow>;
   toggleSuspend: (operatorId: string) => Promise<PlatformOperatorRow>;
   deleteOperator: (operatorId: string) => Promise<DeleteTransportOperatorResult>;
@@ -181,6 +187,11 @@ export function PlatformDataProvider({ children }: { children: ReactNode }) {
       refresh,
       async createOperator(payload) {
         const row = await createTransportOperatorApi(payload);
+        afterMutation(row);
+        return row;
+      },
+      async updateOperator(operatorId, payload) {
+        const row = await updateTransportOperatorApi(operatorId, payload);
         afterMutation(row);
         return row;
       },

@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { ShieldAlert } from "lucide-react";
+import { useOptionalOperatorLocks } from "@/components/operator/OperatorLocksContext";
 import {
   getLeadFreezeMessage,
   getStaffFreezeMessage,
-  loadOperatorLockStatus,
-  type OperatorControlLocks,
 } from "@/lib/operator-controls";
 import { cn } from "@/lib/utils";
 
@@ -18,30 +16,8 @@ type OperatorFreezeBannerProps = {
 };
 
 export function OperatorFreezeBanner({ operator, mode, className }: OperatorFreezeBannerProps) {
-  const [locks, setLocks] = useState<OperatorControlLocks | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const refresh = async () => {
-      try {
-        const next = await loadOperatorLockStatus(operator);
-        if (!cancelled) setLocks(next);
-      } catch {
-        // Keep last known state if the API is briefly unreachable.
-      }
-    };
-
-    void refresh();
-    const onFocus = () => void refresh();
-    window.addEventListener("focus", onFocus);
-    const interval = window.setInterval(() => void refresh(), 8000);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("focus", onFocus);
-      window.clearInterval(interval);
-    };
-  }, [operator]);
+  const locksContext = useOptionalOperatorLocks();
+  const locks = locksContext?.locks ?? null;
 
   if (!locks) return null;
   const frozen = mode === "staff" ? locks.staffOpsLocked : locks.leadOpsLocked;

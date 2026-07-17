@@ -2,10 +2,10 @@ import { apiFetch } from '@/lib/api-client';
 import type { StaffSession } from '@/types/staff';
 import type { StaffParcelDetail, StaffParcelSummary } from '@/types/staff-parcel';
 
-export async function staffLoginApi(email: string, password: string): Promise<StaffSession> {
+export async function staffLoginApi(phone: string, password: string): Promise<StaffSession> {
   return apiFetch<StaffSession>('/staff/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ phone, password }),
   });
 }
 

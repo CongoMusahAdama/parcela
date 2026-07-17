@@ -9,8 +9,9 @@ import { AppShell } from "@/components/ui/AppShell";
 
 export function MainHomeContent() {
   return (
-    <AppShell variant="hero">
-      <div className="flex min-h-[calc(100dvh-2.5rem)] flex-col">
+    <AppShell variant="hero" viewport className="!px-5 !pt-5">
+      <div className="mobile-scroll min-h-0 flex-1 pb-8">
+      <div className="flex min-h-0 flex-col">
         <header className="mb-6 flex items-center justify-between gap-3">
           <span className="font-body shrink-0 rounded-full border border-border bg-surface px-3 py-1.5 text-[11px] font-medium text-muted">
             Partner transport stations
@@ -43,6 +44,7 @@ export function MainHomeContent() {
             variant="secondary"
           />
         </section>
+      </div>
       </div>
     </AppShell>
   );

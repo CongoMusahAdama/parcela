@@ -191,7 +191,7 @@ export function PlatformAuditView() {
     : null;
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-display text-[11px] font-bold uppercase tracking-wider text-[var(--platform-orange)]">
@@ -285,7 +285,48 @@ export function PlatformAuditView() {
           totalCount={audit.length}
         />
 
-        <div className="overflow-x-auto">
+        {filtered.length > 0 ? (
+          <div className="space-y-2.5 p-3 xl:hidden">
+            {listPagination.pageItems.map((row, index) => {
+              const kind = getPlatformAuditKind(row.action);
+              const operatorCode = parsePlatformAuditOperator(row.detail);
+              const operator = operatorCode
+                ? operators.find((item) => item.code === operatorCode)
+                : null;
+              const relative = formatPlatformWhenRelative(row.at);
+
+              return (
+                <button
+                  key={row.id}
+                  type="button"
+                  onClick={() => setSelected(row)}
+                  className="w-full rounded-xl border border-stone-200 bg-white p-3 text-left shadow-sm transition-colors hover:border-[var(--platform-orange)]/40"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <AuditKindBadge kind={kind} compact />
+                    <span className="font-body shrink-0 text-[10px] text-stone-400">
+                      #
+                      {platformRowNumber(
+                        listPagination.currentPage,
+                        listPagination.pageSize,
+                        index,
+                      )}
+                    </span>
+                  </div>
+                  <p className="font-display mt-2 text-sm font-bold text-stone-900">{row.action}</p>
+                  <p className="font-body mt-1 line-clamp-2 text-xs text-stone-600">{row.detail}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-stone-500">
+                    <span>{formatPlatformWhen(row.at)}</span>
+                    {relative ? <span>· {relative}</span> : null}
+                    {operator ? <span>· {operator.name}</span> : null}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        <div className="hidden xl:block operator-portal-table-scroll overflow-x-auto">
           <table className="min-w-[920px] w-full text-left">
             <thead>
               <tr className="bg-[var(--platform-orange)] text-[10px] uppercase tracking-wider text-white">

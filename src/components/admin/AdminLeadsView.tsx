@@ -14,9 +14,8 @@ import {
   X,
 } from "lucide-react";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
+import { useAdminData } from "@/components/admin/AdminDataContext";
 import {
-  fetchAdminLeads,
-  fetchAdminStations,
   removeAdminLeadApi,
   sendAdminLeadCredentialsApi,
   upsertAdminLeadApi,
@@ -24,6 +23,7 @@ import {
   type AdminStationRow,
 } from "@/lib/admin-api";
 import { getAdminAccentColor, getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
+import { adminLeadCredentialSuccessText } from "@/lib/admin-credentials-message";
 import { showConfirmDialog, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import type { Operator } from "@/types/parcel";
 import { cn } from "@/lib/utils";
@@ -193,9 +193,9 @@ export function AdminLeadsView() {
   const operator = getAdminOperator(admin);
   const companyName = getAdminOperatorName(admin);
   const accentColor = getAdminAccentColor(admin);
+  const { stations, leads, coreLoading: loading, refreshCore } = useAdminData();
 
   const [rows, setRows] = useState<LeadRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [coverageFilter, setCoverageFilter] = useState<"all" | "assigned" | "unassigned">("all");
@@ -221,37 +221,10 @@ export function AdminLeadsView() {
   useEffect(() => {
     if (!operator) {
       setRows([]);
-      setLoading(false);
       return;
     }
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      try {
-        const [stations, leads] = await Promise.all([
-          fetchAdminStations(),
-          fetchAdminLeads(),
-        ]);
-        if (cancelled) return;
-        setRows((prev) => buildLeadRows(stations, leads, prev));
-      } catch (error) {
-        if (!cancelled) {
-          void showValidationAlert({
-            title: "Unable to load branch leads",
-            text: error instanceof Error ? error.message : "Try again in a moment.",
-          });
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [operator]);
+    setRows((prev) => buildLeadRows(stations, leads, prev));
+  }, [operator, stations, leads]);
 
   const cities = useMemo(
     () => [...new Set(rows.map((r) => r.city))].sort((a, b) => a.localeCompare(b)),
@@ -282,7 +255,7 @@ export function AdminLeadsView() {
 
   if (!operator) {
     return (
-      <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main className="operator-portal-main">
         <h1 className="font-display text-xl font-bold text-foreground">Branch leads</h1>
         <p className="font-body mt-2 text-sm text-muted">
           Complete Admin setup first so leads are created only for your transport.
@@ -363,6 +336,7 @@ export function AdminLeadsView() {
             : r,
         ),
       );
+      void refreshCore({ silent: true });
 
       setCredentialsPreview({
         name: result.lead.displayName,
@@ -374,9 +348,11 @@ export function AdminLeadsView() {
 
       await showSuccessAlert({
         title: result.smsSent ? "Login sent" : "Credentials generated",
-        text: result.smsSent
-          ? `Login details were sent to ${phone}. ${result.lead.displayName} is locked to ${row.stationName} (${row.stationCode}).`
-          : `A new PIN was generated for ${result.lead.displayName}, but SMS may be unavailable. Ask them to check their phone or resend later.`,
+        text: adminLeadCredentialSuccessText(
+          result,
+          phone,
+          `${row.stationName} (${row.stationCode})`,
+        ),
         confirmButtonColor: accentColor,
       });
       return true;
@@ -438,6 +414,7 @@ export function AdminLeadsView() {
       setRows((prev) =>
         prev.map((row) => (row.stationId === stationId ? nextRow : row)),
       );
+      void refreshCore({ silent: true });
 
       await showSuccessAlert({
         title: creating ? "Lead account created" : "Lead updated",
@@ -506,6 +483,7 @@ export function AdminLeadsView() {
             : r,
         ),
       );
+      void refreshCore({ silent: true });
       await showSuccessAlert({
         title: "Lead removed",
         text: `${row.stationName} is unassigned. You can assign a new lead anytime.`,
@@ -523,7 +501,7 @@ export function AdminLeadsView() {
   const pendingSendCount = rows.filter((r) => r.leadName && !r.credentialsSent).length;
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -592,7 +570,7 @@ export function AdminLeadsView() {
           ))}
         </div>
 
-        <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="mt-4 grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
           <section className="rounded-2xl border border-border bg-surface shadow-sm">
             <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 sm:px-5">
               <div className="relative min-w-[12rem] flex-1">
@@ -647,8 +625,83 @@ export function AdminLeadsView() {
               </p>
             ) : (
               <>
-                <div className="max-h-[520px] overflow-auto">
-                  <table className="min-w-full text-left text-sm">
+                <div className="space-y-2.5 p-3 xl:hidden">
+                  {paged.map((row, index) => (
+                    <article
+                      key={row.stationId}
+                      className="rounded-xl border border-border bg-surface p-3 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          {row.leadName ? (
+                            <>
+                              <p className="font-display font-semibold text-foreground">{row.leadName}</p>
+                              {row.leadEmail ? (
+                                <p className="font-body truncate text-[10px] text-muted">{row.leadEmail}</p>
+                              ) : null}
+                            </>
+                          ) : (
+                            <p className="font-medium text-amber-700">Unassigned</p>
+                          )}
+                          <p className="font-body mt-1 text-xs text-muted">{row.leadPhone || "No phone"}</p>
+                        </div>
+                        {row.leadName ? (
+                          <span
+                            className={cn(
+                              "shrink-0 inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ring-1 ring-inset",
+                              row.credentialsSent
+                                ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                                : "bg-amber-50 text-amber-800 ring-amber-200",
+                            )}
+                          >
+                            {row.credentialsSent ? "Sent" : "Not sent"}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="font-body mt-2 text-xs text-foreground">
+                        {row.stationName}
+                        <span className="font-mono text-[10px] text-muted">
+                          {" "}
+                          · {row.stationCode} · {row.city}
+                        </span>
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(row)}
+                          className="font-display rounded-lg px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-white"
+                          style={{ background: "var(--staff-accent)" }}
+                        >
+                          {row.leadName ? "Edit" : "Create"}
+                        </button>
+                        {row.leadName ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => sendLoginDetails(row)}
+                              className="font-display inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-foreground hover:border-[var(--staff-accent)]"
+                            >
+                              <Send className="size-3" />
+                              {row.credentialsSent ? "Resend" : "Send login"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => clearLead(row)}
+                              className="font-display rounded-lg border border-border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-foreground hover:border-red-300 hover:text-red-700"
+                            >
+                              Remove
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                      <p className="font-body mt-2 text-[10px] text-muted">#{pageStart + index + 1}</p>
+                    </article>
+                  ))}
+                </div>
+
+                <div className="hidden xl:block">
+                <div className="operator-portal-table-scroll max-h-[min(520px,60vh)] overflow-auto">
+                  <table className="min-w-[720px] w-full text-left text-sm">
                     <thead className="sticky top-0 z-10 bg-[#0b1220] text-[11px] uppercase tracking-wider text-white">
                       <tr>
                         <th className="w-10 px-3 py-2.5 font-semibold sm:px-4">#</th>
@@ -742,6 +795,7 @@ export function AdminLeadsView() {
                     </tbody>
                   </table>
                 </div>
+                </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 sm:px-5">
                   <p className="font-body text-xs text-muted">
@@ -800,7 +854,7 @@ export function AdminLeadsView() {
             )}
           </section>
 
-          <aside className="rounded-2xl border border-border bg-surface p-5 shadow-sm lg:sticky lg:top-4">
+          <aside className="rounded-2xl border border-border bg-surface p-5 shadow-sm xl:sticky xl:top-4">
             <LeadsPieChart rows={filtered.length ? filtered : rows} />
           </aside>
         </div>
@@ -1003,7 +1057,7 @@ export function AdminLeadsView() {
               ))}
             </dl>
             <p className="font-body mt-3 text-[11px] text-muted">
-              Portal: /lead/login — they will only see staff and parcels for this branch.
+              Portal: /portal/login — they will only see staff and parcels for this branch.
             </p>
             <div className="mt-5 flex justify-end">
               <button

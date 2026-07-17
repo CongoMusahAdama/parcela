@@ -41,6 +41,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/operator-sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      {
+        source: "/manifest-operator.webmanifest",
+        headers: [{ key: "Cache-Control", value: "public, max-age=3600" }],
+      },
+      {
         source: "/:path*",
         headers: securityHeaders,
       },

@@ -7,6 +7,7 @@ import {
   Building2,
   Check,
   CheckCircle2,
+  Edit2,
   FileText,
   KeyRound,
   Loader2,
@@ -19,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { PlatformConfigurationLetterModal } from "@/components/platform/PlatformConfigurationLetterModal";
+import { PlatformEditOperatorModal } from "@/components/platform/PlatformEditOperatorModal";
 import { GhanaCitySelect } from "@/components/platform/GhanaCitySelect";
 import { usePlatformData } from "@/components/platform/PlatformDataContext";
 import { PlatformOperatorMark } from "@/components/platform/PlatformOperatorMark";
@@ -39,6 +41,7 @@ import { platformRowNumber, usePlatformPagination } from "@/lib/platform-paginat
 import { showConfirmDialog, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import { PLATFORM_THEME } from "@/lib/platform-theme";
 import { readOperatorLogoFile } from "@/lib/operator-logo-upload";
+import { PLATFORM_BRAND_COLORS } from "@/lib/platform-brand-colors";
 import { isValidEmail } from "@/lib/email-validation";
 import {
   computeSubscriptionExpiresAt,
@@ -135,48 +138,7 @@ function OnboardStepBar({ currentStep }: { currentStep: number }) {
   );
 }
 
-const BRAND_COLORS: { name: string; hex: string }[] = [
-  { name: "Parcela Orange", hex: "#fd7e14" },
-  { name: "Crimson Red", hex: "#dc2626" },
-  { name: "Rose", hex: "#f43f5e" },
-  { name: "Fuchsia", hex: "#d946ef" },
-  { name: "Violet", hex: "#7c3aed" },
-  { name: "Indigo", hex: "#4f46e5" },
-  { name: "Royal Blue", hex: "#2563eb" },
-  { name: "Sky Blue", hex: "#0ea5e9" },
-  { name: "Cyan", hex: "#06b6d4" },
-  { name: "Teal", hex: "#0d9488" },
-  { name: "Emerald", hex: "#10b981" },
-  { name: "Green", hex: "#22c55e" },
-  { name: "Lime", hex: "#84cc16" },
-  { name: "Yellow", hex: "#eab308" },
-  { name: "Amber", hex: "#f59e0b" },
-  { name: "Deep Orange", hex: "#ea580c" },
-  { name: "Brown", hex: "#78350f" },
-  { name: "Warm Slate", hex: "#64748b" },
-  { name: "Stone Gray", hex: "#78716c" },
-  { name: "Charcoal", hex: "#374151" },
-  { name: "Navy", hex: "#1e3a5f" },
-  { name: "Midnight", hex: "#1e1b4b" },
-  { name: "Forest Green", hex: "#166534" },
-  { name: "Olive", hex: "#4d7c0f" },
-  { name: "Gold", hex: "#ca8a04" },
-  { name: "Copper", hex: "#b45309" },
-  { name: "Burgundy", hex: "#9f1239" },
-  { name: "Maroon", hex: "#7f1d1d" },
-  { name: "Plum", hex: "#6b21a8" },
-  { name: "Cobalt", hex: "#1d4ed8" },
-  { name: "Mint", hex: "#059669" },
-  { name: "Turquoise", hex: "#0891b2" },
-  { name: "Coral", hex: "#fb7185" },
-  { name: "Salmon", hex: "#f97316" },
-  { name: "Peach", hex: "#fed7aa" },
-  { name: "Lavender", hex: "#a78bfa" },
-  { name: "Dusty Rose", hex: "#e879f9" },
-  { name: "Steel Blue", hex: "#3b82f6" },
-  { name: "Graphite", hex: "#1c1917" },
-  { name: "Silver", hex: "#9ca3af" },
-];
+const BRAND_COLORS = PLATFORM_BRAND_COLORS;
 
 type OnboardTerminal = {
   id: string;
@@ -263,6 +225,7 @@ export function PlatformOperatorsView() {
   const [bulkPasteText, setBulkPasteText] = useState("");
   const [cityBatchText, setCityBatchText] = useState("");
   const [letterOperatorId, setLetterOperatorId] = useState<string | null>(null);
+  const [editOperatorId, setEditOperatorId] = useState<string | null>(null);
   const [letterAgreementDate, setLetterAgreementDate] = useState("");
   const [suspendBusyId, setSuspendBusyId] = useState<string | null>(null);
   const [deleteBusyId, setDeleteBusyId] = useState<string | null>(null);
@@ -315,6 +278,9 @@ export function PlatformOperatorsView() {
 
   const letterOperator =
     operators.find((row) => row.id === letterOperatorId) ?? null;
+
+  const editOperator =
+    operators.find((row) => row.id === editOperatorId) ?? null;
 
   const terminalsModalOperator =
     operators.find((row) => row.id === terminalsModalOperatorId) ?? null;
@@ -479,31 +445,14 @@ export function PlatformOperatorsView() {
       }
     }
     if (step === 3) {
-      const hasTerminalList = draft.terminals.length > 0;
-      if (hasTerminalList) return true;
-
-      const stations = Number(draft.stationCount);
-      const cities = Number(draft.cityCount);
-      if (!draft.stationCount.trim() || Number.isNaN(stations) || stations < 1) {
-        await showValidationAlert({
-          title: "How many terminals?",
-          text: "Enter an approximate station count, or switch to “List terminals” and add them in bulk.",
-        });
-        return false;
-      }
-      if (!draft.cityCount.trim() || Number.isNaN(cities) || cities < 1) {
-        await showValidationAlert({
-          title: "How many cities?",
-          text: "Enter how many cities or corridors this transport covers.",
-        });
-        return false;
-      }
+      const allTerminals = mergeTerminalRows(draft.terminals, collectPendingTerminalRows());
+      return validateNetworkStep(allTerminals);
     }
     if (step === 4) {
-      if (!draft.hqName.trim() || !draft.hqEmail.trim()) {
+      if (!draft.hqName.trim() || !draft.hqEmail.trim() || !draft.hqPhone.trim()) {
         await showValidationAlert({
           title: "HQ admin required",
-          text: "Add the HQ admin name and email. You will hand them login after configuration.",
+          text: "Add the HQ admin name, email, and phone. They sign in with phone + password at /admin/login.",
         });
         return false;
       }
@@ -514,11 +463,27 @@ export function PlatformOperatorsView() {
         });
         return false;
       }
+      const hqPhone = draft.hqPhone.replace(/\s/g, "");
+      if (!/^(\+?233|0)?[2-9]\d{8}$/.test(hqPhone)) {
+        await showValidationAlert({
+          title: "HQ phone invalid",
+          text: "Enter a valid Ghana phone number for HQ sign-in (e.g. 0244555666).",
+        });
+        return false;
+      }
     }
     return true;
   }
 
   async function goNext() {
+    if (onboardStep === 3) {
+      const ok = await validateStep(3);
+      if (!ok) return;
+      commitPendingNetworkInput();
+      setOnboardStep(4);
+      return;
+    }
+
     const ok = await validateStep(onboardStep);
     if (!ok) return;
     setOnboardStep((s) => Math.min(5, s + 1));
@@ -560,7 +525,7 @@ export function PlatformOperatorsView() {
     }
     const confirmed = await showConfirmDialog({
       title: "Issue HQ logins?",
-      text: `Send temporary credentials by SMS to ${hqAdmin.displayName} (${hqAdmin.email}). They sign in at /admin and finish their network setup.`,
+      text: `Send temporary credentials by SMS to ${hqAdmin.displayName} (${hqAdmin.phone}). They sign in at /admin/login with that phone number and finish their network setup.`,
       confirmText: "Issue logins",
       cancelText: "Cancel",
       confirmButtonColor: "#fd7e14",
@@ -666,6 +631,120 @@ export function PlatformOperatorsView() {
       stationCount: terminals.length > 0 ? String(terminals.length) : "",
       cityCount: cities.size > 0 ? String(cities.size) : "",
     };
+  }
+
+  function collectPendingTerminalRows(): { name: string; city: string }[] {
+    const rows: { name: string; city: string }[] = [];
+
+    if (bulkPasteText.trim()) {
+      rows.push(...parseBulkTerminalLines(bulkPasteText).rows);
+    }
+
+    const batchCity = resolveGhanaCityName(terminalDraft.city);
+    if (batchCity && cityBatchText.trim()) {
+      rows.push(...parseTerminalNamesForCity(cityBatchText, batchCity).rows);
+    } else if (terminalDraft.name.trim() && batchCity) {
+      rows.push({ name: terminalDraft.name.trim(), city: batchCity });
+    }
+
+    return rows;
+  }
+
+  function mergeTerminalRows(
+    existing: OnboardTerminal[],
+    pending: { name: string; city: string }[],
+  ): OnboardTerminal[] {
+    const seen = new Set(
+      existing.map((terminal) => `${terminal.name.toLowerCase()}|${terminal.city.toLowerCase()}`),
+    );
+    const merged = [...existing];
+    for (const row of pending) {
+      const key = `${row.name.toLowerCase()}|${row.city.toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push({ id: crypto.randomUUID(), name: row.name, city: row.city });
+    }
+    return merged;
+  }
+
+  function commitPendingNetworkInput() {
+    const pending = collectPendingTerminalRows();
+    if (pending.length === 0) return;
+
+    setDraft((current) => {
+      const terminals = mergeTerminalRows(current.terminals, pending);
+      return { ...current, terminals, ...syncNetworkCounts(terminals) };
+    });
+    setBulkPasteText("");
+    setCityBatchText("");
+    if (terminalDraft.name.trim()) {
+      setTerminalDraft((current) => ({ ...current, name: "" }));
+    }
+  }
+
+  async function validateNetworkStep(allTerminals: OnboardTerminal[]): Promise<boolean> {
+    if (allTerminals.length > 0) return true;
+
+    const inListMode =
+      networkInputMode === "list" ||
+      bulkPasteText.trim().length > 0 ||
+      cityBatchText.trim().length > 0;
+
+    if (inListMode) {
+      if (bulkPasteText.trim()) {
+        const { rows } = parseBulkTerminalLines(bulkPasteText);
+        if (rows.length === 0) {
+          await showValidationAlert({
+            title: "Could not read pasted terminals",
+            text: 'Use one terminal per line as "Name, City" (e.g. Circle Terminal, Accra). Each line needs a real city name after the comma.',
+          });
+          return false;
+        }
+      }
+
+      if (cityBatchText.trim()) {
+        const city = resolveGhanaCityName(terminalDraft.city);
+        if (!city) {
+          await showValidationAlert({
+            title: "Choose a city first",
+            text: "Select the city for your terminal names before continuing.",
+          });
+          return false;
+        }
+        const { rows } = parseTerminalNamesForCity(cityBatchText, city);
+        if (rows.length === 0) {
+          await showValidationAlert({
+            title: "Add terminal names",
+            text: "Enter one terminal name per line under your selected city.",
+          });
+          return false;
+        }
+      }
+
+      await showValidationAlert({
+        title: "Add at least one terminal",
+        text: "Paste terminals (Name, City per line), use Add all to city, or add one at a time — then continue.",
+      });
+      return false;
+    }
+
+    const stations = Number(draft.stationCount);
+    const cities = Number(draft.cityCount);
+    if (!draft.stationCount.trim() || Number.isNaN(stations) || stations < 1) {
+      await showValidationAlert({
+        title: "How many terminals?",
+        text: "Enter an approximate station count, or switch to “List terminals” and add them in bulk.",
+      });
+      return false;
+    }
+    if (!draft.cityCount.trim() || Number.isNaN(cities) || cities < 1) {
+      await showValidationAlert({
+        title: "How many cities?",
+        text: "Enter how many cities or corridors this transport covers.",
+      });
+      return false;
+    }
+    return true;
   }
 
   async function addTerminal() {
@@ -780,14 +859,18 @@ export function PlatformOperatorsView() {
   }
 
   async function submitOnboard() {
-    for (const step of [1, 3, 4] as const) {
+    for (const step of [1, 4] as const) {
       const ok = await validateStep(step);
       if (!ok) return;
     }
 
+    const pending = collectPendingTerminalRows();
+    const allTerminals = mergeTerminalRows(draft.terminals, pending);
+    if (!(await validateNetworkStep(allTerminals))) return;
+
     setSaving(true);
     try {
-      const terminals = draft.terminals.map((terminal) => ({
+      const terminals = allTerminals.map((terminal) => ({
         name: terminal.name.trim(),
         city: terminal.city.trim(),
       }));
@@ -830,7 +913,8 @@ export function PlatformOperatorsView() {
         text: `${next.name} is on Parcela with status Configure. ${platformOnboardSmsText(
           draft.issueLoginsNow,
           next.hqSmsSent,
-          next.primaryAdminEmail ?? draft.hqEmail,
+          draft.hqPhone.trim(),
+          next.hqTemporaryPassword,
         )}`,
         confirmButtonColor: "#fd7e14",
       });
@@ -839,7 +923,9 @@ export function PlatformOperatorsView() {
         title: "Could not onboard transport",
         text:
           error instanceof ApiError
-            ? error.message
+            ? error.status === 413
+              ? "The logo or form data is too large. Use a logo under 400 KB, or onboard without a logo first."
+              : error.message
             : "Something went wrong while creating this transport. Try again.",
       });
     } finally {
@@ -848,7 +934,7 @@ export function PlatformOperatorsView() {
   }
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-display text-[11px] font-bold uppercase tracking-[0.18em] text-stone-400">
@@ -919,7 +1005,63 @@ export function PlatformOperatorsView() {
             resultCount={filtered.length}
             totalCount={operators.length}
           />
-          <div className="overflow-x-auto">
+
+          {filtered.length > 0 ? (
+            <div className="space-y-2.5 p-3 xl:hidden">
+              {listPagination.pageItems.map((row, index) => {
+                const active = selected?.id === row.id;
+                return (
+                  <button
+                    key={row.id}
+                    type="button"
+                    onClick={() => setSelectedId(row.id)}
+                    className={cn(
+                      "w-full rounded-xl border p-3 text-left shadow-sm transition-colors",
+                      active
+                        ? "border-[var(--platform-orange)] bg-[var(--platform-orange-soft)]"
+                        : "border-stone-200 bg-white hover:border-[var(--platform-orange)]/40",
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <PlatformOperatorMark
+                        code={row.code}
+                        name={row.name}
+                        brandColor={row.brandColor}
+                        logoDataUrl={row.logoDataUrl}
+                        size="sm"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-display truncate text-sm font-bold text-stone-900">
+                              {row.name}
+                            </p>
+                            <p className="font-mono text-[11px] text-stone-500">{row.code}</p>
+                          </div>
+                          <span
+                            className={cn(
+                              "shrink-0 font-display inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ring-1 ring-inset",
+                              operatorStatusTone(row.status),
+                            )}
+                          >
+                            {operatorStatusLabel(row.status)}
+                          </span>
+                        </div>
+                        <p className="font-body mt-2 text-xs text-stone-600">
+                          {row.region} · {row.stationCount} stations · {row.hqAdminCount} HQ
+                        </p>
+                        <p className="font-body mt-1 text-[10px] text-stone-400">
+                          Updated {formatPlatformWhen(row.updatedAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+
+          <div className="hidden xl:block operator-portal-table-scroll overflow-x-auto">
             <table className="min-w-[700px] w-full text-left">
               <thead>
                 <tr className="bg-[var(--platform-orange)] text-[10px] uppercase tracking-wider text-white">
@@ -1089,8 +1231,13 @@ export function PlatformOperatorsView() {
                   {selected.primaryAdminName ?? "Not assigned"}
                 </p>
                 <p className="font-mono text-[11px] text-stone-500">
-                  {selected.primaryAdminEmail ?? "—"}
+                  {selectedHq[0]?.phone ?? "—"}
                 </p>
+                {selected.primaryAdminEmail ? (
+                  <p className="font-body mt-0.5 text-[10px] text-stone-400">
+                    {selected.primaryAdminEmail}
+                  </p>
+                ) : null}
               </div>
 
               <div className="mt-5">
@@ -1108,7 +1255,7 @@ export function PlatformOperatorsView() {
                         <tr className="bg-[var(--platform-orange)] text-[10px] uppercase tracking-wider text-white">
                           <PlatformTableSnHeader />
                           <th className="font-display px-3 py-2 font-bold">Name</th>
-                          <th className="font-display px-3 py-2 font-bold">Email</th>
+                          <th className="font-display px-3 py-2 font-bold">Login phone</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1119,7 +1266,7 @@ export function PlatformOperatorsView() {
                               {person.displayName}
                             </td>
                             <td className="font-mono truncate px-3 py-2 text-[10px] text-stone-500">
-                              {person.email}
+                              {person.phone}
                             </td>
                           </tr>
                         ))}
@@ -1134,6 +1281,14 @@ export function PlatformOperatorsView() {
               </div>
 
               <div className="mt-6 grid gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditOperatorId(selected.id)}
+                  className="font-display inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 hover:bg-stone-50"
+                >
+                  <Edit2 className="size-3.5" />
+                  Edit branding & details
+                </button>
                 <button
                   type="button"
                   onClick={() => void openTerminalsModal(selected)}
@@ -1735,6 +1890,8 @@ export function PlatformOperatorsView() {
                         <p className="font-body mt-1 text-xs text-stone-500">
                           One terminal per line:{" "}
                           <span className="font-mono text-stone-600">Terminal name, City</span>
+                          {" · "}
+                          <span className="text-stone-600">Continue adds pasted lines automatically.</span>
                         </p>
                         <textarea
                           rows={4}
@@ -1927,7 +2084,7 @@ export function PlatformOperatorsView() {
                     </div>
                     <div>
                       <label htmlFor="hq-phone" className={labelClass}>
-                        HQ phone
+                        HQ login phone
                       </label>
                       <input
                         id="hq-phone"
@@ -2323,6 +2480,13 @@ export function PlatformOperatorsView() {
             if (!letterOperatorId) return;
             void recordConfigurationLetter(letterOperatorId, letterAgreementDate || undefined);
           }}
+        />
+      ) : null}
+
+      {editOperator ? (
+        <PlatformEditOperatorModal
+          operator={editOperator}
+          onClose={() => setEditOperatorId(null)}
         />
       ) : null}
     </main>

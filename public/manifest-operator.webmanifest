@@ -1,0 +1,36 @@
+{
+  "id": "/portal/login?source=pwa",
+  "name": "Parcela Counter",
+  "short_name": "Parcela",
+  "description": "Station counter app for parcel verify, release, and collection. Works offline and syncs when connected.",
+  "start_url": "/portal/login?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "browser"],
+  "background_color": "#eef2f6",
+  "theme_color": "#0d9488",
+  "orientation": "any",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Verify & log",
+      "short_name": "Verify",
+      "url": "/staff/verify",
+      "icons": [{ "src": "/logo.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "/staff/dashboard",
+      "icons": [{ "src": "/logo.png", "sizes": "512x512" }]
+    }
+  ]
+}

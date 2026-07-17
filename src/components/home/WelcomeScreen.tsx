@@ -14,7 +14,8 @@ type WelcomeScreenProps = {
 
 export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
   return (
-    <AppShell variant="hero" className="flex min-h-[calc(100dvh-2.5rem)] flex-col !pb-6">
+    <AppShell variant="hero" viewport className="!px-5 !pt-5">
+      <div className="mobile-scroll min-h-0 flex-1 pb-6">
       <header className="mb-4 flex items-center justify-between gap-3">
         <span className="font-body shrink-0 rounded-full bg-surface/80 px-3 py-1 text-xs font-medium text-muted shadow-sm">
           Partner transport stations
@@ -76,6 +77,7 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
       >
         Get started
       </Button>
+      </div>
     </AppShell>
   );
 }

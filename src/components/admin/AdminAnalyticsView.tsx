@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -12,27 +12,14 @@ import {
   Users,
 } from "lucide-react";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
-import { fetchAdminOverview } from "@/lib/admin-api";
+import { useAdminData } from "@/components/admin/AdminDataContext";
 import { getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
-import type { AdminBranchSnapshot, AdminBranchStatus, AdminNetworkOverview } from "@/types/admin";
+import type { AdminBranchSnapshot, AdminBranchStatus } from "@/types/admin";
 import type { Operator } from "@/types/parcel";
 import { cn } from "@/lib/utils";
 
 type AnalyticsBranch = AdminBranchSnapshot & {
   address?: string;
-};
-
-const EMPTY_OVERVIEW: AdminNetworkOverview = {
-  operatorLabel: "Operator",
-  branchCount: 0,
-  activeLeads: 0,
-  activeStaff: 0,
-  totalParcels: 0,
-  inTransit: 0,
-  readyForCollection: 0,
-  totalCollected: 0,
-  alerts: [],
-  branches: [],
 };
 
 const PIE_COLORS = [
@@ -155,38 +142,9 @@ export function AdminAnalyticsView() {
   const { admin } = useAdminSession();
   const operator = getAdminOperator(admin);
   const companyName = getAdminOperatorName(admin);
-
-  const [overview, setOverview] = useState<AdminNetworkOverview>(EMPTY_OVERVIEW);
-  const [branches, setBranches] = useState<AnalyticsBranch[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { overview, coreLoading: loading } = useAdminData();
+  const branches = overview.branches as AnalyticsBranch[];
   const [sortBy, setSortBy] = useState<"parcels" | "collected" | "transit" | "staff">("parcels");
-
-  useEffect(() => {
-    if (!operator) {
-      setOverview(EMPTY_OVERVIEW);
-      setBranches([]);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      try {
-        const data = await fetchAdminOverview();
-        if (cancelled) return;
-        setOverview(data);
-        setBranches(data.branches);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [operator]);
 
   const sorted = useMemo(() => {
     const copy = [...branches];
@@ -238,7 +196,7 @@ export function AdminAnalyticsView() {
 
   if (!operator) {
     return (
-      <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main className="operator-portal-main">
         <h1 className="font-display text-xl font-bold text-foreground">Insights</h1>
         <p className="font-body mt-2 text-sm text-muted">
           Complete Admin setup first so insights are limited to your transport.
@@ -261,7 +219,7 @@ export function AdminAnalyticsView() {
   ].filter((d) => d.value > 0);
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -411,8 +369,8 @@ export function AdminAnalyticsView() {
                   ))}
                 </div>
 
-                <div className="max-h-[420px] overflow-auto">
-                  <table className="min-w-full text-left text-sm">
+                <div className="operator-portal-table-scroll max-h-[min(420px,55vh)] overflow-auto">
+                  <table className="min-w-[720px] w-full text-left text-sm">
                     <thead className="sticky top-0 z-10 bg-[#0b1220] text-[11px] uppercase tracking-wider text-white">
                       <tr>
                         <th className="w-10 px-3 py-2.5 font-semibold sm:px-4">#</th>

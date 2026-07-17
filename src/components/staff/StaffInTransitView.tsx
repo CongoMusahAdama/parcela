@@ -24,7 +24,7 @@ export function StaffInTransitView() {
   const incoming = inTransit.filter((p) => p.direction === "incoming").length;
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <StaffPageHeader
         title="In transit"
         description="Parcels currently on buses — ones you sent out and ones heading to your station."

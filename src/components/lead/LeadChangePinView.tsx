@@ -9,8 +9,9 @@ import { LeadAuthBrandPanel } from "@/components/lead/LeadAuthBrandPanel";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
 import { changeLeadPinApi } from "@/lib/lead-api";
 import { restoreLeadSession, saveLeadSession, signOutLead } from "@/lib/lead-auth";
-import { showInfoAlert, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
-import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
+import { queuePortalWelcome } from "@/lib/operator-portal-welcome";
+import { OPERATOR_LOGIN_PATH } from "@/lib/operator-auth";
+import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import type { LeadSession } from "@/types/lead";
 
 export function LeadChangePinView() {
@@ -30,7 +31,7 @@ export function LeadChangePinView() {
       const current = await restoreLeadSession();
       if (cancelled) return;
       if (!current) {
-        router.replace("/lead/login");
+        router.replace(OPERATOR_LOGIN_PATH);
         return;
       }
       setSession(current);
@@ -40,18 +41,6 @@ export function LeadChangePinView() {
       cancelled = true;
     };
   }, [router]);
-
-  useInactivityLogout({
-    enabled: ready && Boolean(session),
-    onIdle: async () => {
-      await signOutLead();
-      await showInfoAlert({
-        title: "Session expired",
-        text: "You were signed out after 30 minutes of inactivity.",
-      });
-      router.replace("/lead/login");
-    },
-  });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -91,6 +80,7 @@ export function LeadChangePinView() {
         ...session,
         staff: { ...session.staff, mustChangePassword: false },
       });
+      queuePortalWelcome("lead", session.staff.id);
       await showSuccessAlert({
         title: "PIN updated",
         text: result.message,
@@ -209,7 +199,7 @@ export function LeadChangePinView() {
 
             <p className="font-body mt-4 text-center text-sm text-white/80">
               Wrong account?{" "}
-              <Link href="/lead/login" className="font-semibold text-white hover:underline">
+              <Link href={OPERATOR_LOGIN_PATH} className="font-semibold text-white hover:underline">
                 Sign in again
               </Link>
             </p>

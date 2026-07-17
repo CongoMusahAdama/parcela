@@ -4,7 +4,7 @@ import { ADMIN_REPORT_MODULES, ADMIN_REPORTS_HUB } from "@/lib/admin-reports";
 
 export function AdminReportsHubView() {
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div className="mb-6">
         <p className="font-display text-xs font-bold uppercase tracking-[0.2em] text-muted">
           Reports

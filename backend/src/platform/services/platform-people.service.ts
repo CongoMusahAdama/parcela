@@ -3,7 +3,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { isProvisionedPhone } from '../../common/utils/phone.util';
-import { generateTemporaryPassword } from '../../common/utils/temp-password.util';
+import { generateHqTemporaryPassword, generateLeadTemporaryPin, generateTemporaryPassword, shouldSkipCredentialSms } from '../../common/utils/temp-password.util';
 import { SmsService } from '../../sms/sms.service';
 import { StaffAuthService } from '../../staff/staff-auth.service';
 import type { StaffAccountRecord } from '../../staff/data/staff-accounts';
@@ -62,7 +62,10 @@ export class PlatformPeopleService {
     if (dto.displayName) account.displayName = dto.displayName.trim();
     if (dto.email) account.email = dto.email.trim().toLowerCase();
     if (dto.phone) account.phone = dto.phone.trim();
-    if (dto.status === 'inactive') account.active = false;
+    if (dto.status === 'inactive') {
+      account.active = false;
+      this.staffAuth.invalidateAccountTokens(account.id);
+    }
     if (dto.status === 'active') {
       account.active = true;
       account.mustChangePassword = false;
@@ -91,7 +94,7 @@ export class PlatformPeopleService {
       throw new NotFoundException('HQ admin not found');
     }
 
-    const tempPassword = generateTemporaryPassword();
+    const tempPassword = generateHqTemporaryPassword();
     this.staffAuth.updatePasswordForAccount(account.id, tempPassword, true);
 
     await this.audit.record({
@@ -102,18 +105,19 @@ export class PlatformPeopleService {
     });
 
     const operatorName = await this.operatorNameFor(account.operator);
-    const smsSent = isProvisionedPhone(account.phone)
-      ? await this.sms.sendHqAdminCredentials({
-          phone: account.phone,
-          displayName: account.displayName,
-          email: account.email,
-          temporaryPassword: tempPassword,
-          operatorName,
-          reason: 'issued',
-        })
-      : false;
+    const smsSent =
+      !shouldSkipCredentialSms() && isProvisionedPhone(account.phone)
+        ? await this.sms.sendHqAdminCredentials({
+            phone: account.phone,
+            displayName: account.displayName,
+            email: account.email,
+            temporaryPassword: tempPassword,
+            operatorName,
+            reason: 'issued',
+          })
+        : false;
 
-    return { ok: true, temporaryPassword: tempPassword, email: account.email, smsSent };
+    return { ok: true, temporaryPassword: tempPassword, phone: account.phone, smsSent };
   }
 
   async resetHqPassword(accountId: string, actorEmail: string) {
@@ -122,7 +126,7 @@ export class PlatformPeopleService {
       throw new NotFoundException('HQ admin not found');
     }
 
-    const tempPassword = generateTemporaryPassword();
+    const tempPassword = generateHqTemporaryPassword();
     this.staffAuth.updatePasswordForAccount(account.id, tempPassword, true);
 
     await this.audit.record({
@@ -133,18 +137,19 @@ export class PlatformPeopleService {
     });
 
     const operatorName = await this.operatorNameFor(account.operator);
-    const smsSent = isProvisionedPhone(account.phone)
-      ? await this.sms.sendHqAdminCredentials({
-          phone: account.phone,
-          displayName: account.displayName,
-          email: account.email,
-          temporaryPassword: tempPassword,
-          operatorName,
-          reason: 'reset',
-        })
-      : false;
+    const smsSent =
+      !shouldSkipCredentialSms() && isProvisionedPhone(account.phone)
+        ? await this.sms.sendHqAdminCredentials({
+            phone: account.phone,
+            displayName: account.displayName,
+            email: account.email,
+            temporaryPassword: tempPassword,
+            operatorName,
+            reason: 'reset',
+          })
+        : false;
 
-    return { ok: true, temporaryPassword: tempPassword, email: account.email, smsSent };
+    return { ok: true, temporaryPassword: tempPassword, phone: account.phone, smsSent };
   }
 
   async deleteHqAdmin(accountId: string, actorEmail: string) {
@@ -189,7 +194,10 @@ export class PlatformPeopleService {
     if (dto.displayName) account.displayName = dto.displayName.trim();
     if (dto.email) account.email = dto.email.trim().toLowerCase();
     if (dto.phone) account.phone = dto.phone.trim();
-    if (dto.status === 'inactive' || dto.status === 'locked') account.active = false;
+    if (dto.status === 'inactive' || dto.status === 'locked') {
+      account.active = false;
+      this.staffAuth.invalidateAccountTokens(account.id);
+    }
     if (dto.status === 'active') {
       account.active = true;
       account.mustChangePassword = false;
@@ -230,16 +238,19 @@ export class PlatformPeopleService {
     let smsSent = false;
     if (isProvisionedPhone(account.phone)) {
       if (account.role === 'station_lead') {
-        const tempPin = generateTemporaryPassword(6);
+        const tempPin = generateLeadTemporaryPin();
         account.pin = tempPin;
         this.staffAuth.saveAccount(account);
-        smsSent = await this.sms.sendBranchLeadCredentials({
-          phone: account.phone,
-          displayName: account.displayName,
-          temporaryPin: tempPin,
-          stationName: account.stationName,
-          reason: 'reset',
-        });
+        smsSent =
+          !shouldSkipCredentialSms() && isProvisionedPhone(account.phone)
+            ? await this.sms.sendBranchLeadCredentials({
+                phone: account.phone,
+                displayName: account.displayName,
+                temporaryPin: tempPin,
+                stationName: account.stationName,
+                reason: 'reset',
+              })
+            : false;
       } else if (account.role === 'station_staff') {
         smsSent = await this.sms.sendCounterStaffCredentials({
           phone: account.phone,
@@ -261,7 +272,7 @@ export class PlatformPeopleService {
       }
     }
 
-    return { ok: true, temporaryPassword: tempPassword, email: account.email, smsSent };
+    return { ok: true, temporaryPassword: tempPassword, phone: account.phone, smsSent };
   }
 
   private async operatorNameFor(code: string) {

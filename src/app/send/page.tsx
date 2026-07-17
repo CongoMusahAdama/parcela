@@ -19,7 +19,7 @@ export default function SendStationsPage() {
 
   if (loading) {
     return (
-      <AppShell className="flex min-h-dvh flex-col !px-0 !pt-0">
+      <AppShell viewport>
         <div className="animate-pulse px-5 py-4">
           <div className="h-4 w-12 rounded bg-border" />
           <div className="mx-auto mt-3 h-[200px] max-w-[320px] rounded-xl bg-border" />

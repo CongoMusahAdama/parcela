@@ -71,6 +71,9 @@ export class Parcel {
   @Prop({ required: true })
   destinationStationName!: string;
 
+  @Prop()
+  destinationStationCode?: string;
+
   @Prop({ index: true })
   destinationOperator?: string;
 

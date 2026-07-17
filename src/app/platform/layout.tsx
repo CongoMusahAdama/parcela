@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OnlinePortalGuard } from "@/components/operator/OnlinePortalGuard";
 
 export const metadata: Metadata = {
   title: {
@@ -15,6 +16,7 @@ export default function PlatformRootLayout({
 }>) {
   return (
     <div className="platform-portal min-h-dvh w-full bg-[#fafaf9] font-body text-stone-900">
+      <OnlinePortalGuard />
       {children}
     </div>
   );

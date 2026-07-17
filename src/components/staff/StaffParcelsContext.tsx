@@ -18,9 +18,10 @@ import {
   type StaffQueuedMutation,
 } from "@/lib/staff-mutation-queue";
 import { fetchStaffParcels } from "@/lib/staff-api";
+import { STAFF_PARCEL_CACHE_KEY } from "@/lib/operator-offline-state";
 import type { StaffParcelSummary } from "@/types/staff-parcel";
 
-const PARCEL_CACHE_KEY = "parcela_staff_parcels_cache_v1";
+const PARCEL_CACHE_KEY = STAFF_PARCEL_CACHE_KEY;
 
 type StaffParcelsContextValue = {
   parcels: StaffParcelSummary[];
@@ -69,6 +70,7 @@ export function StaffParcelsProvider({
   const [stale, setStale] = useState(false);
   const [pendingMutations, setPendingMutations] = useState<StaffQueuedMutation[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const refreshInFlight = useRef(false);
 
   useEffect(() => {
     const cached = readParcelCache();
@@ -82,6 +84,8 @@ export function StaffParcelsProvider({
   useEffect(() => subscribeStaffMutationQueue(setPendingMutations), []);
 
   const refresh = useCallback(async (options?: { silent?: boolean }) => {
+    if (refreshInFlight.current) return;
+    refreshInFlight.current = true;
     if (!options?.silent) {
       setLoading(true);
     }
@@ -99,6 +103,7 @@ export function StaffParcelsProvider({
       }
       setError(getNetworkErrorMessage(err, "Could not load station parcels"));
     } finally {
+      refreshInFlight.current = false;
       setLoading(false);
     }
   }, []);

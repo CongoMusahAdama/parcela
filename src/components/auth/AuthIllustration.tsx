@@ -3,28 +3,26 @@ import { cn } from "@/lib/utils";
 
 type AuthIllustrationProps = {
   className?: string;
-  /** multiply — white panel; screen — teal/dark panel */
+  /** Kept for compatibility — sender.png works on light and dark panels. */
   variant?: "light" | "dark";
   priority?: boolean;
 };
 
 export function AuthIllustration({
   className,
-  variant = "light",
   priority = false,
 }: AuthIllustrationProps) {
   return (
     <div className={cn("bg-transparent", className)}>
       <Image
-        src="/Auth.jpg"
+        src="/sender.png"
         alt=""
-        width={800}
-        height={800}
+        width={1536}
+        height={1024}
+        unoptimized
         priority={priority}
-        className={cn(
-          "h-auto w-full bg-transparent object-contain",
-          variant === "dark" ? "mix-blend-screen" : "mix-blend-multiply",
-        )}
+        className="h-auto w-full object-contain"
+        sizes="(max-width: 448px) 200px, 280px"
       />
     </div>
   );

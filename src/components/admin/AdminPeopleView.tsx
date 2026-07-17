@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Building2,
@@ -16,7 +16,8 @@ import {
   X,
 } from "lucide-react";
 import { useAdminSession } from "@/components/admin/AdminOperatorShell";
-import { fetchAdminPeople, setAdminPersonActiveApi } from "@/lib/admin-api";
+import { useAdminData, useEnsureAdminPeople } from "@/components/admin/AdminDataContext";
+import { setAdminPersonActiveApi } from "@/lib/admin-api";
 import { getAdminAccentColor, getAdminOperator, getAdminOperatorName } from "@/lib/admin-operator";
 import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import type { Operator } from "@/types/parcel";
@@ -159,60 +160,32 @@ export function AdminPeopleView() {
   const operator = getAdminOperator(admin);
   const companyName = getAdminOperatorName(admin);
   const accentColor = getAdminAccentColor(admin);
+  const { people, peopleLoading: loading, refreshPeople } = useAdminData();
+  useEnsureAdminPeople();
 
-  const [rows, setRows] = useState<PersonRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const rows = useMemo<PersonRow[]>(
+    () =>
+      people.map((person) => ({
+        id: person.id,
+        name: person.displayName,
+        phone: person.phone,
+        email: person.email,
+        role: person.role === "station_lead" ? "branch_lead" : "counter_staff",
+        stationId: person.stationId,
+        stationName: person.stationName,
+        stationCode: person.stationCode,
+        city: person.location?.split("·")[0]?.trim() || person.stationName,
+        status: person.active ? "active" : "inactive",
+      })),
+    [people],
+  );
+
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | PersonRole>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | PersonStatus>("all");
   const [cityFilter, setCityFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<PersonRow | null>(null);
-
-  useEffect(() => {
-    if (!operator) {
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      try {
-        const people = await fetchAdminPeople();
-        if (cancelled) return;
-        setRows(
-          people.map((person) => ({
-            id: person.id,
-            name: person.displayName,
-            phone: person.phone,
-            email: person.email,
-            role: person.role === "station_lead" ? "branch_lead" : "counter_staff",
-            stationId: person.stationId,
-            stationName: person.stationName,
-            stationCode: person.stationCode,
-            city: person.location?.split("·")[0]?.trim() || person.stationName,
-            status: person.active ? "active" : "inactive",
-          })),
-        );
-      } catch (error) {
-        if (!cancelled) {
-          void showValidationAlert({
-            title: "Unable to load people",
-            text: error instanceof Error ? error.message : "Try again in a moment.",
-          });
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [operator]);
 
   const cities = useMemo(
     () => [...new Set(rows.map((r) => r.city))].sort((a, b) => a.localeCompare(b)),
@@ -239,7 +212,7 @@ export function AdminPeopleView() {
 
   if (!operator) {
     return (
-      <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main className="operator-portal-main">
         <h1 className="font-display text-xl font-bold text-foreground">Roles directory</h1>
         <p className="font-body mt-2 text-sm text-muted">
           Complete Admin setup first so HQ is locked to your transport service.
@@ -270,10 +243,8 @@ export function AdminPeopleView() {
     const next: PersonStatus = person.status === "active" ? "inactive" : "active";
     try {
       await setAdminPersonActiveApi(person.id, next === "active");
-      setRows((prev) =>
-        prev.map((row) => (row.id === person.id ? { ...row, status: next } : row)),
-      );
       setSelected((prev) => (prev?.id === person.id ? { ...prev, status: next } : prev));
+      void refreshPeople({ silent: true });
       await showSuccessAlert({
         title: next === "active" ? "Account activated" : "Account deactivated",
         text: `${person.name} is now ${next}.`,
@@ -288,7 +259,7 @@ export function AdminPeopleView() {
   };
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -350,7 +321,7 @@ export function AdminPeopleView() {
           ))}
         </div>
 
-        <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="mt-4 grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
           <section className="rounded-2xl border border-border bg-surface shadow-sm">
             <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 sm:px-5">
               <div className="relative min-w-[12rem] flex-1">
@@ -417,8 +388,73 @@ export function AdminPeopleView() {
               </p>
             ) : (
               <>
-                <div className="max-h-[520px] overflow-auto">
-                  <table className="min-w-full text-left text-sm">
+                <div className="space-y-2.5 p-3 xl:hidden">
+                  {paged.map((row, index) => (
+                    <article
+                      key={row.id}
+                      className="rounded-xl border border-border bg-surface p-3 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-display font-semibold text-foreground">{row.name}</p>
+                          <p className="font-body text-[10px] text-muted">{row.phone}</p>
+                        </div>
+                        <span
+                          className={cn(
+                            "shrink-0 inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ring-1 ring-inset",
+                            statusClass(row.status),
+                          )}
+                        >
+                          {row.status}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span
+                          className={cn(
+                            "inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ring-1 ring-inset",
+                            roleClass(row.role),
+                          )}
+                        >
+                          {roleLabel(row.role)}
+                        </span>
+                        <span className="font-body text-xs text-muted">
+                          {row.stationName} · {row.city}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelected(row)}
+                          className="font-display rounded-lg border border-border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-foreground hover:border-[var(--staff-accent)]"
+                        >
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleStatus(row)}
+                          className={cn(
+                            "font-display rounded-lg px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide",
+                            row.status === "active"
+                              ? "border border-amber-300 bg-amber-50 text-amber-800"
+                              : "text-white",
+                          )}
+                          style={
+                            row.status === "inactive"
+                              ? { background: "var(--staff-accent)" }
+                              : undefined
+                          }
+                        >
+                          {row.status === "active" ? "Deactivate" : "Activate"}
+                        </button>
+                      </div>
+                      <p className="font-body mt-2 text-[10px] text-muted">#{pageStart + index + 1}</p>
+                    </article>
+                  ))}
+                </div>
+
+                <div className="hidden xl:block">
+                <div className="operator-portal-table-scroll max-h-[min(520px,60vh)] overflow-auto">
+                  <table className="min-w-[720px] w-full text-left text-sm">
                     <thead className="sticky top-0 z-10 bg-[#0b1220] text-[11px] uppercase tracking-wider text-white">
                       <tr>
                         <th className="w-10 px-3 py-2.5 font-semibold sm:px-4">#</th>
@@ -498,6 +534,7 @@ export function AdminPeopleView() {
                     </tbody>
                   </table>
                 </div>
+                </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 sm:px-5">
                   <p className="font-body text-xs text-muted">
@@ -559,7 +596,7 @@ export function AdminPeopleView() {
             )}
           </section>
 
-          <aside className="rounded-2xl border border-border bg-surface p-5 shadow-sm lg:sticky lg:top-4">
+          <aside className="rounded-2xl border border-border bg-surface p-5 shadow-sm xl:sticky xl:top-4">
             <PeoplePieChart rows={filtered.length ? filtered : rows} />
           </aside>
         </div>

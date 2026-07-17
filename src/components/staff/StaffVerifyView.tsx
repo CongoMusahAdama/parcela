@@ -22,11 +22,10 @@ import { runOrQueueStaffMutation } from "@/lib/staff-mutation-queue";
 import { matchesStaffParcelQuery } from "@/lib/staff-parcel-filters";
 import { getStaffFreezeMessage, loadOperatorLockStatus } from "@/lib/operator-controls";
 import { isSupportedOperator } from "@/lib/operators";
+import { ensureStationsLoaded } from "@/lib/stations";
 import { showConfirmDialog, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import { getPendingParcelsForVerify, toStaffParcelDetail } from "@/types/staff-parcel";
 import { cn } from "@/lib/utils";
-
-const TRANSPORT_TYPES = ["Standard", "Express"] as const;
 
 const GHANA_PHONE_PATTERN = /^(\+?233|0)?[2-9]\d{8}$/;
 
@@ -59,7 +58,6 @@ export function StaffVerifyView() {
   const [busNumber, setBusNumber] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
   const [driverName, setDriverName] = useState("");
-  const [transportType, setTransportType] = useState<(typeof TRANSPORT_TYPES)[number]>("Standard");
   const [parcelMatches, setParcelMatches] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagFillContext, setTagFillContext] = useState<StaffTagFillContext | null>(null);
@@ -86,7 +84,6 @@ export function StaffVerifyView() {
     setBusNumber("");
     setDriverPhone("");
     setDriverName("");
-    setTransportType("Standard");
   }, [selectedRef]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -187,6 +184,10 @@ export function StaffVerifyView() {
       }
 
       await refresh();
+      const stations = await ensureStationsLoaded();
+      const originStation = stations.find((s) => s.id === selected.originStationId);
+      const destinationStation = stations.find((s) => s.id === selected.destinationStationId);
+
       setTagFillContext({
         bookingReference: selected.bookingReference,
         pickupCode: selected.pickupCode,
@@ -198,7 +199,11 @@ export function StaffVerifyView() {
         destinationStationId: selected.destinationStationId,
         originStationName: selected.originStationName,
         destinationStationName: selected.destinationStationName,
-        items: detail?.items ?? selected.items,
+        originStationCode: selected.originStationCode ?? originStation?.code,
+        destinationStationCode: selected.destinationStationCode ?? destinationStation?.code,
+        originCity: originStation?.city,
+        destinationCity: destinationStation?.city,
+        items: detail?.items ?? selected.items ?? [],
         busNumber: loggedBus,
         driverPhone: normalizedDriverPhone,
         driverName: trimmedDriverName,
@@ -226,7 +231,7 @@ export function StaffVerifyView() {
   }
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       {tagFillContext && (
         <StaffParcelTagFillModal context={tagFillContext} onDone={handleTagFillDone} />
       )}
@@ -362,7 +367,7 @@ export function StaffVerifyView() {
                       Item summary
                     </p>
                     <ul className="mt-2 space-y-2">
-                      {detail.items.map((item, index) => (
+                        {detail.items?.map((item, index) => (
                         <li
                           key={`${selected.bookingReference}-item-${index}`}
                           className="flex items-center gap-2 text-sm"
@@ -482,29 +487,6 @@ export function StaffVerifyView() {
                         autoComplete="name"
                       />
                     </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <label
-                      htmlFor="transport-type"
-                      className="font-display mb-2 block text-[11px] font-semibold uppercase tracking-wide text-muted"
-                    >
-                      Transport type
-                    </label>
-                    <select
-                      id="transport-type"
-                      value={transportType}
-                      onChange={(e) =>
-                        setTransportType(e.target.value as (typeof TRANSPORT_TYPES)[number])
-                      }
-                      className="font-body w-full rounded-xl border border-border bg-surface px-3 py-3 text-sm outline-none focus:border-[var(--staff-accent)]"
-                    >
-                      {TRANSPORT_TYPES.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
                   </div>
 
                   <div className="mt-5 rounded-xl border border-dashed border-border bg-surface px-3 py-3 text-xs text-muted">

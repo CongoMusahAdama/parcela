@@ -50,8 +50,8 @@ export class StaffController {
   @Post('login')
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   login(@Body() dto: StaffLoginDto, @Res({ passthrough: true }) res: Response) {
-    const result = this.staffAuth.login(dto.email, dto.password);
-    setAuthCookie(res, STAFF_AUTH_COOKIE, result.token, this.staffAuth.getTokenTtlMs());
+    const result = this.staffAuth.login(dto.phone, dto.password);
+    setAuthCookie(res, STAFF_AUTH_COOKIE, result.token, this.staffAuth.getLoginCookieTtlMs('station_staff'));
     void this.sms.sendSecureLoginAlert({
       phone: result.staff.phone,
       displayName: result.staff.displayName,

@@ -9,6 +9,7 @@ import { AdminAuthField } from "@/components/admin/AdminAuthField";
 import { Logo } from "@/components/brand/Logo";
 import { changeAdminPasswordApi } from "@/lib/admin-api";
 import { restoreAdminSession, saveAdminSession, signOutAdmin } from "@/lib/admin-auth";
+import { queuePortalWelcome } from "@/lib/operator-portal-welcome";
 import { showInfoAlert, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import type { AdminSession } from "@/types/admin";
@@ -91,6 +92,7 @@ export function AdminChangePasswordView() {
         ...session,
         admin: { ...session.admin, ...result.admin, mustChangePassword: false },
       });
+      queuePortalWelcome("admin", session.admin.id);
       await showSuccessAlert({
         title: "Password updated",
         text: result.message,

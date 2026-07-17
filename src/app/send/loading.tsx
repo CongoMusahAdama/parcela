@@ -2,10 +2,7 @@ import { AppShell } from "@/components/ui/AppShell";
 
 export default function SendLoading() {
   return (
-    <AppShell
-      shellClassName="h-dvh max-h-dvh overflow-hidden"
-      className="flex min-h-0 flex-1 flex-col overflow-hidden !px-0 !pb-0 !pt-0"
-    >
+    <AppShell viewport>
       <div className="animate-pulse shrink-0 border-b border-border bg-surface px-5 pb-4 pt-2">
         <div className="mb-3 h-4 w-12 rounded bg-border" />
         <div className="mx-auto h-[190px] w-full max-w-[360px] rounded-xl bg-border" />

@@ -183,7 +183,7 @@ export function PlatformUsersView() {
   }
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="operator-portal-main">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-display text-[11px] font-bold uppercase tracking-wider text-[var(--platform-orange)]">
@@ -284,7 +284,52 @@ export function PlatformUsersView() {
           totalCount={users.filter((u) => u.role === activeRoleTab).length}
         />
 
-        <div className="overflow-x-auto">
+        {filtered.length > 0 ? (
+          <div className="space-y-2.5 p-3 xl:hidden">
+            {listPagination.pageItems.map((row, index) => (
+              <article
+                key={row.id}
+                className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-display text-sm font-bold text-stone-900">{row.displayName}</p>
+                    <p className="font-mono truncate text-[11px] text-stone-500">{row.email}</p>
+                    <p className="font-body text-[11px] text-stone-400">{row.phone}</p>
+                  </div>
+                  <span
+                    className={cn(
+                      "shrink-0 font-display inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ring-1 ring-inset",
+                      userStatusTone(row.status),
+                    )}
+                  >
+                    {platformUserStatusLabel(row.status)}
+                  </span>
+                </div>
+                <p className="font-body mt-2 text-xs text-stone-600">
+                  {row.operatorName}
+                  <span className="font-mono text-[10px] text-stone-400"> · {row.operatorCode}</span>
+                </p>
+                <p className="font-body mt-1 text-xs text-stone-500">
+                  {row.stationName ?? (row.role === "hq_admin" ? "HQ (All stations)" : "—")}
+                </p>
+                <p className="font-body mt-1 text-[10px] text-stone-400">
+                  Last sign-in: {formatPlatformWhen(row.lastSignInAt)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleOpenUser(row)}
+                  className="font-display mt-3 inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-stone-700 shadow-sm"
+                >
+                  <Edit2 className="size-3" />
+                  View / Edit
+                </button>
+              </article>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="hidden xl:block operator-portal-table-scroll overflow-x-auto">
           <table className="min-w-[880px] w-full text-left">
             <thead>
               <tr className="bg-[var(--platform-orange)] text-[10px] uppercase tracking-wider text-white">
@@ -364,6 +409,17 @@ export function PlatformUsersView() {
             </tbody>
           </table>
         </div>
+
+        {filtered.length === 0 ? (
+          <div className="px-4 py-12 text-center xl:hidden">
+            <p className="font-display text-sm font-bold text-stone-700">
+              No {activeTabMeta.label.toLowerCase()} match
+            </p>
+            <p className="font-body mt-1 text-sm text-stone-500">
+              Try another tab or adjust your search and filters.
+            </p>
+          </div>
+        ) : null}
 
         <PlatformTablePagination
           currentPage={listPagination.currentPage}

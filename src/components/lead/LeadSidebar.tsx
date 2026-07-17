@@ -48,7 +48,7 @@ export function LeadSidebar({ mobileOpen, onMobileClose, onSignOut }: LeadSideba
           <button
             type="button"
             onClick={onMobileClose}
-            className="rounded-lg p-1.5 text-white/80 hover:bg-white/10 lg:hidden"
+            className="rounded-lg p-1.5 text-white/80 hover:bg-white/10 md:hidden"
             aria-label="Close menu"
           >
             <X className="size-5" />
@@ -114,7 +114,7 @@ export function LeadSidebar({ mobileOpen, onMobileClose, onSignOut }: LeadSideba
                   ) : (
                     <Icon className="size-[18px] shrink-0" strokeWidth={active ? 2.5 : 2} />
                   )}
-                  <span>{label}</span>
+                  <span className="truncate">{label}</span>
                 </Link>
               </li>
             );
@@ -146,7 +146,7 @@ export function LeadSidebar({ mobileOpen, onMobileClose, onSignOut }: LeadSideba
       {mobileOpen && (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-foreground/40 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-40 bg-foreground/40 backdrop-blur-[2px] md:hidden"
           onClick={onMobileClose}
           aria-label="Close menu overlay"
         />
@@ -154,8 +154,8 @@ export function LeadSidebar({ mobileOpen, onMobileClose, onSignOut }: LeadSideba
 
       <aside
         className={cn(
-          "staff-sidebar lead-sidebar fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(88vw,272px)] flex-col shadow-xl transition-transform duration-300 sm:w-[272px] lg:translate-x-0 lg:shadow-none",
-          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          "staff-sidebar lead-sidebar fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(88vw,272px)] flex-col shadow-xl transition-transform duration-300 sm:w-[272px] md:translate-x-0 md:shadow-none",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
         style={{ background: "var(--staff-header-gradient)" }}
       >

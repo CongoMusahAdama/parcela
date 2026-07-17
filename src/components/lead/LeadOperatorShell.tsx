@@ -3,6 +3,9 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
+import { OperatorInstallBanner } from "@/components/operator/OperatorInstallBanner";
+import { OperatorLocksProvider } from "@/components/operator/OperatorLocksContext";
+import { OperatorPortalWelcomeGate } from "@/components/operator/OperatorPortalWelcomeGate";
 import { LeadApiBanner } from "@/components/lead/LeadApiBanner";
 import { LeadParcelsProvider } from "@/components/lead/LeadParcelsContext";
 import { LeadSidebar } from "@/components/lead/LeadSidebar";
@@ -10,13 +13,12 @@ import { OperatorFreezeBanner } from "@/components/shared/OperatorFreezeBanner";
 import { StaffNavProvider, useStaffNav } from "@/components/staff/StaffNavContext";
 import { StaffPreloader } from "@/components/staff/StaffPreloader";
 import { restoreLeadSession, signOutLead } from "@/lib/lead-auth";
-import { fetchLeadSession } from "@/lib/lead-api";
+import { OPERATOR_LOGIN_PATH } from "@/lib/operator-auth";
 import { getLeadNavItem } from "@/lib/lead-nav";
 import { prefetchAllLeadViews } from "@/lib/lead-view-prefetch";
 import { operatorStaffThemeStyle } from "@/lib/operator-theme";
-import { showConfirmDialog, showInfoAlert, showSuccessAlert } from "@/lib/sweetalert";
-import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
-import { useSessionValidation } from "@/hooks/use-session-validation";
+import { ensureOperatorBrandingLoaded } from "@/lib/operators";
+import { showConfirmDialog, showSuccessAlert } from "@/lib/sweetalert";
 import type { LeadSession } from "@/types/lead";
 
 const LeadSessionContext = createContext<LeadSession | null>(null);
@@ -57,8 +59,8 @@ function LeadShellContent({
         onSignOut={onSignOut}
       />
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:ml-[272px]">
-        <header className="z-30 flex shrink-0 items-center gap-3 border-b border-border bg-surface/95 px-4 py-3 backdrop-blur-sm lg:hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:ml-[272px]">
+        <header className="z-30 flex shrink-0 items-center gap-3 border-b border-border bg-surface/95 px-4 py-3 backdrop-blur-sm md:hidden">
           <button
             type="button"
             onClick={() => setMobileNavOpen(true)}
@@ -77,7 +79,7 @@ function LeadShellContent({
           </div>
         </header>
 
-        <div className="relative min-h-0 flex-1 overflow-y-auto" data-lead-scroll-root>
+        <div className="operator-portal-scroll relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden" data-lead-scroll-root>
           <OperatorFreezeBanner operator={staff.operator} mode="lead" />
           <LeadApiBanner />
           {isNavigating && (
@@ -86,6 +88,7 @@ function LeadShellContent({
           {children}
         </div>
       </div>
+      <OperatorInstallBanner placement="portal" />
     </div>
   );
 }
@@ -102,10 +105,11 @@ export function LeadOperatorShell({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     void (async () => {
+      await ensureOperatorBrandingLoaded();
       const current = await restoreLeadSession();
       if (cancelled) return;
       if (!current) {
-        router.replace("/lead/login");
+        router.replace(OPERATOR_LOGIN_PATH);
         return;
       }
       if (current.staff.mustChangePassword) {
@@ -135,31 +139,6 @@ export function LeadOperatorShell({ children }: { children: React.ReactNode }) {
     setMobileNavOpen(false);
   }, [pathname]);
 
-  useInactivityLogout({
-    enabled: ready && Boolean(session),
-    onIdle: async () => {
-      await signOutLead();
-      await showInfoAlert({
-        title: "Session expired",
-        text: "You were signed out after 30 minutes of inactivity.",
-      });
-      router.replace("/lead/login");
-    },
-  });
-
-  useSessionValidation({
-    enabled: ready && Boolean(session),
-    validate: () => fetchLeadSession(),
-    onInvalid: async () => {
-      await signOutLead();
-      await showInfoAlert({
-        title: "Signed out",
-        text: "Your session ended. Sign in again.",
-      });
-      router.replace("/lead/login");
-    },
-  });
-
   async function handleSignOut() {
     if (!session) return;
 
@@ -179,7 +158,7 @@ export function LeadOperatorShell({ children }: { children: React.ReactNode }) {
       title: "Signed out",
       text: "You have been signed out safely.",
     });
-    router.push("/lead/login");
+    router.push(OPERATOR_LOGIN_PATH);
   }
 
   if (!ready || !session) {
@@ -190,7 +169,7 @@ export function LeadOperatorShell({ children }: { children: React.ReactNode }) {
 
     return (
       <div className="lead-portal flex h-dvh overflow-hidden bg-[#eef2f6] font-body">
-        <div className="hidden w-[272px] shrink-0 bg-slate-300/25 lg:block" aria-hidden />
+        <div className="hidden w-[272px] shrink-0 bg-slate-300/25 md:block" aria-hidden />
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <StaffPreloader message={bootMessage} />
         </div>
@@ -200,18 +179,27 @@ export function LeadOperatorShell({ children }: { children: React.ReactNode }) {
 
   return (
     <LeadSessionContext.Provider value={session}>
-      <LeadParcelsProvider demoToken={session.token}>
-        <StaffNavProvider>
-          <LeadShellContent
-            session={session}
-            mobileNavOpen={mobileNavOpen}
-            setMobileNavOpen={setMobileNavOpen}
-            onSignOut={handleSignOut}
-          >
-            {children}
-          </LeadShellContent>
-        </StaffNavProvider>
-      </LeadParcelsProvider>
+      <OperatorLocksProvider operator={session.staff.operator}>
+        <LeadParcelsProvider demoToken={session.token}>
+          <StaffNavProvider>
+            <LeadShellContent
+              session={session}
+              mobileNavOpen={mobileNavOpen}
+              setMobileNavOpen={setMobileNavOpen}
+              onSignOut={handleSignOut}
+            >
+              {children}
+            </LeadShellContent>
+            <OperatorPortalWelcomeGate
+              portal="lead"
+              accountId={session.staff.id}
+              displayName={session.staff.displayName}
+              subtitle={`Branch lead · ${session.staff.stationName} · ${session.staff.stationCode}`}
+              operatorLabel={String(session.staff.operator)}
+            />
+          </StaffNavProvider>
+        </LeadParcelsProvider>
+      </OperatorLocksProvider>
     </LeadSessionContext.Provider>
   );
 }
