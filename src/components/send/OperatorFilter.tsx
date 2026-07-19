@@ -28,7 +28,7 @@ function FilterChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "font-display shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold transition-all duration-200 sm:text-sm",
+        "font-display shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all duration-200",
         active && legacyClass,
         active && !legacyClass && !lightAccent && "border-transparent text-white shadow-sm",
         active && !legacyClass && lightAccent && "border-transparent shadow-sm",
@@ -72,33 +72,30 @@ export function OperatorFilter({ value, onChange, options }: OperatorFilterProps
   if (options.length === 0) return null;
 
   return (
-    <div>
-      <p className="font-body mb-2 text-[11px] text-muted">Filter by transport service</p>
-      <div className="-mx-1 overflow-x-auto overscroll-x-contain px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex w-max min-w-full gap-2 pr-1">
-          <FilterChip active={value === "all"} onClick={() => onChange("all")}>
-            All stations
-          </FilterChip>
-          {options.map((opt) => {
-            const active = value === opt.code;
-            const legacy = isLegacyOperator(opt.code);
-            const legacyClass =
-              active && legacy ? OPERATOR_FILTER_ACTIVE_CLASS[opt.code as "VIP" | "STC"] : undefined;
-            const accent = operatorAccentColor(opt.code);
+    <div className="-mx-0.5 overflow-x-auto px-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex w-max gap-1.5">
+        <FilterChip active={value === "all"} onClick={() => onChange("all")}>
+          All
+        </FilterChip>
+        {options.map((opt) => {
+          const active = value === opt.code;
+          const legacy = isLegacyOperator(opt.code);
+          const legacyClass =
+            active && legacy ? OPERATOR_FILTER_ACTIVE_CLASS[opt.code as "VIP" | "STC"] : undefined;
+          const accent = operatorAccentColor(opt.code);
 
-            return (
-              <FilterChip
-                key={opt.code}
-                active={active}
-                onClick={() => onChange(opt.code)}
-                accentColor={accent}
-                legacyClass={legacyClass}
-              >
-                <span className="whitespace-nowrap">{opt.label}</span>
-              </FilterChip>
-            );
-          })}
-        </div>
+          return (
+            <FilterChip
+              key={opt.code}
+              active={active}
+              onClick={() => onChange(opt.code)}
+              accentColor={accent}
+              legacyClass={legacyClass}
+            >
+              <span className="max-w-[9.5rem] truncate">{opt.label}</span>
+            </FilterChip>
+          );
+        })}
       </div>
     </div>
   );
