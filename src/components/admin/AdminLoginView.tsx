@@ -7,6 +7,7 @@ import { AdminAuthBrandPanel } from "@/components/admin/AdminAuthBrandPanel";
 import { AuthCompanyBrand } from "@/components/auth/AuthCompanyBrand";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
+import { useClientReady } from "@/hooks/use-client-ready";
 import {
   formatAdminServerDate,
   getAdminLoginFailureMessage,
@@ -19,6 +20,7 @@ import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 
 export function AdminLoginView() {
   const router = useRouter();
+  const ready = useClientReady();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -84,7 +86,9 @@ export function AdminLoginView() {
           Sign in to your HQ dashboard with the phone number Parcela provisioned for your transport
           company.
         </p>
-        <p className="font-body mt-1 text-xs text-[#94a3b8]">{formatAdminServerDate()}</p>
+        <p className="font-body mt-1 text-xs text-[#94a3b8]">
+          {ready ? formatAdminServerDate() : "\u00a0"}
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>

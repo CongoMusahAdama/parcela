@@ -1,6 +1,7 @@
 "use client";
 
 import { KeyRound, Network, Shield, UserPlus } from "lucide-react";
+import { useClientReady } from "@/hooks/use-client-ready";
 import { getPlatformTimeGreeting } from "@/lib/platform-auth";
 
 const FEATURES = [
@@ -11,7 +12,8 @@ const FEATURES = [
 ] as const;
 
 export function PlatformAuthBrandPanel() {
-  const greeting = getPlatformTimeGreeting();
+  const ready = useClientReady();
+  const greeting = ready ? getPlatformTimeGreeting() : "Welcome";
 
   return (
     <div

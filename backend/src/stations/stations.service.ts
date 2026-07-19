@@ -4,6 +4,10 @@ import { Model } from 'mongoose';
 import { GHANA_STATIONS } from '../data/ghana-stations';
 import { GHANA_CITIES, mergeGhanaCities, resolveGhanaCityName } from '../data/ghana-cities';
 import { haversineKm } from '../common/utils/geo.util';
+import {
+  TransportOperator,
+  TransportOperatorDocument,
+} from '../platform/schemas/transport-operator.schema';
 import { Station, StationDocument } from './schemas/station.schema';
 
 @Injectable()
@@ -12,16 +16,40 @@ export class StationsService {
 
   constructor(
     @InjectModel(Station.name) private readonly stationModel: Model<StationDocument>,
+    @InjectModel(TransportOperator.name)
+    private readonly operatorModel: Model<TransportOperatorDocument>,
   ) {}
 
-  async findAll(params: {    q?: string;
+  /** Operator codes that are onboarded and bookable by senders (not suspended). */
+  async listPublicOperatorCodes(): Promise<string[]> {
+    const rows = await this.operatorModel
+      .find({ status: { $ne: 'suspended' } })
+      .select('code')
+      .lean();
+    return rows.map((row) => row.code.trim().toUpperCase()).filter(Boolean);
+  }
+
+  async findAll(params: {
+    q?: string;
     operator?: string;
     lat?: number;
     lng?: number;
     excludeId?: string;
   }) {
-    const filter: Record<string, unknown> = { active: true };
-    if (params.operator) filter.operator = params.operator;
+    const publicOperators = await this.listPublicOperatorCodes();
+    if (publicOperators.length === 0) {
+      return [];
+    }
+
+    const filter: Record<string, unknown> = {
+      active: true,
+      operator: { $in: publicOperators },
+    };
+    if (params.operator) {
+      const code = params.operator.trim().toUpperCase();
+      if (!publicOperators.includes(code)) return [];
+      filter.operator = code;
+    }
     if (params.excludeId) filter.stationId = { $ne: params.excludeId };
 
     let stations = await this.stationModel.find(filter).lean();
@@ -124,11 +152,12 @@ export class StationsService {
       }
       if (suffix > 50) continue;
 
-      const coords = this.coordsForCity(city);
+      const slot = existingCount + created;
+      const coords = this.coordsForCity(city, slot);
       await this.stationModel.create({
         stationId,
         name,
-        code: `${code}-${String(existingCount + created + 1).padStart(2, '0')}`,
+        code: `${code}-${String(slot + 1).padStart(2, '0')}`,
         address: `${city}, Ghana`,
         city,
         hours: 'Mon–Sun 6:00–20:00',
@@ -155,17 +184,82 @@ export class StationsService {
     return result.deletedCount ?? 0;
   }
 
+  /**
+   * Hide catalog terminals whose transport was never onboarded (e.g. legacy VIP/STC seed).
+   * Keeps stations for every active/configure TransportOperator.
+   */
+  async deactivateStationsForMissingOperators(): Promise<number> {
+    const publicOperators = await this.listPublicOperatorCodes();
+    const filter =
+      publicOperators.length === 0
+        ? { active: true }
+        : { active: true, operator: { $nin: publicOperators } };
+    const result = await this.stationModel.updateMany(filter, { $set: { active: false } });
+    const count = result.modifiedCount ?? 0;
+    if (count > 0) {
+      this.logger.log(`Deactivated ${count} station(s) for operators not in the platform catalog`);
+    }
+    return count;
+  }
+
+  /**
+   * Spread stacked city-center pins so HQ-added terminals are separately visible on the map.
+   */
+  async spreadStackedOperatorStations(operatorCode?: string): Promise<number> {
+    const filter: Record<string, unknown> = { active: true };
+    if (operatorCode) filter.operator = operatorCode.trim().toUpperCase();
+
+    const stations = await this.stationModel.find(filter).sort({ operator: 1, city: 1, name: 1 });
+    const byKey = new Map<string, typeof stations>();
+    for (const station of stations) {
+      const key = `${station.operator}::${station.city.trim().toLowerCase()}::${station.lat.toFixed(4)},${station.lng.toFixed(4)}`;
+      const group = byKey.get(key) ?? [];
+      group.push(station);
+      byKey.set(key, group);
+    }
+
+    let updated = 0;
+    for (const group of byKey.values()) {
+      if (group.length < 2) continue;
+      for (const [index, station] of group.entries()) {
+        const next = this.offsetCoords({ lat: station.lat, lng: station.lng }, index);
+        if (next.lat === station.lat && next.lng === station.lng) continue;
+        station.lat = next.lat;
+        station.lng = next.lng;
+        await station.save();
+        updated += 1;
+      }
+    }
+    if (updated > 0) {
+      this.logger.log(`Spread ${updated} stacked station pin(s) for map visibility`);
+    }
+    return updated;
+  }
+
   async listGhanaCities() {
     const fromDb = await this.stationModel.distinct('city');
     return mergeGhanaCities(GHANA_CITIES, fromDb);
   }
 
-  private coordsForCity(city: string) {
+  private coordsForCity(city: string, slot = 0) {
     const match = GHANA_STATIONS.find(
       (station) => station.city.toLowerCase() === city.trim().toLowerCase(),
     );
-    if (match) return { lat: match.lat, lng: match.lng };
-    return { lat: 5.6037, lng: -0.187 };
+    const base = match
+      ? { lat: match.lat, lng: match.lng }
+      : { lat: 5.6037, lng: -0.187 };
+    return this.offsetCoords(base, slot);
+  }
+
+  /** ~350–450m radial offset so multiple terminals in one city don't share one pin. */
+  private offsetCoords(base: { lat: number; lng: number }, slot: number) {
+    if (slot <= 0) return base;
+    const angle = slot * 2.399963; // golden-angle radians
+    const radiusDeg = 0.0035 + (slot % 5) * 0.0009;
+    return {
+      lat: base.lat + Math.sin(angle) * radiusDeg,
+      lng: base.lng + Math.cos(angle) * radiusDeg,
+    };
   }
 
   private toPublic(station: {

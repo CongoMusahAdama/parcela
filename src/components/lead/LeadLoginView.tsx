@@ -7,6 +7,7 @@ import { AuthIllustration } from "@/components/auth/AuthIllustration";
 import { Logo } from "@/components/brand/Logo";
 import { LeadAuthBrandPanel } from "@/components/lead/LeadAuthBrandPanel";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
+import { useClientReady } from "@/hooks/use-client-ready";
 import { formatStaffServerDate } from "@/lib/staff-auth";
 import { getLeadLoginFailureMessage, signInLead, validateLeadLoginInput } from "@/lib/lead-auth";
 import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
@@ -14,6 +15,7 @@ import type { LeadSession } from "@/types/lead";
 
 export function LeadLoginView() {
   const router = useRouter();
+  const ready = useClientReady();
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [showPin, setShowPin] = useState(false);
@@ -87,7 +89,9 @@ export function LeadLoginView() {
               </h2>
               <p className="font-body mt-1 text-xs text-white/85 sm:text-sm">
                 Server date:{" "}
-                <span className="font-semibold text-white">{formatStaffServerDate()}</span>
+                <span className="font-semibold text-white">
+                  {ready ? formatStaffServerDate() : "\u00a0"}
+                </span>
               </p>
             </div>
 
@@ -140,7 +144,7 @@ export function LeadLoginView() {
             </p>
 
             <p className="font-body mt-4 text-center text-[10px] leading-relaxed text-white/70">
-              © {new Date().getFullYear()} Parcela · Branch lead dashboard
+              © {ready ? new Date().getFullYear() : 2026} Parcela · Branch lead dashboard
               <br />
               support@parcela.app
             </p>

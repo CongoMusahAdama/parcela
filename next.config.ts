@@ -49,7 +49,11 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/manifest-operator.webmanifest",
-        headers: [{ key: "Cache-Control", value: "public, max-age=3600" }],
+        headers: [{ key: "Cache-Control", value: "public, max-age=300" }],
+      },
+      {
+        source: "/icons/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
       {
         source: "/:path*",

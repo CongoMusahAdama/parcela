@@ -63,7 +63,7 @@ function StaffShellContent({
         onSignOut={onSignOut}
       />
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:ml-[272px]">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:ml-[var(--portal-sidebar-width)]">
         <header className="z-30 flex shrink-0 items-center gap-3 border-b border-border bg-surface/95 px-4 py-3 backdrop-blur-sm md:hidden">
           <button
             type="button"
@@ -169,7 +169,10 @@ export function StaffOperatorShell({ children }: StaffOperatorShellProps) {
 
     return (
       <div className="staff-portal flex h-dvh overflow-hidden bg-[#eef2f6] font-body">
-        <div className="hidden w-[272px] shrink-0 bg-slate-300/25 md:block" aria-hidden />
+        <div
+          className="hidden w-[var(--portal-sidebar-width)] shrink-0 bg-slate-300/25 md:block"
+          aria-hidden
+        />
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <StaffPreloader message={bootMessage} />
         </div>

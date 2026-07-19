@@ -6,6 +6,7 @@ import { Lock, Mail } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { PlatformAuthBrandPanel } from "@/components/platform/PlatformAuthBrandPanel";
 import { PlatformAuthField } from "@/components/platform/PlatformAuthField";
+import { useClientReady } from "@/hooks/use-client-ready";
 import {
   PLATFORM_DEMO_EMAIL,
   formatPlatformServerDate,
@@ -18,6 +19,7 @@ import { showValidationAlert } from "@/lib/sweetalert";
 
 export function PlatformLoginView() {
   const router = useRouter();
+  const ready = useClientReady();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -76,7 +78,7 @@ export function PlatformLoginView() {
                 Sign in to Parcela
               </h2>
               <p className="font-body mt-2 text-xs text-stone-500 sm:text-sm">
-                {formatPlatformServerDate()}
+                {ready ? formatPlatformServerDate() : "\u00a0"}
               </p>
             </div>
 
@@ -127,7 +129,7 @@ export function PlatformLoginView() {
             </p>
 
             <p className="font-body mt-4 text-center text-[10px] leading-relaxed text-stone-400">
-              © {new Date().getFullYear()} Parcela · Platform
+              © {ready ? new Date().getFullYear() : 2026} Parcela · Platform
             </p>
 
             {process.env.NODE_ENV === "development" && (

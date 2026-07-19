@@ -30,6 +30,12 @@
     overflow-x: hidden;
   }
 
+  /* Shared portal chrome — scales with viewport so browser zoom doesn't crush the main column */
+  .staff-portal,
+  .lead-portal {
+    --portal-sidebar-width: clamp(13.5rem, 22vw, 17rem);
+  }
+
   .parcela-map-marker {
     background: transparent !important;
     border: none !important;
@@ -185,7 +191,7 @@
   .lead-portal .operator-portal-main,
   .admin-portal .operator-portal-main,
   .platform-portal .operator-portal-main {
-    margin-left: auto;
+    margin-left: 0;
     margin-right: auto;
     width: 100%;
     max-width: 1440px;

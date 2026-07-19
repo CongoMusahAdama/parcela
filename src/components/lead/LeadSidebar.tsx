@@ -154,7 +154,7 @@ export function LeadSidebar({ mobileOpen, onMobileClose, onSignOut }: LeadSideba
 
       <aside
         className={cn(
-          "staff-sidebar lead-sidebar fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(88vw,272px)] flex-col shadow-xl transition-transform duration-300 sm:w-[272px] md:translate-x-0 md:shadow-none",
+          "staff-sidebar lead-sidebar fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(88vw,var(--portal-sidebar-width))] flex-col shadow-xl transition-transform duration-300 sm:w-[var(--portal-sidebar-width)] md:translate-x-0 md:shadow-none",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
         style={{ background: "var(--staff-header-gradient)" }}

@@ -68,6 +68,8 @@ export function isSupportedOperator(value: string): value is Operator {
 }
 
 export function operatorAccentColor(value: string): string {
+  const branding = getOperatorBranding(value);
+  if (branding?.brandColor?.trim()) return branding.brandColor.trim();
   return isSupportedOperator(value) ? OPERATOR_ACCENT[value] : "#0d9488";
 }
 
@@ -127,6 +129,15 @@ export function getOperatorBranding(code: string): PublicOperatorBranding | unde
   return brandingByCode?.get(code.trim().toUpperCase());
 }
 
+/** Uploaded brand mark, then legacy VIP/STC assets — same resolution as login + mobile. */
+export function getOperatorLogoSrc(code: string): string | null {
+  const normalized = code.trim().toUpperCase();
+  const branding = getOperatorBranding(normalized);
+  if (branding?.logoDataUrl) return branding.logoDataUrl;
+  if (isSupportedOperator(normalized)) return OPERATOR_LOGOS[normalized];
+  return null;
+}
+
 export function getOperatorLabel(code: string): string {
   return getOperatorBranding(code)?.name ?? code.trim().toUpperCase();
 }
@@ -135,10 +146,16 @@ export function listOperatorFilterOptions(
   stationOperators: readonly string[] = [],
 ): Array<{ code: string; label: string }> {
   const codes = new Set<string>();
-  brandingByCode?.forEach((_row, code) => codes.add(code));
-  stationOperators.forEach((code) => {
-    if (code.trim()) codes.add(code.trim().toUpperCase());
-  });
+  // Prefer onboarded transports from branding; only include station codes that match branding when loaded.
+  if (brandingByCode && brandingByCode.size > 0) {
+    brandingByCode.forEach((row, code) => {
+      if (row.active !== false) codes.add(code);
+    });
+  } else {
+    stationOperators.forEach((code) => {
+      if (code.trim()) codes.add(code.trim().toUpperCase());
+    });
+  }
   return Array.from(codes)
     .sort((a, b) => getOperatorLabel(a).localeCompare(getOperatorLabel(b)))
     .map((code) => ({ code, label: getOperatorLabel(code) }));

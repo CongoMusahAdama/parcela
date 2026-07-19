@@ -8,6 +8,7 @@ import { AuthCompanyBrand } from "@/components/auth/AuthCompanyBrand";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { OperatorAuthBrandPanel } from "@/components/operator/OperatorAuthBrandPanel";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
+import { useClientReady } from "@/hooks/use-client-ready";
 import { getLeadLoginFailureMessage, signInLead, validateLeadLoginInput } from "@/lib/lead-auth";
 import {
   getOperatorChangeCredentialPath,
@@ -48,6 +49,7 @@ export function OperatorLoginView() {
   const [showSecret, setShowSecret] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  const ready = useClientReady();
   const loginPhone = mode === "staff" ? phone : leadPhone;
   const { brand: companyBrand, loading: brandLoading } = useLoginOperatorBrand(
     loginPhone,
@@ -175,7 +177,9 @@ export function OperatorLoginView() {
         </p>
         <p className="font-body mt-1 text-xs text-[#94a3b8]">
           Server date:{" "}
-          <span className="font-semibold text-[#0D9488]">{formatStaffServerDate()}</span>
+          <span className="font-semibold text-[#0D9488]">
+            {ready ? formatStaffServerDate() : "\u00a0"}
+          </span>
         </p>
       </div>
 

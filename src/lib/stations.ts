@@ -25,7 +25,8 @@ async function loadStationsFromApi(): Promise<Station[]> {
     apiStationCache = normalizeStations(stations);
     return apiStationCache;
   } catch {
-    apiStationCache = normalizeStations(MOCK_STATIONS);
+    // Do not fall back to the VIP/STC catalog — only platform-configured terminals are bookable.
+    apiStationCache = [];
     return apiStationCache;
   }
 }
@@ -56,12 +57,12 @@ export async function resolveStationById(id: string): Promise<Station | undefine
   }
 }
 
-export function getSupportedStations(stations: Station[] = apiStationCache ?? MOCK_STATIONS): Station[] {
+export function getSupportedStations(stations: Station[] = apiStationCache ?? []): Station[] {
   return normalizeStations(stations);
 }
 
 export function getStationById(id: string): Station | undefined {
-  const pool = apiStationCache ?? MOCK_STATIONS;
+  const pool = apiStationCache ?? [];
   return pool.find((s) => s.id === id);
 }
 

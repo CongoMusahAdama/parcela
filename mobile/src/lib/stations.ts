@@ -29,7 +29,7 @@ async function loadStationsFromApi(): Promise<Station[]> {
     return apiStationCache;
   } catch {
     stationsLoadedFromApi = false;
-    apiStationCache = normalizeStations(MOCK_STATIONS);
+    apiStationCache = [];
     return apiStationCache;
   }
 }

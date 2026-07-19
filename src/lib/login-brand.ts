@@ -4,9 +4,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import {
   ensureOperatorBrandingLoaded,
-  getOperatorBranding,
-  isSupportedOperator,
-  OPERATOR_LOGOS,
+  getOperatorLogoSrc,
 } from "@/lib/operators";
 
 export type LoginPortal = "staff" | "lead" | "hq";
@@ -25,13 +23,7 @@ const PHONE_PATTERN = /^(\+?233|0)?[2-9]\d{8}$/;
 export function loginBrandLogoSrc(brand: LoginOperatorBrand): string | null {
   if (!brand.found) return null;
   if (brand.logoDataUrl) return brand.logoDataUrl;
-  const code = brand.operatorCode ?? "";
-  if (isSupportedOperator(code)) {
-    return OPERATOR_LOGOS[code];
-  }
-  const cached = getOperatorBranding(code);
-  if (cached?.logoDataUrl) return cached.logoDataUrl;
-  return null;
+  return getOperatorLogoSrc(brand.operatorCode ?? "");
 }
 
 export async function fetchLoginOperatorBrandApi(

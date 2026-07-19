@@ -1,6 +1,6 @@
-import { isLegacyOperator } from "@/lib/admin-operator";
-import { getOperatorLabel, OPERATOR_LOGOS } from "@/lib/operators";
-import type { Operator } from "@/types/parcel";
+"use client";
+
+import { getOperatorLabel, getOperatorLogoSrc } from "@/lib/operators";
 import { cn } from "@/lib/utils";
 
 type OperatorLogoProps = {
@@ -11,11 +11,10 @@ type OperatorLogoProps = {
 
 export function OperatorLogo({ operator, variant = "inline", className }: OperatorLogoProps) {
   const code = operator.trim().toUpperCase();
-  const legacy = isLegacyOperator(code) ? (code as Operator) : null;
-  const src = legacy ? OPERATOR_LOGOS[legacy] : null;
+  const src = getOperatorLogoSrc(code);
+  const label = getOperatorLabel(code);
 
   if (!src) {
-    const label = getOperatorLabel(code);
     const initials =
       label
         .split(/\s+/)
@@ -61,7 +60,7 @@ export function OperatorLogo({ operator, variant = "inline", className }: Operat
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
-      alt={code}
+      alt={label}
       className={cn("h-9 w-auto max-w-[10rem] object-contain", className)}
     />
   );

@@ -1,11 +1,16 @@
 /* Parcela operator service worker — staff, branch lead, and portal login only.
    HQ (/admin) and platform (/platform) always use the network (no offline cache). */
 
-const CACHE_VERSION = "parcela-operator-v1";
+const CACHE_VERSION = "parcela-operator-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const OFFLINE_URL = "/offline-operator.html";
 
-const PRECACHE_URLS = [OFFLINE_URL, "/logo.png"];
+const PRECACHE_URLS = [
+  OFFLINE_URL,
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-maskable-512.png",
+];
 
 function isAdminOrPlatformPath(pathname) {
   return pathname.startsWith("/admin") || pathname.startsWith("/platform");

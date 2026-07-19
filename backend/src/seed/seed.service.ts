@@ -4,7 +4,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { GHANA_STATIONS } from '../data/ghana-stations';
 import { Parcel, ParcelDocument } from '../parcels/schemas/parcel.schema';
+import {
+  TransportOperator,
+  TransportOperatorDocument,
+} from '../platform/schemas/transport-operator.schema';
 import { Station, StationDocument } from '../stations/schemas/station.schema';
+import { StationsService } from '../stations/stations.service';
 
 /** Legacy demo pickup codes seeded before demo data was removed */
 const LEGACY_DEMO_PICKUP_CODES = [
@@ -22,6 +27,9 @@ export class SeedService implements OnModuleInit {
   constructor(
     @InjectModel(Station.name) private readonly stationModel: Model<StationDocument>,
     @InjectModel(Parcel.name) private readonly parcelModel: Model<ParcelDocument>,
+    @InjectModel(TransportOperator.name)
+    private readonly operatorModel: Model<TransportOperatorDocument>,
+    private readonly stationsService: StationsService,
     private readonly config: ConfigService,
   ) {}
 
@@ -41,6 +49,8 @@ export class SeedService implements OnModuleInit {
     await this.clearLegacyDemoParcels();
 
     const stations = await this.seedStations();
+    await this.stationsService.deactivateStationsForMissingOperators();
+    await this.stationsService.spreadStackedOperatorStations();
     this.logger.log(`Seed complete: ${stations.upserted} stations upserted`);
     return { stations };
   }
@@ -55,7 +65,28 @@ export class SeedService implements OnModuleInit {
   }
 
   async seedStations() {
-    const ops = GHANA_STATIONS.map((s) => ({
+    const configuredCodes = new Set(
+      (
+        await this.operatorModel
+          .find({ status: { $ne: 'suspended' } })
+          .select('code')
+          .lean()
+      ).map((row) => row.code.trim().toUpperCase()),
+    );
+
+    // Only sync catalog VIP/STC rows when those transports are actually onboarded.
+    const catalog = GHANA_STATIONS.filter((station) =>
+      configuredCodes.has(station.operator.toUpperCase()),
+    );
+
+    if (catalog.length === 0) {
+      this.logger.log(
+        'Stations: skipped Ghana catalog seed (no VIP/STC operators configured on the platform)',
+      );
+      return { total: 0, upserted: 0 };
+    }
+
+    const ops = catalog.map((s) => ({
       updateOne: {
         filter: { stationId: s.id },
         update: {
@@ -79,8 +110,8 @@ export class SeedService implements OnModuleInit {
     const result = await this.stationModel.bulkWrite(ops);
     const upserted = (result.upsertedCount ?? 0) + (result.modifiedCount ?? 0);
     this.logger.log(
-      `Stations: ${GHANA_STATIONS.length} synced (${result.upsertedCount ?? 0} new, ${result.modifiedCount ?? 0} updated)`,
+      `Stations: ${catalog.length} catalog synced (${result.upsertedCount ?? 0} new, ${result.modifiedCount ?? 0} updated)`,
     );
-    return { total: GHANA_STATIONS.length, upserted };
+    return { total: catalog.length, upserted };
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Building2, MapPin, Network, Settings, Shield } from "lucide-react";
+import { useClientReady } from "@/hooks/use-client-ready";
 import { getAdminTimeGreeting } from "@/lib/admin-auth";
 
 const FEATURES = [
@@ -11,7 +12,8 @@ const FEATURES = [
 ] as const;
 
 export function AdminAuthBrandPanel() {
-  const greeting = getAdminTimeGreeting();
+  const ready = useClientReady();
+  const greeting = ready ? getAdminTimeGreeting() : "Welcome";
 
   return (
     <div className="text-white">

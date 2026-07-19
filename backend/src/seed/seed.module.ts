@@ -12,6 +12,7 @@ import {
 } from '../platform/schemas/transport-operator.schema';
 import { StaffAccount, StaffAccountSchema } from '../staff/schemas/staff-account.schema';
 import { Station, StationSchema } from '../stations/schemas/station.schema';
+import { StationsModule } from '../stations/stations.module';
 import { SeedService } from './seed.service';
 import { WorkspaceResetService } from './workspace-reset.service';
 
@@ -25,6 +26,7 @@ import { WorkspaceResetService } from './workspace-reset.service';
       { name: PlatformAuditEntry.name, schema: PlatformAuditEntrySchema },
       { name: OperatorSettings.name, schema: OperatorSettingsSchema },
     ]),
+    StationsModule,
   ],
   providers: [SeedService, WorkspaceResetService],
   exports: [SeedService, WorkspaceResetService],

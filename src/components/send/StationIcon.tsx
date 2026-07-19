@@ -1,7 +1,7 @@
 import { Bus, BusFront } from "lucide-react";
 import type { Operator } from "@/types/parcel";
 import { isLegacyOperator } from "@/lib/admin-operator";
-import { OPERATOR_ICON_CLASS } from "@/lib/operators";
+import { OPERATOR_ICON_CLASS, operatorAccentColor } from "@/lib/operators";
 import { cn } from "@/lib/utils";
 
 type StationIconProps = {
@@ -18,22 +18,32 @@ export function StationIcon({ operator, className }: StationIconProps) {
   const code = operator.toUpperCase();
   const legacy = isLegacyOperator(code) ? code : null;
   const Icon = legacy ? icons[legacy] : Bus;
-  const { wrapper, icon } = legacy
-    ? OPERATOR_ICON_CLASS[legacy]
-    : {
-        wrapper: "bg-primary/10 text-primary",
-        icon: "text-primary",
-      };
+  const accent = operatorAccentColor(code);
+
+  if (legacy) {
+    const { wrapper, icon } = OPERATOR_ICON_CLASS[legacy];
+    return (
+      <div
+        className={cn(
+          "flex size-11 shrink-0 items-center justify-center rounded-xl",
+          wrapper,
+          className,
+        )}
+      >
+        <Icon className={cn("size-5", icon)} strokeWidth={1.75} />
+      </div>
+    );
+  }
 
   return (
     <div
       className={cn(
         "flex size-11 shrink-0 items-center justify-center rounded-xl",
-        wrapper,
-        className
+        className,
       )}
+      style={{ backgroundColor: `${accent}22`, color: accent }}
     >
-      <Icon className={cn("size-5", icon)} strokeWidth={1.75} />
+      <Icon className="size-5" strokeWidth={1.75} style={{ color: accent }} />
     </div>
   );
 }

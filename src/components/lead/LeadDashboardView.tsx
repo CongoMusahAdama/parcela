@@ -133,11 +133,11 @@ export function LeadDashboardView() {
           </div>
         </section>
 
-        <section className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
+        <section className="mt-4 grid gap-2 sm:mt-5 sm:gap-3 [grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr))]">
           {metrics.map(({ label, shortLabel, value, icon: Icon }) => (
             <div
               key={label}
-              className="flex items-center gap-2 rounded-xl border border-border bg-surface p-2.5 shadow-sm sm:block sm:p-4"
+              className="flex min-w-0 items-center gap-2 rounded-xl border border-border bg-surface p-2.5 shadow-sm sm:block sm:p-4"
             >
               <div
                 className="flex size-7 shrink-0 items-center justify-center rounded-lg sm:mb-2 sm:size-8"
@@ -158,10 +158,10 @@ export function LeadDashboardView() {
           ))}
         </section>
 
-        <section className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3 md:grid-cols-4">
+        <section className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3 lg:grid-cols-4">
           <Link
             href="/lead/team"
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3.5 sm:text-left md:rounded-2xl"
+            className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-center shadow-sm md:rounded-2xl lg:flex-row lg:items-center lg:gap-3 lg:p-3.5 lg:text-left"
           >
             <span
               className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white sm:size-10 sm:rounded-xl"
@@ -169,7 +169,7 @@ export function LeadDashboardView() {
             >
               <Users className="size-4" />
             </span>
-            <p className="font-display text-[11px] font-bold leading-tight text-foreground sm:text-sm">
+            <p className="font-display text-xs font-bold leading-snug text-foreground sm:text-sm">
               Manage staff
             </p>
           </Link>
@@ -177,7 +177,7 @@ export function LeadDashboardView() {
           <button
             type="button"
             onClick={() => setAddModalOpen(true)}
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3.5 sm:text-left md:rounded-2xl"
+            className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-center shadow-sm md:rounded-2xl lg:flex-row lg:items-center lg:gap-3 lg:p-3.5 lg:text-left"
           >
             <span
               className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white sm:size-10 sm:rounded-xl"
@@ -185,19 +185,19 @@ export function LeadDashboardView() {
             >
               <UserPlus className="size-4" />
             </span>
-            <p className="font-display text-[11px] font-bold leading-tight text-foreground sm:text-sm">
+            <p className="font-display text-xs font-bold leading-snug text-foreground sm:text-sm">
               Add staff
             </p>
           </button>
 
           <Link
             href="/lead/analytics"
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3.5 sm:text-left md:rounded-2xl"
+            className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-center shadow-sm md:rounded-2xl lg:flex-row lg:items-center lg:gap-3 lg:p-3.5 lg:text-left"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 sm:size-10 sm:rounded-xl">
               <Truck className="size-4" />
             </span>
-            <p className="font-display text-[11px] font-bold leading-tight text-foreground sm:text-sm">
+            <p className="font-display text-xs font-bold leading-snug text-foreground sm:text-sm">
               Analytics
             </p>
           </Link>
@@ -206,12 +206,12 @@ export function LeadDashboardView() {
             href="/staff/dashboard"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-border bg-surface p-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3.5 sm:text-left md:rounded-2xl"
+            className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl border border-dashed border-border bg-surface p-2.5 text-center shadow-sm md:rounded-2xl lg:flex-row lg:items-center lg:gap-3 lg:p-3.5 lg:text-left"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 sm:size-10 sm:rounded-xl">
               <ExternalLink className="size-4" />
             </span>
-            <p className="font-display text-[11px] font-bold leading-tight text-foreground sm:text-sm">
+            <p className="font-display text-xs font-bold leading-snug text-foreground sm:text-sm">
               Counter
             </p>
           </a>
@@ -240,7 +240,7 @@ export function LeadDashboardView() {
                   type="button"
                   onClick={() => setActiveTab(tab)}
                   className={cn(
-                    "font-display flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide transition-all sm:flex-none sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-xs",
+                    "font-display flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide transition-all sm:flex-none sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-xs lg:min-w-0",
                     activeTab === tab
                       ? "text-white shadow-md"
                       : "text-[var(--staff-accent-dark)] hover:bg-[var(--staff-accent-muted)] hover:text-[var(--staff-accent)]",

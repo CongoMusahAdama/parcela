@@ -9,6 +9,7 @@ import { Logo } from "@/components/brand/Logo";
 import { StaffAuthBrandPanel } from "@/components/staff/StaffAuthBrandPanel";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
 import { Button } from "@/components/ui/Button";
+import { useClientReady } from "@/hooks/use-client-ready";
 import {
   formatStaffServerDate,
   getStaffLoginFailureMessage,
@@ -20,6 +21,7 @@ import type { StaffSession } from "@/types/staff";
 
 export function StaffLoginView() {
   const router = useRouter();
+  const ready = useClientReady();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -93,7 +95,9 @@ export function StaffLoginView() {
               </h2>
               <p className="font-body mt-1 text-xs text-muted sm:text-sm">
                 Server date:{" "}
-                <span className="font-semibold text-primary">{formatStaffServerDate()}</span>
+                <span className="font-semibold text-primary">
+                  {ready ? formatStaffServerDate() : "\u00a0"}
+                </span>
               </p>
             </div>
 
@@ -160,7 +164,7 @@ export function StaffLoginView() {
             </div>
 
             <p className="font-body mt-4 text-center text-[10px] leading-relaxed text-muted">
-              © {new Date().getFullYear()} Parcela · Staff operations dashboard
+              © {ready ? new Date().getFullYear() : 2026} Parcela · Staff operations dashboard
               <br />
               support@parcela.app
             </p>
