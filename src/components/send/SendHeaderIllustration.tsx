@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function SendHeaderIllustration() {
   return (
-    <div className="mx-auto w-full">
+    <div className="mx-auto w-full max-w-[320px]">
       <Image
         src="/sender.png"
         alt="Parcel delivery illustration"
@@ -10,8 +10,8 @@ export function SendHeaderIllustration() {
         height={1024}
         unoptimized
         priority
-        className="h-auto max-h-[150px] w-full object-contain sm:max-h-[200px] lg:max-h-[260px]"
-        sizes="(max-width: 448px) 100vw, 448px"
+        className="mx-auto h-auto max-h-[140px] w-full object-contain sm:max-h-[160px]"
+        sizes="320px"
       />
     </div>
   );

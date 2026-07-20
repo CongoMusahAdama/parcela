@@ -107,95 +107,116 @@ export function DestinationStationPicker({
 
       {open ? (
         <div
-          className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex justify-center bg-foreground/25 backdrop-blur-[1px]"
           role="dialog"
           aria-modal="true"
           aria-label="Choose destination station"
         >
-          <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 pb-6 pt-4 safe-top">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="font-display text-xl font-bold text-foreground">Destination station</h2>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-lg p-2 text-muted hover:bg-surface hover:text-foreground"
-                aria-label="Close"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-
-            <div className="relative mb-3">
-              <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
-              <input
-                ref={searchRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search city or station..."
-                className="font-body w-full min-h-12 rounded-2xl border border-border bg-surface py-3 pl-11 pr-10 text-base outline-none focus:border-primary"
-              />
-              {query ? (
+          <div className="flex h-full w-full max-w-[430px] flex-col bg-background shadow-[0_0_0_1px_rgb(15_23_42/0.06)]">
+            <div className="flex min-h-0 flex-1 flex-col px-4 pb-5 pt-3 safe-top sm:px-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="font-display text-lg font-bold text-foreground sm:text-xl">
+                  Destination station
+                </h2>
                 <button
                   type="button"
-                  onClick={() => setQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg p-2 text-muted hover:bg-surface hover:text-foreground"
+                  aria-label="Close"
                 >
-                  <X className="size-4" />
+                  <X className="size-5" />
                 </button>
+              </div>
+
+              <div className="relative mb-3">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
+                <input
+                  ref={searchRef}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search city or station..."
+                  className="font-body h-11 w-full rounded-xl border border-border bg-surface py-2.5 pl-10 pr-10 text-sm outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgb(13_148_136/0.12)]"
+                />
+                {query ? (
+                  <button
+                    type="button"
+                    onClick={() => setQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+                    aria-label="Clear search"
+                  >
+                    <X className="size-4" />
+                  </button>
+                ) : null}
+              </div>
+
+              {operatorFilters.length > 1 ? (
+                <div className="mb-3">
+                  <OperatorFilter value={operator} onChange={setOperator} options={operatorFilters} />
+                </div>
               ) : null}
-            </div>
 
-            <OperatorFilter value={operator} onChange={setOperator} options={operatorFilters} />
+              <p className="font-body mb-2 text-[11px] text-muted">
+                {filtered.length} station{filtered.length === 1 ? "" : "s"}
+              </p>
 
-            <p className="font-body mb-2 text-[11px] text-muted">
-              {filtered.length} station{filtered.length === 1 ? "" : "s"}
-            </p>
-
-            <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain">
-              {filtered.length === 0 ? (
-                <li className="flex flex-col items-center gap-2 py-12 text-center text-muted">
-                  <MapPin className="size-8 opacity-40" />
-                  <p className="font-body text-sm">No stations match your search</p>
-                </li>
-              ) : (
-                filtered.map((station) => {
-                  const isSelected = station.id === value;
-                  return (
-                    <li key={station.id}>
+              <ul className="mobile-scroll min-h-0 flex-1 space-y-2 overscroll-contain pb-2">
+                {filtered.length === 0 ? (
+                  <li className="flex flex-col items-center gap-2 py-12 text-center text-muted">
+                    <MapPin className="size-8 opacity-40" />
+                    <p className="font-body text-sm">No stations match your search</p>
+                    {(query || operator !== "all") && (
                       <button
                         type="button"
-                        onClick={() => pickStation(station.id)}
-                        className={cn(
-                          "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors",
-                          isSelected
-                            ? "border-primary bg-primary/10"
-                            : "border-border bg-surface hover:border-primary/30"
-                        )}
+                        onClick={() => {
+                          setQuery("");
+                          setOperator("all");
+                        }}
+                        className="font-display text-sm font-semibold text-primary"
                       >
-                        <span
-                          className="size-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: operatorAccentColor(station.operator) }}
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span
-                            className={cn(
-                              "font-body block text-sm font-medium",
-                              isSelected ? "text-primary" : "text-foreground"
-                            )}
-                          >
-                            {station.name}
-                          </span>
-                          <span className="font-body block text-xs text-muted">
-                            {station.city} · {station.operator}
-                          </span>
-                        </span>
-                        {isSelected ? <Check className="size-5 shrink-0 text-primary" /> : null}
+                        Clear filters
                       </button>
-                    </li>
-                  );
-                })
-              )}
-            </ul>
+                    )}
+                  </li>
+                ) : (
+                  filtered.map((station) => {
+                    const isSelected = station.id === value;
+                    return (
+                      <li key={station.id}>
+                        <button
+                          type="button"
+                          onClick={() => pickStation(station.id)}
+                          className={cn(
+                            "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors",
+                            isSelected
+                              ? "border-primary bg-primary/10"
+                              : "border-border bg-surface hover:border-primary/30",
+                          )}
+                        >
+                          <span
+                            className="size-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: operatorAccentColor(station.operator) }}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span
+                              className={cn(
+                                "font-body block text-sm font-medium",
+                                isSelected ? "text-primary" : "text-foreground",
+                              )}
+                            >
+                              {station.name}
+                            </span>
+                            <span className="font-body block text-xs text-muted">
+                              {station.city} · {getOperatorLabel(station.operator)}
+                            </span>
+                          </span>
+                          {isSelected ? <Check className="size-5 shrink-0 text-primary" /> : null}
+                        </button>
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
+            </div>
           </div>
         </div>
       ) : null}

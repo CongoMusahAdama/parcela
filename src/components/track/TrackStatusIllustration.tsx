@@ -21,9 +21,11 @@ export function TrackStatusIllustration({
         priority
         className={cn(
           "h-auto object-contain",
-          compact ? "max-h-[200px] max-w-[200px]" : "mx-auto w-full max-h-[300px]"
+          compact
+            ? "mx-auto max-h-[100px] max-w-[160px]"
+            : "mx-auto w-full max-h-[140px] max-w-[240px]",
         )}
-        sizes={compact ? "200px" : "(max-width: 448px) 100vw, 448px"}
+        sizes={compact ? "160px" : "240px"}
       />
     </div>
   );

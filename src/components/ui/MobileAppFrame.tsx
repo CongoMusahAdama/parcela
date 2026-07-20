@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export function MobileAppFrame({ children }: { children: ReactNode }) {
   return (
     <div className="parcela-app-canvas min-h-dvh w-full">
-      <div className="parcela-app-frame mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-background">
+      <div className="parcela-app-frame relative mx-auto flex min-h-dvh w-full max-w-[430px] flex-col overflow-hidden bg-background">
         {children}
       </div>
     </div>

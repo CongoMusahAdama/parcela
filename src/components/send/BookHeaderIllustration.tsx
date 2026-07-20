@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function BookHeaderIllustration() {
   return (
-    <div className="mx-auto w-full max-w-[380px]">
+    <div className="mx-auto w-full max-w-[260px]">
       <Image
         src="/receiver.png"
         alt="Recipient receiving a parcel"
@@ -10,8 +10,8 @@ export function BookHeaderIllustration() {
         height={1024}
         unoptimized
         priority
-        className="h-auto max-h-[140px] w-full object-contain sm:max-h-[200px] lg:max-h-[240px]"
-        sizes="(max-width: 448px) 380px, 380px"
+        className="mx-auto h-auto max-h-[110px] w-full object-contain sm:max-h-[130px]"
+        sizes="260px"
       />
     </div>
   );

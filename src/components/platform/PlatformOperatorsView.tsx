@@ -1280,31 +1280,31 @@ export function PlatformOperatorsView() {
                 </p>
               </div>
 
-              <div className="mt-6 grid gap-2">
+              <div className="mt-5 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setEditOperatorId(selected.id)}
-                  className="font-display inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 hover:bg-stone-50"
+                  className="font-display inline-flex items-center justify-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-2.5 py-2 text-[10px] font-bold uppercase tracking-wide text-sky-800 hover:bg-sky-100"
                 >
-                  <Edit2 className="size-3.5" />
-                  Edit branding & details
+                  <Edit2 className="size-3.5 shrink-0" />
+                  <span className="truncate">Edit branding</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => void openTerminalsModal(selected)}
-                  className="font-display inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 hover:bg-stone-50"
+                  className="font-display inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-[10px] font-bold uppercase tracking-wide text-emerald-800 hover:bg-emerald-100"
                 >
-                  <MapPin className="size-3.5" />
-                  Add stations & terminals
+                  <MapPin className="size-3.5 shrink-0" />
+                  <span className="truncate">Add stations</span>
                 </button>
                 {selected.status !== "configured" && selected.status !== "suspended" ? (
                   <button
                     type="button"
                     onClick={() => void handleMarkConfigured(selected)}
-                    className="font-display inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white"
+                    className="font-display col-span-2 inline-flex items-center justify-center gap-1.5 rounded-xl px-2.5 py-2 text-[10px] font-bold uppercase tracking-wide text-white hover:brightness-110"
                     style={{ background: "var(--platform-orange)" }}
                   >
-                    <CheckCircle2 className="size-3.5" />
+                    <CheckCircle2 className="size-3.5 shrink-0" />
                     Mark configured
                   </button>
                 ) : null}
@@ -1312,43 +1312,48 @@ export function PlatformOperatorsView() {
                   <button
                     type="button"
                     onClick={() => openConfigurationLetter(selected)}
-                    className="font-display inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 hover:bg-stone-50"
+                    className="font-display inline-flex items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 px-2.5 py-2 text-[10px] font-bold uppercase tracking-wide text-violet-800 hover:bg-violet-100"
                   >
-                    <FileText className="size-3.5" />
-                    Configuration letter
+                    <FileText className="size-3.5 shrink-0" />
+                    <span className="truncate">Config letter</span>
                   </button>
                 ) : null}
                 <button
                   type="button"
                   onClick={() => void handleIssueHqLogins(selected)}
-                  className="font-display inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 hover:bg-stone-50"
+                  className="font-display inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-[10px] font-bold uppercase tracking-wide text-amber-900 hover:bg-amber-100"
                 >
-                  <KeyRound className="size-3.5" />
-                  Issue HQ logins
+                  <KeyRound className="size-3.5 shrink-0" />
+                  <span className="truncate">Issue HQ logins</span>
                 </button>
                 <button
                   type="button"
                   disabled={suspendBusyId === selected.id}
                   onClick={() => void handleToggleSuspend(selected)}
                   className={cn(
-                    "font-display inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 hover:bg-stone-50",
+                    "font-display inline-flex items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 text-[10px] font-bold uppercase tracking-wide",
+                    selected.status === "suspended"
+                      ? "border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100"
+                      : "border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100",
                     suspendBusyId === selected.id && "cursor-wait opacity-70",
                   )}
                 >
                   {suspendBusyId === selected.id ? (
                     <>
-                      <Loader2 className="size-3.5 animate-spin" />
-                      {selected.status === "suspended" ? "Resuming…" : "Suspending…"}
+                      <Loader2 className="size-3.5 shrink-0 animate-spin" />
+                      <span className="truncate">
+                        {selected.status === "suspended" ? "Resuming…" : "Suspending…"}
+                      </span>
                     </>
                   ) : selected.status === "suspended" ? (
                     <>
-                      <PlayCircle className="size-3.5" />
-                      Resume transport
+                      <PlayCircle className="size-3.5 shrink-0" />
+                      <span className="truncate">Resume</span>
                     </>
                   ) : (
                     <>
-                      <PauseCircle className="size-3.5" />
-                      Suspend transport
+                      <PauseCircle className="size-3.5 shrink-0" />
+                      <span className="truncate">Suspend</span>
                     </>
                   )}
                 </button>
@@ -1358,29 +1363,29 @@ export function PlatformOperatorsView() {
                     disabled={deleteBusyId === selected.id}
                     onClick={() => void handleDeleteOperator(selected)}
                     className={cn(
-                      "font-display inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-red-700 hover:bg-red-100",
+                      "font-display inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-2.5 py-2 text-[10px] font-bold uppercase tracking-wide text-red-700 hover:bg-red-100",
                       deleteBusyId === selected.id && "cursor-wait opacity-70",
                     )}
                   >
                     {deleteBusyId === selected.id ? (
                       <>
-                        <Loader2 className="size-3.5 animate-spin" />
-                        Deleting…
+                        <Loader2 className="size-3.5 shrink-0 animate-spin" />
+                        <span className="truncate">Deleting…</span>
                       </>
                     ) : (
                       <>
-                        <Trash2 className="size-3.5" />
-                        Delete transport
+                        <Trash2 className="size-3.5 shrink-0" />
+                        <span className="truncate">Delete</span>
                       </>
                     )}
                   </button>
                 ) : null}
                 <Link
                   href="/platform/hq-admins"
-                  className="font-display inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-800 hover:bg-stone-50"
+                  className="font-display inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-2.5 py-2 text-[10px] font-bold uppercase tracking-wide text-indigo-800 hover:bg-indigo-100"
                 >
-                  Manage HQ admins
-                  <ArrowRight className="size-3.5" />
+                  <span className="truncate">HQ admins</span>
+                  <ArrowRight className="size-3.5 shrink-0" />
                 </Link>
               </div>
             </>

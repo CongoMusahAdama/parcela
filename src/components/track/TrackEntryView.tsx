@@ -74,7 +74,7 @@ function TrackEntryContent() {
         </Button>
       }
     >
-      <header className="z-10 shrink-0 border-b border-border bg-surface px-5 pb-3 pt-2">
+      <header className="z-10 shrink-0 border-b border-border bg-surface px-4 pb-3 pt-2 sm:px-5">
         <Link
           href="/"
           className="font-display mb-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary"
@@ -85,14 +85,14 @@ function TrackEntryContent() {
 
         <TrackHeaderIllustration />
 
-        <div className="mt-3">
+        <div className="mt-2.5">
           <span className="font-display inline-block rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
             Step 1 of 4
           </span>
-          <h1 className="font-display mt-1.5 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+          <h1 className="font-display mt-1.5 text-xl font-bold tracking-tight text-foreground">
             Track your parcel
           </h1>
-          <p className="font-body mt-1 text-sm text-muted">
+          <p className="font-body mt-1 text-sm leading-snug text-muted">
             Enter the pickup code printed on the receipt the sender shared with you
           </p>
         </div>
@@ -102,7 +102,7 @@ function TrackEntryContent() {
         </div>
       </header>
 
-      <section className="mobile-scroll min-h-0 flex-1 bg-background px-5 pt-4 pb-6">
+      <section className="mobile-scroll min-h-0 flex-1 bg-background px-4 pt-4 pb-6 sm:px-5">
         <form id="track-entry-form" onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label

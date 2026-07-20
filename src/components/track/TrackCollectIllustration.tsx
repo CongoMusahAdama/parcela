@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function TrackCollectIllustration() {
   return (
-    <div className="mx-auto w-full">
+    <div className="mx-auto w-full max-w-[280px]">
       <Image
         src="/collection.png"
         alt="Recipient collecting a parcel at the station"
@@ -10,8 +10,8 @@ export function TrackCollectIllustration() {
         height={1024}
         unoptimized
         priority
-        className="h-auto max-h-[140px] w-full object-contain sm:max-h-[200px] lg:max-h-[260px]"
-        sizes="(max-width: 448px) 100vw, 448px"
+        className="mx-auto h-auto max-h-[120px] w-full object-contain sm:max-h-[140px]"
+        sizes="280px"
       />
     </div>
   );

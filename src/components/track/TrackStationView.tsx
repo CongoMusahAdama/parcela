@@ -70,7 +70,7 @@ function TrackStationContent() {
   );
 
   return (
-    <div className="relative mx-auto h-dvh max-h-dvh w-full max-w-md overflow-hidden bg-background md:max-w-2xl lg:max-w-4xl">
+    <div className="relative mx-auto h-dvh max-h-dvh w-full max-w-[430px] overflow-hidden bg-background">
       <CollectionStationMap
         parcel={parcel}
         lat={coords.lat}

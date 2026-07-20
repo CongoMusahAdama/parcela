@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, List, LocateFixed, Map, Search as SearchIcon, SearchX } from "lucide-react";
 import { OperatorFilter } from "@/components/send/OperatorFilter";
 import { StationCard } from "@/components/send/StationCard";
@@ -61,6 +62,9 @@ function groupStationsByCity(
 }
 
 export function SendStationsView({ stations: initialStations }: SendStationsViewProps) {
+  const searchParams = useSearchParams();
+  const operatorFromUrl = (searchParams.get("operator") ?? "").trim().toUpperCase();
+
   const [query, setQuery] = useState("");
   const [operatorFilter, setOperatorFilter] = useState<OperatorFilterValue>("all");
   const [cityFilter, setCityFilter] = useState<string | "all">("all");
@@ -72,6 +76,12 @@ export function SendStationsView({ stations: initialStations }: SendStationsView
     () => listOperatorFilterOptions(listStationOperatorCodes(initialStations)),
     [initialStations],
   );
+
+  useEffect(() => {
+    if (!operatorFromUrl) return;
+    const known = operatorFilters.some((opt) => opt.code === operatorFromUrl);
+    if (known) setOperatorFilter(operatorFromUrl);
+  }, [operatorFromUrl, operatorFilters]);
 
   useEffect(() => {
     setUserCoords(getSendLocation());
@@ -213,36 +223,34 @@ export function SendStationsView({ stations: initialStations }: SendStationsView
         </div>
 
         {cityOptions.length > 1 ? (
-          <div className="mt-2 -mx-0.5 overflow-x-auto px-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="flex w-max gap-1">
+          <div className="mt-2 flex flex-wrap gap-1">
+            <button
+              type="button"
+              onClick={() => setCityFilter("all")}
+              className={cn(
+                "font-display shrink-0 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors",
+                cityFilter === "all"
+                  ? "bg-foreground text-white"
+                  : "bg-background text-muted hover:text-foreground",
+              )}
+            >
+              All cities
+            </button>
+            {cityOptions.map((city) => (
               <button
+                key={city}
                 type="button"
-                onClick={() => setCityFilter("all")}
+                onClick={() => setCityFilter(city)}
                 className={cn(
                   "font-display shrink-0 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors",
-                  cityFilter === "all"
+                  cityFilter === city
                     ? "bg-foreground text-white"
                     : "bg-background text-muted hover:text-foreground",
                 )}
               >
-                All cities
+                {city}
               </button>
-              {cityOptions.map((city) => (
-                <button
-                  key={city}
-                  type="button"
-                  onClick={() => setCityFilter(city)}
-                  className={cn(
-                    "font-display shrink-0 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors",
-                    cityFilter === city
-                      ? "bg-foreground text-white"
-                      : "bg-background text-muted hover:text-foreground",
-                  )}
-                >
-                  {city}
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
         ) : null}
       </header>

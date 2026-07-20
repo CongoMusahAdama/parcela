@@ -108,21 +108,29 @@ function toBrandingMap(rows: PublicOperatorBranding[]) {
 }
 
 export async function ensureOperatorBrandingLoaded(): Promise<Map<string, PublicOperatorBranding>> {
-  if (brandingByCode) return brandingByCode;
+  if (brandingByCode && brandingByCode.size > 0) return brandingByCode;
   if (!brandingLoadPromise) {
     brandingLoadPromise = (async () => {
       try {
         const rows = await fetchPublicOperatorBrandingApi();
         brandingByCode = toBrandingMap(rows);
       } catch {
-        brandingByCode = new Map();
+        // Keep null so the next caller can retry when the API comes back.
+        if (!brandingByCode) brandingByCode = new Map();
       }
-      return brandingByCode;
+      return brandingByCode ?? new Map();
     })().finally(() => {
       brandingLoadPromise = null;
     });
   }
   return brandingLoadPromise;
+}
+
+/** Force a fresh public branding fetch (e.g. landing partners). */
+export async function refreshOperatorBranding(): Promise<Map<string, PublicOperatorBranding>> {
+  brandingByCode = null;
+  brandingLoadPromise = null;
+  return ensureOperatorBrandingLoaded();
 }
 
 export function getOperatorBranding(code: string): PublicOperatorBranding | undefined {

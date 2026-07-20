@@ -15,7 +15,10 @@ export function AppChrome({ children }: { children: ReactNode }) {
     pathname?.startsWith("/admin") ||
     pathname?.startsWith("/platform");
 
-  if (isWebPortal) {
+  /** Marketing homepage is full-width; send/track keep the phone-app frame. */
+  const isMarketingHome = pathname === "/";
+
+  if (isWebPortal || isMarketingHome) {
     return <>{children}</>;
   }
 

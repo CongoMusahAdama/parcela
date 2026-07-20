@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function TrackHeaderIllustration() {
   return (
-    <div className="mx-auto w-full">
+    <div className="mx-auto w-full max-w-[280px]">
       <Image
         src="/receiver1.png"
         alt="Recipient tracking a parcel"
@@ -10,8 +10,8 @@ export function TrackHeaderIllustration() {
         height={1024}
         unoptimized
         priority
-        className="h-auto max-h-[140px] w-full object-contain sm:max-h-[220px] lg:max-h-[280px]"
-        sizes="(max-width: 448px) 100vw, 448px"
+        className="mx-auto h-auto max-h-[120px] w-full object-contain sm:max-h-[140px]"
+        sizes="280px"
       />
     </div>
   );
