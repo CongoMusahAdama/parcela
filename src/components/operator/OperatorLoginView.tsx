@@ -4,12 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { KeyRound, Lock, Phone, UserRound, Users } from "lucide-react";
-import { AuthCompanyBrand } from "@/components/auth/AuthCompanyBrand";
-import { AuthPageShell } from "@/components/auth/AuthPageShell";
-import { OperatorAuthBrandPanel } from "@/components/operator/OperatorAuthBrandPanel";
+import { OperatorPortalAuthShell } from "@/components/operator/OperatorPortalAuthShell";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
 import { useClientReady } from "@/hooks/use-client-ready";
 import { getLeadLoginFailureMessage, signInLead, validateLeadLoginInput } from "@/lib/lead-auth";
+import { useLoginOperatorBrand, type LoginOperatorBrand } from "@/lib/login-brand";
 import {
   getOperatorChangeCredentialPath,
   getPostLoginPath,
@@ -23,7 +22,6 @@ import {
   validateStaffLoginInput,
 } from "@/lib/staff-auth";
 import { hasSeenPortalWelcome, queuePortalWelcome } from "@/lib/operator-portal-welcome";
-import { useLoginOperatorBrand } from "@/lib/login-brand";
 import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import { cn } from "@/lib/utils";
 import type { LeadSession } from "@/types/lead";
@@ -51,26 +49,45 @@ export function OperatorLoginView() {
   const [checkingSession, setCheckingSession] = useState(true);
   const ready = useClientReady();
   const loginPhone = mode === "staff" ? phone : leadPhone;
-  const { brand: companyBrand, loading: brandLoading } = useLoginOperatorBrand(
-    loginPhone,
-    mode === "staff" ? "staff" : "lead",
-  );
+  const {
+    brand: companyBrand,
+    loading: brandLoading,
+    applyBrand,
+  } = useLoginOperatorBrand(loginPhone, mode === "staff" ? "staff" : "lead");
+
+  async function handleTransportConfigured(
+    _name: string,
+    nextBrand: LoginOperatorBrand | null,
+  ) {
+    applyBrand(nextBrand);
+  }
 
   useEffect(() => {
     let cancelled = false;
+    const failOpen = window.setTimeout(() => {
+      if (!cancelled) setCheckingSession(false);
+    }, 2500);
 
     void (async () => {
-      const session = await restoreOperatorSession();
-      if (cancelled) return;
-      if (session) {
-        router.replace(getPostLoginPath(session));
-        return;
+      try {
+        // Login page must not treat offline cache as signed-in (API may be unreachable).
+        const session = await restoreOperatorSession({ allowOfflineCache: false });
+        if (cancelled) return;
+        if (session) {
+          router.replace(getPostLoginPath(session));
+          return;
+        }
+      } catch {
+        // Show the form even when the API host cannot be resolved.
+      } finally {
+        window.clearTimeout(failOpen);
+        if (!cancelled) setCheckingSession(false);
       }
-      setCheckingSession(false);
     })();
 
     return () => {
       cancelled = true;
+      window.clearTimeout(failOpen);
     };
   }, [router]);
 
@@ -157,34 +174,40 @@ export function OperatorLoginView() {
   }
 
   return (
-    <AuthPageShell
-      variant="operator"
+    <OperatorPortalAuthShell
+      mode={mode}
+      brand={companyBrand}
+      brandLoading={brandLoading}
       loading={checkingSession}
-      brandMark={
-        <AuthCompanyBrand brand={companyBrand} loading={brandLoading} variant="dark" />
-      }
-      hero={<OperatorAuthBrandPanel mode={mode} />}
-      heroAccentColor={companyBrand?.brandColor}
+      onServerConfigured={handleTransportConfigured}
     >
-      <div className="text-center lg:text-left">
-        <h2 className="font-display text-2xl font-bold tracking-tight text-[#0f172a] sm:text-[1.65rem]">
-          Welcome back
+      <div>
+        <h2
+          className="font-display text-3xl font-bold tracking-tight sm:text-[2.15rem]"
+          style={{
+            background: "linear-gradient(120deg, #1e3a5f 0%, #334155 55%, #0d1525 100%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
+          }}
+        >
+          Log in
         </h2>
-        <p className="font-body mt-2 text-sm leading-relaxed text-[#64748b]">
+        <p className="font-body mt-2 text-sm leading-relaxed text-slate-500">
           {mode === "staff"
             ? "Sign in to verify parcels, log transit, and release collections at your terminal."
             : "Sign in to manage your branch team, parcels, and daily operations."}
         </p>
-        <p className="font-body mt-1 text-xs text-[#94a3b8]">
+        <p className="font-body mt-1 text-xs text-slate-400">
           Server date:{" "}
-          <span className="font-semibold text-[#0D9488]">
+          <span className="font-semibold text-[#1e3a5f]">
             {ready ? formatStaffServerDate() : "\u00a0"}
           </span>
         </p>
       </div>
 
       <div
-        className="mt-6 rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-1.5"
+        className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-1.5"
         role="tablist"
         aria-label="Sign-in role"
       >
@@ -201,15 +224,15 @@ export function OperatorLoginView() {
                 className={cn(
                   "rounded-xl px-2.5 py-3 text-left transition-all duration-200",
                   active
-                    ? "bg-white text-[#0f172a] shadow-sm ring-1 ring-[#e2e8f0]"
-                    : "text-[#64748b] hover:bg-white/70 hover:text-[#0f172a]",
+                    ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
+                    : "text-slate-500 hover:bg-white/70 hover:text-slate-900",
                 )}
               >
                 <span className="flex items-center gap-2">
                   <span
                     className={cn(
                       "flex size-7 shrink-0 items-center justify-center rounded-lg",
-                      active ? "bg-[#0D9488]/10 text-[#0D9488]" : "bg-white text-[#94a3b8]",
+                      active ? "bg-[#1e3a5f]/10 text-[#1e3a5f]" : "bg-white text-slate-400",
                     )}
                   >
                     <Icon className="size-3.5" strokeWidth={2.25} />
@@ -254,7 +277,7 @@ export function OperatorLoginView() {
                 <button
                   type="button"
                   onClick={() => setShowSecret((v) => !v)}
-                  className="font-body rounded-lg px-2 py-1 text-xs font-medium text-[#64748b] hover:text-[#0f172a]"
+                  className="font-body rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:text-slate-900"
                 >
                   {showSecret ? "hide" : "show"}
                 </button>
@@ -287,7 +310,7 @@ export function OperatorLoginView() {
                 <button
                   type="button"
                   onClick={() => setShowSecret((v) => !v)}
-                  className="font-body rounded-lg px-2 py-1 text-xs font-medium text-[#64748b] hover:text-[#0f172a]"
+                  className="font-body rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:text-slate-900"
                 >
                   {showSecret ? "hide" : "show"}
                 </button>
@@ -299,33 +322,36 @@ export function OperatorLoginView() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="font-display w-full min-h-[52px] rounded-xl bg-[#0D9488] text-sm font-bold uppercase tracking-wider text-white shadow-[0_12px_28px_rgb(13_148_136_/_0.32)] transition-colors hover:bg-[#0f766e] disabled:cursor-not-allowed disabled:opacity-60"
+          className="font-display w-full min-h-[52px] rounded-full text-sm font-bold uppercase tracking-wider text-white shadow-[0_12px_28px_rgb(30_58_95_/_0.35)] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          style={{
+            background: "linear-gradient(120deg, #1e3a5f 0%, #152238 55%, #0d1525 100%)",
+          }}
         >
-          {isSubmitting ? "Signing in…" : "Sign in"}
+          {isSubmitting ? "Signing in…" : "Log in"}
         </button>
 
         {mode === "staff" ? (
           <p className="font-body text-center text-xs sm:text-sm">
             <Link
               href="/staff/change-password"
-              className="font-semibold text-[#0D9488] hover:underline"
+              className="font-semibold text-[#1e3a5f] hover:underline"
             >
               Set or change your password
             </Link>
           </p>
         ) : (
-          <p className="font-body text-center text-xs text-[#64748b] sm:text-sm">
+          <p className="font-body text-center text-xs text-slate-500 sm:text-sm">
             Use the phone and PIN from HQ Branch leads → Send login.
           </p>
         )}
       </form>
 
-      <p className="font-body mt-6 text-center text-[11px] leading-relaxed text-[#94a3b8] lg:text-left">
+      <p className="font-body mt-6 text-center text-[11px] leading-relaxed text-slate-400">
         One portal for your terminal — we open the right dashboard after sign-in.{" "}
-        <a href="mailto:support@parcela.app" className="font-semibold text-[#0D9488] hover:underline">
+        <a href="mailto:support@parcela.app" className="font-semibold text-[#1e3a5f] hover:underline">
           Contact support
         </a>
       </p>
-    </AuthPageShell>
+    </OperatorPortalAuthShell>
   );
 }

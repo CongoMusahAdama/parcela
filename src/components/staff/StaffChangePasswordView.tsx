@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, Phone } from "lucide-react";
-import { AuthCompanyBrand } from "@/components/auth/AuthCompanyBrand";
-import { AuthPageShell } from "@/components/auth/AuthPageShell";
-import { OperatorAuthBrandPanel } from "@/components/operator/OperatorAuthBrandPanel";
+import { OperatorPortalAuthShell } from "@/components/operator/OperatorPortalAuthShell";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
+import { useLoginOperatorBrand } from "@/lib/login-brand";
 import { changeStaffPasswordApi } from "@/lib/staff-api";
 import {
   changeStaffPasswordWithCredentials,
@@ -16,7 +15,6 @@ import {
   validateStaffChangePasswordInput,
 } from "@/lib/staff-auth";
 import { OPERATOR_LOGIN_PATH } from "@/lib/operator-auth";
-import { useLoginOperatorBrand } from "@/lib/login-brand";
 import { queuePortalWelcome } from "@/lib/operator-portal-welcome";
 import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import type { StaffSession } from "@/types/staff";
@@ -32,7 +30,18 @@ export function StaffChangePasswordView() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { brand: companyBrand, loading: brandLoading } = useLoginOperatorBrand(phone, "staff");
+  const {
+    brand: companyBrand,
+    loading: brandLoading,
+    applyBrand,
+  } = useLoginOperatorBrand(phone, "staff");
+
+  async function handleTransportConfigured(
+    _name: string,
+    nextBrand: import("@/lib/login-brand").LoginOperatorBrand | null,
+  ) {
+    applyBrand(nextBrand);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -110,40 +119,33 @@ export function StaffChangePasswordView() {
     }
   }
 
-  if (!ready) {
-    return (
-      <AuthPageShell
-        variant="operator"
-        brandMark={
-          <AuthCompanyBrand brand={companyBrand} loading={brandLoading} variant="dark" />
-        }
-        hero={<OperatorAuthBrandPanel mode="staff" />}
-        heroAccentColor={companyBrand?.brandColor}
-        loading
-      />
-    );
-  }
-
   const signedIn = Boolean(session);
   const usingTemporaryPassword = session?.staff.mustChangePassword ?? !signedIn;
 
   return (
-    <AuthPageShell
-      variant="operator"
-      brandMark={
-        <AuthCompanyBrand brand={companyBrand} loading={brandLoading} variant="dark" />
-      }
-      hero={<OperatorAuthBrandPanel mode="staff" />}
-      heroAccentColor={companyBrand?.brandColor}
+    <OperatorPortalAuthShell
+      mode="staff"
+      brand={companyBrand}
+      brandLoading={brandLoading}
+      loading={!ready}
+      onServerConfigured={handleTransportConfigured}
     >
-      <div className="text-center lg:text-left">
-        <h2 className="font-display text-2xl font-bold tracking-tight text-[#0f172a] sm:text-[1.65rem]">
-          {usingTemporaryPassword ? "Set your password" : "Change your password"}
+      <div>
+        <h2
+          className="font-display text-3xl font-bold tracking-tight sm:text-[2.15rem]"
+          style={{
+            background: "linear-gradient(120deg, #1e3a5f 0%, #334155 55%, #0d1525 100%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
+          }}
+        >
+          {usingTemporaryPassword ? "Set password" : "Change password"}
         </h2>
-        <p className="font-body mt-2 text-sm leading-relaxed text-[#64748b]">
+        <p className="font-body mt-2 text-sm leading-relaxed text-slate-500">
           {signedIn
             ? `Signed in as ${session?.staff.displayName ?? session?.staff.phone}. Choose a private password for your counter account.`
-            : "Enter the phone number on your staff account, your temporary password from HQ, then choose a new password."}
+            : "Enter the phone on your staff account, your temporary password from HQ, then choose a new password."}
         </p>
       </div>
 
@@ -173,7 +175,7 @@ export function StaffChangePasswordView() {
             <button
               type="button"
               onClick={() => setShowCurrent((v) => !v)}
-              className="font-body rounded-lg px-2 py-1 text-xs font-medium text-[#64748b] hover:text-[#0f172a]"
+              className="font-body rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:text-slate-900"
             >
               {showCurrent ? "hide" : "show"}
             </button>
@@ -193,7 +195,7 @@ export function StaffChangePasswordView() {
             <button
               type="button"
               onClick={() => setShowNew((v) => !v)}
-              className="font-body rounded-lg px-2 py-1 text-xs font-medium text-[#64748b] hover:text-[#0f172a]"
+              className="font-body rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:text-slate-900"
             >
               {showNew ? "hide" : "show"}
             </button>
@@ -214,18 +216,21 @@ export function StaffChangePasswordView() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="font-display w-full min-h-[52px] rounded-xl bg-[#0D9488] text-sm font-bold uppercase tracking-wider text-white shadow-[0_12px_28px_rgb(13_148_136_/_0.32)] transition-colors hover:bg-[#0f766e] disabled:cursor-not-allowed disabled:opacity-60"
+          className="font-display w-full min-h-[52px] rounded-full text-sm font-bold uppercase tracking-wider text-white shadow-[0_12px_28px_rgb(30_58_95_/_0.35)] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          style={{
+            background: "linear-gradient(120deg, #1e3a5f 0%, #152238 55%, #0d1525 100%)",
+          }}
         >
           {isSubmitting ? "Updating…" : usingTemporaryPassword ? "Set password" : "Update password"}
         </button>
       </form>
 
-      <p className="font-body mt-6 text-center text-sm text-[#64748b] lg:text-left">
+      <p className="font-body mt-6 text-center text-sm text-slate-500">
         {signedIn ? "Wrong account?" : "Already set your password?"}{" "}
-        <Link href={OPERATOR_LOGIN_PATH} className="font-semibold text-[#0D9488] hover:underline">
+        <Link href={OPERATOR_LOGIN_PATH} className="font-semibold text-[#1e3a5f] hover:underline">
           {signedIn ? "Sign in again" : "Back to sign in"}
         </Link>
       </p>
-    </AuthPageShell>
+    </OperatorPortalAuthShell>
   );
 }

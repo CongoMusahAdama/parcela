@@ -22,16 +22,21 @@ export function getPostLoginPath(session: StaffSession | LeadSession): string {
   return getOperatorDashboardPath(session.staff.role);
 }
 
-export async function restoreOperatorSession(): Promise<StaffSession | LeadSession | null> {
+export async function restoreOperatorSession(options?: {
+  /** When false (login page), never treat offline cache as signed-in. */
+  allowOfflineCache?: boolean;
+}): Promise<StaffSession | LeadSession | null> {
+  const allowOfflineCache = options?.allowOfflineCache !== false;
+
   try {
-    const staffSession = await restoreStaffSession();
+    const staffSession = await restoreStaffSession({ allowOfflineCache });
     if (staffSession) return staffSession;
   } catch {
     // Fall through — may have lead session instead.
   }
 
   try {
-    const leadSession = await restoreLeadSession();
+    const leadSession = await restoreLeadSession({ allowOfflineCache });
     if (leadSession) return leadSession;
   } catch {
     return null;

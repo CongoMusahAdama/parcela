@@ -1,8 +1,11 @@
-const DEFAULT_API_URL = '/api';
+import { getDefaultApiBaseUrl, resolveApiBaseUrl } from "@/lib/api-server-config";
 
 export function getApiBaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL;
-  return url.replace(/\/$/, '');
+  // Clears any legacy broken "https://MMT" style URL from localStorage.
+  if (typeof window !== "undefined") {
+    return resolveApiBaseUrl();
+  }
+  return getDefaultApiBaseUrl();
 }
 
 export class ApiError extends Error {
@@ -11,32 +14,32 @@ export class ApiError extends Error {
     public status: number,
   ) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
   }
 }
 
 const NETWORK_ERROR_MESSAGE =
-  'Connection problem — check your network and try again. Station actions can be queued and will sync when you are back online.';
+  "Connection problem — check your network and try again. Station actions can be queued and will sync when you are back online.";
 
 const inFlightGetRequests = new Map<string, Promise<unknown>>();
 
 function inFlightKey(path: string, init?: RequestInit) {
-  const method = (init?.method ?? 'GET').toUpperCase();
-  const body = typeof init?.body === 'string' ? init.body : '';
+  const method = (init?.method ?? "GET").toUpperCase();
+  const body = typeof init?.body === "string" ? init.body : "";
   return `${method}:${path}:${body}`;
 }
 
 async function apiFetchInternal<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
-  if (!headers.has('Content-Type') && init?.body) {
-    headers.set('Content-Type', 'application/json');
+  if (!headers.has("Content-Type") && init?.body) {
+    headers.set("Content-Type", "application/json");
   }
 
   let response: Response;
   try {
     response = await fetch(`${getApiBaseUrl()}${path}`, {
       ...init,
-      credentials: 'include',
+      credentials: "include",
       headers,
     });
   } catch {
@@ -50,7 +53,7 @@ async function apiFetchInternal<T>(path: string, init?: RequestInit): Promise<T>
       try {
         const body = JSON.parse(raw) as { message?: string | string[] };
         if (body.message) {
-          message = Array.isArray(body.message) ? body.message.join(', ') : body.message;
+          message = Array.isArray(body.message) ? body.message.join(", ") : body.message;
         } else {
           message = raw;
         }
@@ -69,8 +72,8 @@ async function apiFetchInternal<T>(path: string, init?: RequestInit): Promise<T>
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const method = (init?.method ?? 'GET').toUpperCase();
-  if (method !== 'GET') {
+  const method = (init?.method ?? "GET").toUpperCase();
+  if (method !== "GET") {
     return apiFetchInternal<T>(path, init);
   }
 

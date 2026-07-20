@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, Mail } from "lucide-react";
-import { AdminAuthBrandPanel } from "@/components/admin/AdminAuthBrandPanel";
-import { AdminAuthField } from "@/components/admin/AdminAuthField";
-import { Logo } from "@/components/brand/Logo";
+import { OperatorPortalAuthShell } from "@/components/operator/OperatorPortalAuthShell";
+import { StaffAuthField } from "@/components/staff/StaffAuthField";
 import { changeAdminPasswordApi } from "@/lib/admin-api";
 import { restoreAdminSession, saveAdminSession, signOutAdmin } from "@/lib/admin-auth";
+import { useLoginOperatorBrand, type LoginOperatorBrand } from "@/lib/login-brand";
 import { queuePortalWelcome } from "@/lib/operator-portal-welcome";
 import { showInfoAlert, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
@@ -24,6 +24,18 @@ export function AdminChangePasswordView() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    brand: companyBrand,
+    loading: brandLoading,
+    applyBrand,
+  } = useLoginOperatorBrand("", "hq");
+
+  async function handleTransportConfigured(
+    _name: string,
+    nextBrand: LoginOperatorBrand | null,
+  ) {
+    applyBrand(nextBrand);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -35,12 +47,22 @@ export function AdminChangePasswordView() {
         return;
       }
       setSession(current);
+      if (current.admin.operator || current.admin.logoDataUrl || current.admin.operatorName) {
+        applyBrand({
+          found: true,
+          operatorCode: current.admin.operator ?? undefined,
+          operatorName: current.admin.operatorName ?? current.admin.operator ?? undefined,
+          brandColor: current.admin.brandColor ?? undefined,
+          logoDataUrl: current.admin.logoDataUrl ?? null,
+          stationName: null,
+        });
+      }
       setReady(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, applyBrand]);
 
   useInactivityLogout({
     enabled: ready && Boolean(session),
@@ -109,120 +131,115 @@ export function AdminChangePasswordView() {
     }
   }
 
-  if (!ready || !session) {
-    return <div className="admin-portal min-h-dvh bg-[#e8ecf1]" aria-hidden />;
-  }
-
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-[#e8ecf1] px-3 py-4 sm:px-6 sm:py-6">
-      <div className="flex min-h-[720px] w-full max-w-[1040px] flex-row overflow-hidden rounded-2xl border border-[#e2e8f0]/80 bg-white shadow-[0_28px_72px_-20px_rgb(15_23_42_/_0.22)]">
-        <aside className="hidden w-[48%] shrink-0 border-r border-[#e2e8f0] bg-white lg:block">
-          <AdminAuthBrandPanel />
-        </aside>
-
-        <section
-          className="relative flex min-h-[720px] flex-1 flex-col justify-center overflow-hidden px-10 py-14 text-white lg:px-14 lg:py-16"
+    <OperatorPortalAuthShell
+      mode="hq"
+      brand={companyBrand}
+      brandLoading={brandLoading}
+      loading={!ready}
+      onServerConfigured={handleTransportConfigured}
+    >
+      <div>
+        <h2
+          className="font-display text-3xl font-bold tracking-tight sm:text-[2.15rem]"
           style={{
-            background: "linear-gradient(155deg, #0f172a 0%, #1e293b 48%, #0f172a 100%)",
+            background: "linear-gradient(120deg, #1e3a5f 0%, #334155 55%, #0d1525 100%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
           }}
         >
-          <div className="relative mx-auto w-full max-w-[400px]">
-            <div className="flex flex-col items-center text-center">
-              <Logo
-                size="lg"
-                className="justify-center [&_span]:text-white [&_img]:brightness-0 [&_img]:invert"
-              />
-              <h2 className="font-display mt-5 text-xl font-bold tracking-tight text-white">
-                Set your password
-              </h2>
-              <p className="font-body mt-2 text-sm text-white/80">
-                Signed in as {session.admin.displayName}. Replace your temporary HQ password before
-                continuing.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
-              <AdminAuthField
-                id="admin-change-email"
-                label="HQ email"
-                type="email"
-                value={session.admin.email}
-                onChange={() => undefined}
-                placeholder="hq@transport.com"
-                icon={Mail}
-                autoComplete="username"
-                readOnly
-              />
-
-              <AdminAuthField
-                id="admin-change-current-password"
-                label="Temporary password"
-                type={showCurrent ? "text" : "password"}
-                value={currentPassword}
-                onChange={setCurrentPassword}
-                placeholder="From Parcela onboarding"
-                icon={Lock}
-                autoComplete="current-password"
-                trailing={
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrent((v) => !v)}
-                    className="font-body rounded-lg px-2 py-1 text-xs font-medium text-white/80 hover:text-white"
-                  >
-                    {showCurrent ? "hide" : "show"}
-                  </button>
-                }
-              />
-
-              <AdminAuthField
-                id="admin-change-new-password"
-                label="New password"
-                type={showNew ? "text" : "password"}
-                value={newPassword}
-                onChange={setNewPassword}
-                placeholder="At least 8 characters"
-                icon={Lock}
-                autoComplete="new-password"
-                trailing={
-                  <button
-                    type="button"
-                    onClick={() => setShowNew((v) => !v)}
-                    className="font-body rounded-lg px-2 py-1 text-xs font-medium text-white/80 hover:text-white"
-                  >
-                    {showNew ? "hide" : "show"}
-                  </button>
-                }
-              />
-
-              <AdminAuthField
-                id="admin-change-confirm-password"
-                label="Confirm new password"
-                type={showNew ? "text" : "password"}
-                value={confirmPassword}
-                onChange={setConfirmPassword}
-                placeholder="Repeat new password"
-                icon={Lock}
-                autoComplete="new-password"
-              />
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="font-display w-full min-h-[52px] rounded-xl bg-white text-sm font-bold uppercase tracking-wider text-[#0f172a] shadow-sm transition-colors hover:bg-white/95 disabled:opacity-60"
-              >
-                {isSubmitting ? "Updating…" : "Update password"}
-              </button>
-            </form>
-
-            <p className="font-body mt-6 text-center text-sm text-white/75">
-              Wrong account?{" "}
-              <Link href="/admin/login" className="font-semibold text-white hover:underline">
-                Sign in again
-              </Link>
-            </p>
-          </div>
-        </section>
+          Set password
+        </h2>
+        <p className="font-body mt-2 text-sm leading-relaxed text-slate-500">
+          {session
+            ? `Signed in as ${session.admin.displayName}. Replace your temporary HQ password before continuing.`
+            : "Replace your temporary HQ password before continuing."}
+        </p>
       </div>
-    </div>
+
+      <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
+        <StaffAuthField
+          id="admin-change-email"
+          label="HQ email"
+          type="email"
+          value={session?.admin.email ?? ""}
+          onChange={() => undefined}
+          placeholder="hq@transport.com"
+          icon={Mail}
+          autoComplete="username"
+          readOnly
+        />
+
+        <StaffAuthField
+          id="admin-change-current-password"
+          label="Temporary password"
+          type={showCurrent ? "text" : "password"}
+          value={currentPassword}
+          onChange={setCurrentPassword}
+          placeholder="From Parcela onboarding"
+          icon={Lock}
+          autoComplete="current-password"
+          trailing={
+            <button
+              type="button"
+              onClick={() => setShowCurrent((v) => !v)}
+              className="font-body rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:text-slate-900"
+            >
+              {showCurrent ? "hide" : "show"}
+            </button>
+          }
+        />
+
+        <StaffAuthField
+          id="admin-change-new-password"
+          label="New password"
+          type={showNew ? "text" : "password"}
+          value={newPassword}
+          onChange={setNewPassword}
+          placeholder="At least 8 characters"
+          icon={Lock}
+          autoComplete="new-password"
+          trailing={
+            <button
+              type="button"
+              onClick={() => setShowNew((v) => !v)}
+              className="font-body rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:text-slate-900"
+            >
+              {showNew ? "hide" : "show"}
+            </button>
+          }
+        />
+
+        <StaffAuthField
+          id="admin-change-confirm-password"
+          label="Confirm new password"
+          type={showNew ? "text" : "password"}
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          placeholder="Repeat new password"
+          icon={Lock}
+          autoComplete="new-password"
+        />
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="font-display w-full min-h-[52px] rounded-xl text-sm font-bold uppercase tracking-wider text-white shadow-[0_12px_28px_rgb(15_23_42_/_0.28)] transition-opacity hover:opacity-95 disabled:opacity-60"
+          style={{
+            background: "linear-gradient(120deg, #1e3a5f 0%, #152238 100%)",
+          }}
+        >
+          {isSubmitting ? "Updating…" : "Update password"}
+        </button>
+      </form>
+
+      <p className="font-body mt-6 text-center text-sm text-slate-500">
+        Wrong account?{" "}
+        <Link href="/admin/login" className="font-semibold text-[#1e3a5f] hover:underline">
+          Sign in again
+        </Link>
+      </p>
+    </OperatorPortalAuthShell>
   );
 }

@@ -67,7 +67,11 @@ export async function signInAdmin(phone: string, password: string): Promise<Admi
   return session;
 }
 
-export async function restoreAdminSession(): Promise<AdminSession | null> {
+export async function restoreAdminSession(options?: {
+  /** When false (login page), never treat offline cache as signed-in. */
+  allowOfflineCache?: boolean;
+}): Promise<AdminSession | null> {
+  const allowOfflineCache = options?.allowOfflineCache !== false;
   try {
     const session = await fetchAdminSession();
     saveAdminSession(session);
@@ -77,9 +81,11 @@ export async function restoreAdminSession(): Promise<AdminSession | null> {
       clearAdminSession();
       return null;
     }
-    const cached = getAdminSession();
-    if (cached) return cached;
-    throw error;
+    if (allowOfflineCache) {
+      const cached = getAdminSession();
+      if (cached) return cached;
+    }
+    return null;
   }
 }
 

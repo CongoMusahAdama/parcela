@@ -68,10 +68,14 @@ export async function signInLead(phone: string, pin: string): Promise<LeadSessio
   return session;
 }
 
-export async function restoreLeadSession(): Promise<LeadSession | null> {
+export async function restoreLeadSession(options?: {
+  allowOfflineCache?: boolean;
+}): Promise<LeadSession | null> {
   if (LEAD_USE_DEMO_DATA) {
     return getLeadSession();
   }
+
+  const allowOfflineCache = options?.allowOfflineCache !== false;
 
   try {
     const session = await fetchLeadSession();
@@ -82,8 +86,10 @@ export async function restoreLeadSession(): Promise<LeadSession | null> {
       clearLeadSession();
       return null;
     }
-    const cached = getLeadSession();
-    if (cached) return cached;
+    if (allowOfflineCache) {
+      const cached = getLeadSession();
+      if (cached) return cached;
+    }
     clearLeadSession();
     return null;
   }

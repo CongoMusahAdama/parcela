@@ -121,7 +121,10 @@ export async function signInStaff(phone: string, password: string): Promise<Staf
   return session;
 }
 
-export async function restoreStaffSession(): Promise<StaffSession | null> {
+export async function restoreStaffSession(options?: {
+  allowOfflineCache?: boolean;
+}): Promise<StaffSession | null> {
+  const allowOfflineCache = options?.allowOfflineCache !== false;
   try {
     const session = await fetchStaffSession();
     saveStaffSession(session);
@@ -131,9 +134,11 @@ export async function restoreStaffSession(): Promise<StaffSession | null> {
       clearStaffSession();
       return null;
     }
-    const cached = getStaffSession();
-    if (cached) return cached;
-    throw error;
+    if (allowOfflineCache) {
+      const cached = getStaffSession();
+      if (cached) return cached;
+    }
+    return null;
   }
 }
 

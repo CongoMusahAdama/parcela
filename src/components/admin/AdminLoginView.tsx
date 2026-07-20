@@ -3,19 +3,18 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Phone } from "lucide-react";
-import { AdminAuthBrandPanel } from "@/components/admin/AdminAuthBrandPanel";
-import { AuthCompanyBrand } from "@/components/auth/AuthCompanyBrand";
-import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import { OperatorPortalAuthShell } from "@/components/operator/OperatorPortalAuthShell";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
 import { useClientReady } from "@/hooks/use-client-ready";
 import {
   formatAdminServerDate,
   getAdminLoginFailureMessage,
+  restoreAdminSession,
   signInAdmin,
   validateAdminLoginInput,
 } from "@/lib/admin-auth";
+import { useLoginOperatorBrand, type LoginOperatorBrand } from "@/lib/login-brand";
 import { hasSeenPortalWelcome, queuePortalWelcome } from "@/lib/operator-portal-welcome";
-import { useLoginOperatorBrand } from "@/lib/login-brand";
 import { showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 
 export function AdminLoginView() {
@@ -25,10 +24,54 @@ export function AdminLoginView() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { brand: companyBrand, loading: brandLoading } = useLoginOperatorBrand(phone, "hq");
+  const [checkingSession, setCheckingSession] = useState(true);
+  const {
+    brand: companyBrand,
+    loading: brandLoading,
+    applyBrand,
+  } = useLoginOperatorBrand(phone, "hq");
+
+  async function handleTransportConfigured(
+    _name: string,
+    nextBrand: LoginOperatorBrand | null,
+  ) {
+    applyBrand(nextBrand);
+  }
 
   useEffect(() => {
     router.prefetch("/admin/dashboard");
+  }, [router]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const failOpen = window.setTimeout(() => {
+      if (!cancelled) setCheckingSession(false);
+    }, 2500);
+
+    void (async () => {
+      try {
+        const session = await restoreAdminSession({ allowOfflineCache: false });
+        if (cancelled) return;
+        if (session) {
+          if (session.admin.mustChangePassword) {
+            router.replace("/admin/change-password");
+            return;
+          }
+          router.replace("/admin/dashboard");
+          return;
+        }
+      } catch {
+        // Show the form even when the API host cannot be resolved.
+      } finally {
+        window.clearTimeout(failOpen);
+        if (!cancelled) setCheckingSession(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(failOpen);
+    };
   }, [router]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -70,28 +113,38 @@ export function AdminLoginView() {
   }
 
   return (
-    <AuthPageShell
-      variant="hq"
-      brandMark={
-        <AuthCompanyBrand brand={companyBrand} loading={brandLoading} variant="dark" />
-      }
-      hero={<AdminAuthBrandPanel />}
-      heroAccentColor={companyBrand?.brandColor}
+    <OperatorPortalAuthShell
+      mode="hq"
+      brand={companyBrand}
+      brandLoading={brandLoading}
+      loading={checkingSession}
+      onServerConfigured={handleTransportConfigured}
     >
-      <div className="text-center lg:text-left">
-        <h2 className="font-display text-2xl font-bold tracking-tight text-[#0f172a] sm:text-[1.65rem]">
-          Welcome back
+      <div>
+        <h2
+          className="font-display text-3xl font-bold tracking-tight sm:text-[2.15rem]"
+          style={{
+            background: "linear-gradient(120deg, #1e3a5f 0%, #334155 55%, #0d1525 100%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
+          }}
+        >
+          Log in
         </h2>
-        <p className="font-body mt-2 text-sm leading-relaxed text-[#64748b]">
+        <p className="font-body mt-2 text-sm leading-relaxed text-slate-500">
           Sign in to your HQ dashboard with the phone number Parcela provisioned for your transport
           company.
         </p>
-        <p className="font-body mt-1 text-xs text-[#94a3b8]">
-          {ready ? formatAdminServerDate() : "\u00a0"}
+        <p className="font-body mt-1 text-xs text-slate-400">
+          Server date:{" "}
+          <span className="font-semibold text-[#1e3a5f]">
+            {ready ? formatAdminServerDate() : "\u00a0"}
+          </span>
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
+      <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
         <StaffAuthField
           id="admin-phone"
           label="Phone number"
@@ -116,7 +169,7 @@ export function AdminLoginView() {
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="font-body rounded-lg px-2 py-1 text-xs font-medium text-[#64748b] hover:text-[#0f172a]"
+              className="font-body rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:text-slate-900"
             >
               {showPassword ? "hide" : "show"}
             </button>
@@ -126,17 +179,18 @@ export function AdminLoginView() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="font-display mt-1 w-full min-h-[52px] rounded-xl bg-[#0f172a] text-sm font-bold uppercase tracking-wider text-white shadow-[0_12px_28px_rgb(15_23_42_/_0.28)] transition-colors hover:bg-[#1e293b] disabled:cursor-not-allowed disabled:opacity-60"
+          className="font-display mt-1 w-full min-h-[52px] rounded-xl text-sm font-bold uppercase tracking-wider text-white shadow-[0_12px_28px_rgb(15_23_42_/_0.28)] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          style={{
+            background: "linear-gradient(120deg, #1e3a5f 0%, #152238 100%)",
+          }}
         >
           {isSubmitting ? "Signing in…" : "Sign in"}
         </button>
       </form>
 
-      <p className="font-body mt-6 text-center text-xs leading-relaxed text-[#94a3b8] lg:text-left">
-        Provisioned access only. Your dashboard adopts your operator branding after setup.
-        <br />
-        Forgot password? Contact Parcela support.
+      <p className="font-body mt-6 text-center text-xs leading-relaxed text-slate-400">
+        Provisioned access only. Forgot password? Contact Parcela support.
       </p>
-    </AuthPageShell>
+    </OperatorPortalAuthShell>
   );
 }
