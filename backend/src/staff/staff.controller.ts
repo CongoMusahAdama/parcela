@@ -29,6 +29,7 @@ import { StaffLoginDto } from './dto/staff-login.dto';
 import { VerifyLogDto } from './dto/verify-log.dto';
 import { StaffAuthGuard } from './staff-auth.guard';
 import { StaffAuthService } from './staff-auth.service';
+import { PortalUpdatesInboxService } from '../platform/services/portal-updates-inbox.service';
 
 type StaffRequest = {
   staff: ReturnType<StaffAuthService['verifyToken']>;
@@ -41,6 +42,7 @@ export class StaffController {
     private readonly parcelsService: ParcelsService,
     private readonly operatorControls: OperatorControlsService,
     private readonly sms: SmsService,
+    private readonly portalUpdates: PortalUpdatesInboxService,
   ) {}
 
   private async assertStaffOpsUnlocked(operator: string) {
@@ -93,6 +95,13 @@ export class StaffController {
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   lookupLoginBrand(@Query() query: LoginBrandQueryDto) {
     return this.staffAuth.lookupLoginBrand(query.phone, query.portal);
+  }
+
+  @Get('platform-updates')
+  @SkipThrottle({ auth: true })
+  @UseGuards(StaffAuthGuard)
+  platformUpdates() {
+    return this.portalUpdates.listForPortal('staff');
   }
 
   @Post('change-password')

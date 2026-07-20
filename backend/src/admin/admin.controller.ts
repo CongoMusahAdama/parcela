@@ -30,6 +30,7 @@ import { CreateStationDto } from './dto/create-station.dto';
 import { OperatorLocksDto } from './dto/operator-locks.dto';
 import { OperatorSettingsDto } from './dto/operator-settings.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
+import { PortalUpdatesInboxService } from '../platform/services/portal-updates-inbox.service';
 
 type AdminRequest = {
   admin: ReturnType<StaffAuthService['verifyToken']>;
@@ -41,6 +42,7 @@ export class AdminController {
     private readonly staffAuth: StaffAuthService,
     private readonly adminService: AdminService,
     private readonly sms: SmsService,
+    private readonly portalUpdates: PortalUpdatesInboxService,
   ) {}
 
   @Post('login')
@@ -91,6 +93,13 @@ export class AdminController {
       req.admin.staff,
       new Date(req.admin.iat).toISOString(),
     );
+  }
+
+  @Get('platform-updates')
+  @SkipThrottle({ auth: true })
+  @UseGuards(AdminAuthGuard)
+  platformUpdates() {
+    return this.portalUpdates.listForPortal('hq');
   }
 
   @Post('setup/complete')

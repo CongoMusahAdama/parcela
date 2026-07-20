@@ -5,6 +5,7 @@ import { SmsModule } from '../sms/sms.module';
 import { StaffAccount, StaffAccountSchema } from '../staff/schemas/staff-account.schema';
 import { StaffModule } from '../staff/staff.module';
 import { StationsModule } from '../stations/stations.module';
+import { PortalUpdatesModule } from '../platform/portal-updates.module';
 import { AdminAuthGuard } from './admin-auth.guard';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
@@ -26,6 +27,7 @@ import {
       { name: Parcel.name, schema: ParcelSchema },
       { name: TransportOperator.name, schema: TransportOperatorSchema },
     ]),
+    PortalUpdatesModule,
     forwardRef(() => StaffModule),
     StationsModule,
     SmsModule,

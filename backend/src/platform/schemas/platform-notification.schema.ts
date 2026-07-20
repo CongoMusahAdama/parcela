@@ -3,7 +3,15 @@ import { HydratedDocument } from 'mongoose';
 
 export type PlatformNotificationDocument = HydratedDocument<PlatformNotification>;
 
-export type PlatformNotificationAudience = 'staff' | 'general';
+/** Portal roles that can receive SMS updates (platform admins have no phone). */
+export type PlatformNotificationAudience = 'hq' | 'lead' | 'staff' | 'general';
+
+export const PLATFORM_NOTIFICATION_AUDIENCES: PlatformNotificationAudience[] = [
+  'hq',
+  'lead',
+  'staff',
+  'general',
+];
 
 @Schema({ collection: 'platform_notifications', timestamps: true })
 export class PlatformNotification {
@@ -16,7 +24,11 @@ export class PlatformNotification {
   @Prop({ required: true })
   body!: string;
 
-  @Prop({ required: true, enum: ['staff', 'general'], index: true })
+  @Prop({
+    required: true,
+    enum: PLATFORM_NOTIFICATION_AUDIENCES,
+    index: true,
+  })
   audience!: PlatformNotificationAudience;
 
   @Prop({ required: true, default: 0 })

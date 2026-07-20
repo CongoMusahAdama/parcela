@@ -14,6 +14,23 @@ import {
   type PlatformNotificationAudience,
 } from '../schemas/platform-notification.schema';
 
+const AUDIENCE_ROLES: Record<
+  PlatformNotificationAudience,
+  Array<'station_staff' | 'station_lead' | 'operator_admin'>
+> = {
+  hq: ['operator_admin'],
+  lead: ['station_lead'],
+  staff: ['station_staff'],
+  general: ['operator_admin', 'station_lead', 'station_staff'],
+};
+
+const AUDIENCE_EMPTY_MESSAGE: Record<PlatformNotificationAudience, string> = {
+  hq: 'No active HQ admin phones found to notify.',
+  lead: 'No active branch lead phones found to notify.',
+  staff: 'No active counter staff phones found to notify.',
+  general: 'No active portal user phones found to notify.',
+};
+
 @Injectable()
 export class PlatformNotificationsService {
   constructor(
@@ -56,11 +73,7 @@ export class PlatformNotificationsService {
 
     const recipients = await this.resolveRecipients(params.audience);
     if (recipients.length === 0) {
-      throw new BadRequestException(
-        params.audience === 'staff'
-          ? 'No active counter staff phones found to notify.'
-          : 'No active portal user phones found to notify.',
-      );
+      throw new BadRequestException(AUDIENCE_EMPTY_MESSAGE[params.audience]);
     }
 
     const message = this.formatSms(title, body);
@@ -96,18 +109,12 @@ export class PlatformNotificationsService {
   }
 
   private async resolveRecipients(audience: PlatformNotificationAudience) {
-    const filter =
-      audience === 'staff'
-        ? { active: true, role: 'station_staff' as const }
-        : {
-            active: true,
-            role: {
-              $in: ['station_staff', 'station_lead', 'operator_admin'] as const,
-            },
-          };
-
+    const roles = AUDIENCE_ROLES[audience];
     const accounts = await this.staffModel
-      .find(filter)
+      .find({
+        active: true,
+        role: roles.length === 1 ? roles[0] : { $in: roles },
+      })
       .select({ phone: 1 })
       .lean<Array<{ phone?: string }>>();
 

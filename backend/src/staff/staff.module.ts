@@ -4,14 +4,15 @@ import { AdminModule } from '../admin/admin.module';
 import { ParcelsModule } from '../parcels/parcels.module';
 import { SmsModule } from '../sms/sms.module';
 import { StationsModule } from '../stations/stations.module';
-import { LeadAuthGuard } from './lead-auth.guard';
-import { LeadController } from './lead.controller';
-import { LeadTeamService } from './lead-team.service';
-import { StaffAccount, StaffAccountSchema } from './schemas/staff-account.schema';
+import { PortalUpdatesModule } from '../platform/portal-updates.module';
 import {
   TransportOperator,
   TransportOperatorSchema,
 } from '../platform/schemas/transport-operator.schema';
+import { LeadAuthGuard } from './lead-auth.guard';
+import { LeadController } from './lead.controller';
+import { LeadTeamService } from './lead-team.service';
+import { StaffAccount, StaffAccountSchema } from './schemas/staff-account.schema';
 import { StaffAuthGuard } from './staff-auth.guard';
 import { StaffAuthService } from './staff-auth.service';
 import { StaffController } from './staff.controller';
@@ -22,6 +23,7 @@ import { StaffController } from './staff.controller';
       { name: StaffAccount.name, schema: StaffAccountSchema },
       { name: TransportOperator.name, schema: TransportOperatorSchema },
     ]),
+    PortalUpdatesModule,
     ParcelsModule,
     SmsModule,
     StationsModule,

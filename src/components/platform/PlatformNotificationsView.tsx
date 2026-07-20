@@ -1,13 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Bell, Loader2, Megaphone, Send, Users } from "lucide-react";
+import {
+  Bell,
+  Building2,
+  Loader2,
+  Megaphone,
+  Send,
+  UserRound,
+  Users,
+} from "lucide-react";
 import {
   listPlatformNotificationsApi,
   sendPlatformNotificationApi,
   type PlatformNotificationAudience,
   type PlatformNotificationRow,
 } from "@/lib/platform-api";
+import { ApiError } from "@/lib/api-client";
 import { formatPlatformWhen } from "@/lib/platform-demo";
 import { showConfirmDialog, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
 import { cn } from "@/lib/utils";
@@ -16,18 +25,42 @@ const AUDIENCES: {
   id: PlatformNotificationAudience;
   label: string;
   hint: string;
+  icon: typeof Users;
+  badgeClass: string;
 }[] = [
   {
+    id: "hq",
+    label: "HQ admins",
+    hint: "Transport headquarters accounts only",
+    icon: Building2,
+    badgeClass: "bg-amber-50 text-amber-900",
+  },
+  {
+    id: "lead",
+    label: "Branch leads",
+    hint: "Station lead accounts only",
+    icon: UserRound,
+    badgeClass: "bg-emerald-50 text-emerald-800",
+  },
+  {
     id: "staff",
-    label: "Staff",
-    hint: "Counter staff only — station_staff accounts with a phone",
+    label: "Counter staff",
+    hint: "Station staff accounts only",
+    icon: Users,
+    badgeClass: "bg-sky-50 text-sky-800",
   },
   {
     id: "general",
-    label: "General",
-    hint: "All portal users — HQ, branch leads, and counter staff",
+    label: "All roles",
+    hint: "HQ + branch leads + counter staff",
+    icon: Bell,
+    badgeClass: "bg-violet-50 text-violet-800",
   },
 ];
+
+function audienceMeta(id: string) {
+  return AUDIENCES.find((row) => row.id === id) ?? AUDIENCES[3]!;
+}
 
 export function PlatformNotificationsView() {
   const [audience, setAudience] = useState<PlatformNotificationAudience>("staff");
@@ -45,7 +78,14 @@ export function PlatformNotificationsView() {
       const rows = await listPlatformNotificationsApi();
       setHistory(rows);
     } catch (error) {
-      setHistoryError(error instanceof Error ? error.message : "Could not load history.");
+      if (error instanceof ApiError && (error.status === 404 || /cannot get/i.test(error.message))) {
+        setHistory([]);
+        setHistoryError(
+          "Notifications API is not on the live server yet. Redeploy the Parcela API (Render), then refresh.",
+        );
+      } else {
+        setHistoryError(error instanceof Error ? error.message : "Could not load history.");
+      }
     } finally {
       setLoadingHistory(false);
     }
@@ -69,15 +109,15 @@ export function PlatformNotificationsView() {
     if (trimmedBody.length < 4) {
       await showValidationAlert({
         title: "Add a message",
-        text: "Write the update message staff should receive.",
+        text: "Write the update message recipients should receive.",
       });
       return;
     }
 
-    const audienceLabel = audience === "staff" ? "counter staff only" : "all portal users";
+    const selected = audienceMeta(audience);
     const confirmed = await showConfirmDialog({
       title: "Send this update?",
-      text: `SMS will go to ${audienceLabel}. Title: “${trimmedTitle}”.`,
+      text: `SMS will go to ${selected.label.toLowerCase()}. Title: “${trimmedTitle}”.`,
       confirmText: "Send SMS",
       cancelText: "Cancel",
     });
@@ -120,8 +160,8 @@ export function PlatformNotificationsView() {
             Notifications
           </h1>
           <p className="font-body mt-1.5 max-w-2xl text-sm text-stone-600">
-            Send an SMS update when something changes. Choose Staff for counter-only notices, or
-            General for every HQ, lead, and staff phone on Parcela.
+            Send an update to HQ admins, branch leads, counter staff, or everyone. Recipients see it
+            as a popup when they open their dashboard (SMS is sent too).
           </p>
         </div>
       </div>
@@ -137,7 +177,9 @@ export function PlatformNotificationsView() {
             </span>
             <div>
               <h2 className="font-display text-base font-bold text-stone-900">Compose update</h2>
-              <p className="font-body text-xs text-stone-500">Delivered by SMS via mNotify</p>
+              <p className="font-body text-xs text-stone-500">
+                Dashboard popup on login · SMS via mNotify
+              </p>
             </div>
           </div>
 
@@ -148,6 +190,7 @@ export function PlatformNotificationsView() {
             <div className="grid gap-2 sm:grid-cols-2">
               {AUDIENCES.map((option) => {
                 const active = audience === option.id;
+                const Icon = option.icon;
                 return (
                   <button
                     key={option.id}
@@ -161,11 +204,7 @@ export function PlatformNotificationsView() {
                     )}
                   >
                     <span className="font-display flex items-center gap-2 text-sm font-bold text-stone-900">
-                      {option.id === "staff" ? (
-                        <Users className="size-3.5" />
-                      ) : (
-                        <Bell className="size-3.5" />
-                      )}
+                      <Icon className="size-3.5 shrink-0" />
                       {option.label}
                     </span>
                     <span className="font-body mt-1 block text-[11px] leading-snug text-stone-500">
@@ -255,37 +294,38 @@ export function PlatformNotificationsView() {
             </p>
           ) : (
             <ul className="mt-4 max-h-[28rem] space-y-3 overflow-y-auto pr-1">
-              {history.map((row) => (
-                <li
-                  key={row.id}
-                  className="rounded-xl border border-stone-100 bg-stone-50/80 px-3.5 py-3"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        "font-display rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                        row.audience === "staff"
-                          ? "bg-sky-50 text-sky-800"
-                          : "bg-violet-50 text-violet-800",
-                      )}
-                    >
-                      {row.audience === "staff" ? "Staff" : "General"}
-                    </span>
-                    <span className="font-body text-[11px] text-stone-400">
-                      {formatPlatformWhen(row.sentAt)}
-                    </span>
-                  </div>
-                  <p className="font-display mt-1.5 text-sm font-bold text-stone-900">{row.title}</p>
-                  <p className="font-body mt-1 line-clamp-3 text-xs leading-relaxed text-stone-600">
-                    {row.body}
-                  </p>
-                  <p className="font-body mt-2 text-[11px] text-stone-500">
-                    Sent {row.sentCount}/{row.recipientCount}
-                    {row.failedCount > 0 ? ` · ${row.failedCount} failed` : ""}
-                    {row.actorEmail ? ` · ${row.actorEmail}` : ""}
-                  </p>
-                </li>
-              ))}
+              {history.map((row) => {
+                const meta = audienceMeta(row.audience);
+                return (
+                  <li
+                    key={row.id}
+                    className="rounded-xl border border-stone-100 bg-stone-50/80 px-3.5 py-3"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={cn(
+                          "font-display rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                          meta.badgeClass,
+                        )}
+                      >
+                        {meta.label}
+                      </span>
+                      <span className="font-body text-[11px] text-stone-400">
+                        {formatPlatformWhen(row.sentAt)}
+                      </span>
+                    </div>
+                    <p className="font-display mt-1.5 text-sm font-bold text-stone-900">{row.title}</p>
+                    <p className="font-body mt-1 line-clamp-3 text-xs leading-relaxed text-stone-600">
+                      {row.body}
+                    </p>
+                    <p className="font-body mt-2 text-[11px] text-stone-500">
+                      Sent {row.sentCount}/{row.recipientCount}
+                      {row.failedCount > 0 ? ` · ${row.failedCount} failed` : ""}
+                      {row.actorEmail ? ` · ${row.actorEmail}` : ""}
+                    </p>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

@@ -28,6 +28,7 @@ import { UpdateTeamMemberDto } from './dto/update-team-member.dto';
 import { LeadAuthGuard } from './lead-auth.guard';
 import { LeadTeamService } from './lead-team.service';
 import { StaffAuthService } from './staff-auth.service';
+import { PortalUpdatesInboxService } from '../platform/services/portal-updates-inbox.service';
 
 type LeadRequest = {
   lead: ReturnType<StaffAuthService['verifyToken']>;
@@ -41,6 +42,7 @@ export class LeadController {
     private readonly leadTeam: LeadTeamService,
     private readonly operatorControls: OperatorControlsService,
     private readonly sms: SmsService,
+    private readonly portalUpdates: PortalUpdatesInboxService,
   ) {}
 
   private async assertLeadOpsUnlocked(operator: string) {
@@ -94,6 +96,13 @@ export class LeadController {
       staff: req.lead.staff,
       signedInAt: new Date(req.lead.iat).toISOString(),
     };
+  }
+
+  @Get('platform-updates')
+  @SkipThrottle({ auth: true })
+  @UseGuards(LeadAuthGuard)
+  platformUpdates() {
+    return this.portalUpdates.listForPortal('lead');
   }
 
   @Get('summary')

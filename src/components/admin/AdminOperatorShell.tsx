@@ -6,6 +6,7 @@ import { Menu } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminDataProvider } from "@/components/admin/AdminDataContext";
 import { OperatorPortalWelcomeGate } from "@/components/operator/OperatorPortalWelcomeGate";
+import { PortalUpdateGate } from "@/components/operator/PortalUpdateGate";
 import { StaffNavProvider, useStaffNav } from "@/components/staff/StaffNavContext";
 import { StaffPreloader } from "@/components/staff/StaffPreloader";
 import { restoreAdminSession, signOutAdmin } from "@/lib/admin-auth";
@@ -229,6 +230,7 @@ export function AdminOperatorShell({ children }: { children: React.ReactNode }) 
             subtitle={getAdminOperatorName(session.admin)}
             operatorLabel={session.admin.operator ?? undefined}
           />
+          <PortalUpdateGate portal="admin" accountId={session.admin.id} />
         </StaffNavProvider>
       </AdminDataProvider>
     </AdminSessionContext.Provider>

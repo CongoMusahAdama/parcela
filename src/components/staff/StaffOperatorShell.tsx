@@ -6,6 +6,7 @@ import { Menu } from "lucide-react";
 import { OperatorInstallBanner } from "@/components/operator/OperatorInstallBanner";
 import { OperatorLocksProvider } from "@/components/operator/OperatorLocksContext";
 import { OperatorPortalWelcomeGate } from "@/components/operator/OperatorPortalWelcomeGate";
+import { PortalUpdateGate } from "@/components/operator/PortalUpdateGate";
 import { StaffApiBanner } from "@/components/staff/StaffApiBanner";
 import { StaffNavProvider, useStaffNav } from "@/components/staff/StaffNavContext";
 import { StaffParcelsProvider } from "@/components/staff/StaffParcelsContext";
@@ -200,6 +201,7 @@ export function StaffOperatorShell({ children }: StaffOperatorShellProps) {
               subtitle={`${session.staff.stationName} · ${session.staff.stationCode}`}
               operatorLabel={String(session.staff.operator)}
             />
+            <PortalUpdateGate portal="staff" accountId={session.staff.id} />
           </StaffNavProvider>
         </StaffParcelsProvider>
       </OperatorLocksProvider>

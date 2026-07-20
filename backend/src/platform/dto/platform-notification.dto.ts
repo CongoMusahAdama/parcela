@@ -1,4 +1,5 @@
 import { IsIn, IsString, MaxLength, MinLength } from 'class-validator';
+import { PLATFORM_NOTIFICATION_AUDIENCES } from '../schemas/platform-notification.schema';
 
 export class CreatePlatformNotificationDto {
   @IsString()
@@ -11,6 +12,6 @@ export class CreatePlatformNotificationDto {
   @MaxLength(480)
   body!: string;
 
-  @IsIn(['staff', 'general'])
-  audience!: 'staff' | 'general';
+  @IsIn(PLATFORM_NOTIFICATION_AUDIENCES)
+  audience!: (typeof PLATFORM_NOTIFICATION_AUDIENCES)[number];
 }

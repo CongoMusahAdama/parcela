@@ -5,6 +5,7 @@ import { StaffModule } from '../staff/staff.module';
 import { StationsModule } from '../stations/stations.module';
 import { OperatorSettings, OperatorSettingsSchema } from '../admin/schemas/operator-settings.schema';
 import { Parcel, ParcelSchema } from '../parcels/schemas/parcel.schema';
+import { PortalUpdatesModule } from './portal-updates.module';
 import { PlatformAuthController } from './controllers/platform-auth.controller';
 import { PlatformNotificationsController } from './controllers/platform-notifications.controller';
 import { PlatformOperatorsController } from './controllers/platform-operators.controller';
@@ -13,10 +14,6 @@ import { PublicOperatorsController } from './controllers/public-operators.contro
 import { PlatformAuthGuard } from './guards/platform-auth.guard';
 import { PlatformAdmin, PlatformAdminSchema } from './schemas/platform-admin.schema';
 import { PlatformAuditEntry, PlatformAuditEntrySchema } from './schemas/platform-audit.schema';
-import {
-  PlatformNotification,
-  PlatformNotificationSchema,
-} from './schemas/platform-notification.schema';
 import {
   TransportOperator,
   TransportOperatorSchema,
@@ -34,10 +31,10 @@ import { PlatformWorkspaceService } from './services/platform-workspace.service'
       { name: PlatformAdmin.name, schema: PlatformAdminSchema },
       { name: TransportOperator.name, schema: TransportOperatorSchema },
       { name: PlatformAuditEntry.name, schema: PlatformAuditEntrySchema },
-      { name: PlatformNotification.name, schema: PlatformNotificationSchema },
       { name: OperatorSettings.name, schema: OperatorSettingsSchema },
       { name: Parcel.name, schema: ParcelSchema },
     ]),
+    PortalUpdatesModule,
     StaffModule,
     SmsModule,
     StationsModule,

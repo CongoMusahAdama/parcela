@@ -6,6 +6,7 @@ import { Menu } from "lucide-react";
 import { OperatorInstallBanner } from "@/components/operator/OperatorInstallBanner";
 import { OperatorLocksProvider } from "@/components/operator/OperatorLocksContext";
 import { OperatorPortalWelcomeGate } from "@/components/operator/OperatorPortalWelcomeGate";
+import { PortalUpdateGate } from "@/components/operator/PortalUpdateGate";
 import { LeadApiBanner } from "@/components/lead/LeadApiBanner";
 import { LeadParcelsProvider } from "@/components/lead/LeadParcelsContext";
 import { LeadSidebar } from "@/components/lead/LeadSidebar";
@@ -200,6 +201,7 @@ export function LeadOperatorShell({ children }: { children: React.ReactNode }) {
               subtitle={`Branch lead · ${session.staff.stationName} · ${session.staff.stationCode}`}
               operatorLabel={String(session.staff.operator)}
             />
+            <PortalUpdateGate portal="lead" accountId={session.staff.id} />
           </StaffNavProvider>
         </LeadParcelsProvider>
       </OperatorLocksProvider>

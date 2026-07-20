@@ -275,7 +275,7 @@ export async function resetPlatformUserLoginApi(accountId: string): Promise<Plat
   });
 }
 
-export type PlatformNotificationAudience = "staff" | "general";
+export type PlatformNotificationAudience = "hq" | "lead" | "staff" | "general";
 
 export type PlatformNotificationRow = {
   id: string;
