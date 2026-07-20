@@ -6,9 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ChevronRight, MapPin } from "lucide-react";
 import { AppShell } from "@/components/ui/AppShell";
 import { Button } from "@/components/ui/Button";
-import { BookHeaderIllustration } from "@/components/send/BookHeaderIllustration";
 import { ParcelForm, type ParcelFormData, type ParcelFormHandle } from "@/components/send/ParcelForm";
-import { SendWizardSteps } from "@/components/send/SendWizardSteps";
 import { StationIcon } from "@/components/send/StationIcon";
 import { submitBooking } from "@/lib/booking";
 import { loadOperatorLockStatus } from "@/lib/operator-controls";
@@ -139,54 +137,49 @@ function BookPageForm({ originStation }: { originStation: NonNullable<ReturnType
         </div>
       }
     >
-      <header className="z-10 shrink-0 border-b border-border bg-surface px-5 pb-3 pt-2">
-        <Link
-          href="/send"
-          className="font-display mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary"
-        >
-          <ArrowLeft className="size-4" />
-          Back
-        </Link>
-
-        <BookHeaderIllustration />
-
-        <div className="mt-4">
-          <span className="font-display inline-block rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-            Step 2 of 3
-          </span>
-          <h1 className="font-display mt-2 text-2xl font-bold tracking-tight text-foreground">
-            Parcel details
-          </h1>
-          <p className="font-body mt-1.5 text-sm text-muted">
-            Complete each part — you can go back and edit anytime
-          </p>
-        </div>
-
-        <div className="mt-4">
-          <SendWizardSteps current={2} stationId={originStation.id} />
-        </div>
-
-        <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2">
-          <StationIcon operator={originStation.operator} className="size-9 rounded-lg" />
-          <div className="min-w-0 flex-1">
-            <p className="font-display truncate text-sm font-semibold text-foreground">
-              {originStation.name}
-            </p>
-            <p className="font-body flex items-center gap-1 truncate text-xs text-muted">
-              <MapPin className="size-3 shrink-0 text-primary" />
-              {originStation.code} · {originStation.city}
-            </p>
-          </div>
+      <header className="z-10 shrink-0 border-b border-border bg-surface px-4 pb-2.5 pt-2">
+        <div className="flex items-center gap-2">
           <Link
             href="/send"
-            className="font-display shrink-0 text-xs font-semibold text-primary"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-primary hover:bg-primary/10"
+            aria-label="Back to stations"
           >
+            <ArrowLeft className="size-4" />
+          </Link>
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-[10px] font-bold uppercase tracking-wider text-primary">
+              Step 2 of 3 · Details
+            </p>
+            <h1 className="font-display truncate text-base font-bold tracking-tight text-foreground">
+              {formStep === 0
+                ? "Sender details"
+                : formStep === 1
+                  ? "Recipient details"
+                  : formStep === 2
+                    ? "Parcel info"
+                    : "Review & confirm"}
+            </h1>
+          </div>
+        </div>
+
+        <div className="mt-2 flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5">
+          <StationIcon operator={originStation.operator} className="size-7 rounded-md" />
+          <div className="min-w-0 flex-1">
+            <p className="font-display truncate text-[13px] font-semibold leading-tight text-foreground">
+              {originStation.name}
+            </p>
+            <p className="font-body flex items-center gap-1 truncate text-[11px] text-muted">
+              <MapPin className="size-2.5 shrink-0 text-primary" />
+              {originStation.city}
+            </p>
+          </div>
+          <Link href="/send" className="font-display shrink-0 text-[11px] font-semibold text-primary">
             Change
           </Link>
         </div>
       </header>
 
-      <div className="mobile-scroll min-h-0 flex-1 bg-background px-5 pt-2 pb-6 md:px-8 lg:px-10">
+      <div className="mobile-scroll min-h-0 flex-1 bg-background px-4 pt-2.5 pb-4">
         <ParcelForm
           ref={formRef}
           step={formStep}
@@ -261,13 +254,9 @@ export default function BookPage() {
     <Suspense
       fallback={
         <AppShell viewport className="!px-0 !pt-0">
-          <div className="animate-pulse shrink-0 border-b border-border bg-surface px-5 pb-4 pt-2">
-            <div className="mb-3 h-4 w-12 rounded bg-border" />
-            <div className="mx-auto h-[240px] w-full max-w-[380px] rounded-xl bg-border" />
-            <div className="mt-4 space-y-2">
-              <div className="h-5 w-24 rounded-full bg-border" />
-              <div className="h-7 w-40 rounded bg-border" />
-            </div>
+          <div className="animate-pulse shrink-0 border-b border-border bg-surface px-4 pb-2.5 pt-2">
+            <div className="mb-2 h-9 w-full rounded-lg bg-border" />
+            <div className="h-10 w-full rounded-lg bg-border" />
           </div>
         </AppShell>
       }

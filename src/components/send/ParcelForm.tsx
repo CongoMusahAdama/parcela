@@ -172,7 +172,7 @@ function FormStepNav({ step, maxReachedStep, onGoTo }: FormStepNavProps) {
             disabled={!canVisit}
             onClick={() => canVisit && onGoTo(s.id)}
             className={cn(
-              "font-display flex flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-2 text-[10px] font-semibold transition-all",
+              "font-display flex flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-[10px] font-semibold transition-all",
               isActive && "bg-surface text-primary shadow-sm ring-1 ring-border/60",
               !isActive && canVisit && "text-foreground hover:bg-surface/80",
               !canVisit && "cursor-not-allowed text-muted/50"
@@ -247,34 +247,33 @@ export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
     }
 
     return (
-      <form id="parcel-form" onSubmit={handleSubmit} className="space-y-4">
+      <form id="parcel-form" onSubmit={handleSubmit} className="space-y-3">
         <FormStepNav step={step} maxReachedStep={maxReachedStep} onGoTo={goToStep} />
 
-        <div className="rounded-2xl border border-border bg-surface px-4 py-3.5">
-          <p className="font-display text-[10px] font-bold uppercase tracking-wider text-primary">
-            Part {step + 1} of {SUB_STEPS.length}
-          </p>
-          <h2 className="font-display mt-0.5 text-base font-bold text-foreground">{meta.title}</h2>
-          <p className="font-body text-sm text-muted">{meta.subtitle}</p>
-        </div>
+        <p className="font-body px-0.5 text-[12px] leading-snug text-muted">{meta.subtitle}</p>
 
         {step === 0 && (
-          <section className="space-y-3.5 rounded-2xl border border-border bg-surface p-4">
+          <section className="space-y-3 rounded-xl border border-border bg-surface p-3.5">
             <div>
-              <Label htmlFor="senderName">Full name</Label>
+              <Label htmlFor="senderName" className="mb-1 text-xs">
+                Full name
+              </Label>
               <Input
                 id="senderName"
                 placeholder="Your full name"
                 value={form.senderName}
                 onChange={(e) => setForm({ ...form, senderName: e.target.value })}
                 autoComplete="name"
+                className="!min-h-11 !rounded-xl"
               />
               {errors.senderName && (
                 <p className="font-body mt-1 text-xs text-danger">{errors.senderName}</p>
               )}
             </div>
             <div>
-              <Label htmlFor="senderPhone">Phone number</Label>
+              <Label htmlFor="senderPhone" className="mb-1 text-xs">
+                Phone number
+              </Label>
               <Input
                 id="senderPhone"
                 type="tel"
@@ -282,6 +281,7 @@ export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
                 value={form.senderPhone}
                 onChange={(e) => setForm({ ...form, senderPhone: e.target.value })}
                 autoComplete="tel"
+                className="!min-h-11 !rounded-xl"
               />
               {errors.senderPhone && (
                 <p className="font-body mt-1 text-xs text-danger">{errors.senderPhone}</p>
@@ -291,37 +291,46 @@ export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
         )}
 
         {step === 1 && (
-          <section className="space-y-3.5 rounded-2xl border border-border bg-surface p-4">
-            <div>
-              <Label htmlFor="recipientName">Full name</Label>
-              <Input
-                id="recipientName"
-                placeholder="Recipient full name"
-                value={form.recipientName}
-                onChange={(e) => setForm({ ...form, recipientName: e.target.value })}
-                autoComplete="name"
-              />
-              {errors.recipientName && (
-                <p className="font-body mt-1 text-xs text-danger">{errors.recipientName}</p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="recipientPhone">Phone number</Label>
-              <Input
-                id="recipientPhone"
-                type="tel"
-                placeholder="e.g. 055 987 6543"
-                value={form.recipientPhone}
-                onChange={(e) => setForm({ ...form, recipientPhone: e.target.value })}
-                autoComplete="tel"
-              />
-              {errors.recipientPhone && (
-                <p className="font-body mt-1 text-xs text-danger">{errors.recipientPhone}</p>
-              )}
+          <section className="space-y-3">
+            <div className="space-y-3 rounded-xl border border-border bg-surface p-3.5">
+              <div>
+                <Label htmlFor="recipientName" className="mb-1 text-xs">
+                  Full name
+                </Label>
+                <Input
+                  id="recipientName"
+                  placeholder="Recipient full name"
+                  value={form.recipientName}
+                  onChange={(e) => setForm({ ...form, recipientName: e.target.value })}
+                  autoComplete="name"
+                  className="!min-h-11 !rounded-xl"
+                />
+                {errors.recipientName && (
+                  <p className="font-body mt-1 text-xs text-danger">{errors.recipientName}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="recipientPhone" className="mb-1 text-xs">
+                  Phone number
+                </Label>
+                <Input
+                  id="recipientPhone"
+                  type="tel"
+                  placeholder="e.g. 055 987 6543"
+                  value={form.recipientPhone}
+                  onChange={(e) => setForm({ ...form, recipientPhone: e.target.value })}
+                  autoComplete="tel"
+                  className="!min-h-11 !rounded-xl"
+                />
+                {errors.recipientPhone && (
+                  <p className="font-body mt-1 text-xs text-danger">{errors.recipientPhone}</p>
+                )}
+              </div>
             </div>
             <DestinationStationPicker
               stations={destinationStations}
               transportOperator={originStation.operator}
+              originCity={originStation.city}
               value={form.destinationStationId}
               onChange={(destinationStationId) =>
                 setForm({ ...form, destinationStationId })
@@ -332,9 +341,9 @@ export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
         )}
 
         {step === 2 && (
-          <section className="space-y-3.5">
-            <p className="font-body px-1 text-xs text-muted">
-              One booking, one tracking ID — add all parcels you are dropping off together.
+          <section className="space-y-3">
+            <p className="font-body px-0.5 text-[11px] text-muted">
+              One booking, one tracking ID — add all parcels in this trip.
             </p>
             {form.items.map((item, index) => (
               <div

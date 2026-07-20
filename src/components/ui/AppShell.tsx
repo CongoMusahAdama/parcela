@@ -40,7 +40,7 @@ export function AppShell({
         {children}
       </main>
       {footer ? (
-        <footer className="safe-bottom z-10 shrink-0 border-t border-border/80 bg-surface/95 px-5 py-4 backdrop-blur-md">
+        <footer className="safe-bottom z-10 shrink-0 border-t border-border/80 bg-surface/95 px-4 py-3 backdrop-blur-md">
           {footer}
         </footer>
       ) : null}
