@@ -26,13 +26,14 @@ async function loadStationsFromApi(): Promise<Station[]> {
     return apiStationCache;
   } catch {
     // Do not fall back to the VIP/STC catalog — only platform-configured terminals are bookable.
-    apiStationCache = [];
-    return apiStationCache;
+    // Leave cache null so a later call can retry after the API recovers.
+    return [];
   }
 }
 
 export async function ensureStationsLoaded(): Promise<Station[]> {
-  if (apiStationCache) return apiStationCache;
+  // Use !== null so a successful empty list is cached, but failed loads can retry.
+  if (apiStationCache !== null) return apiStationCache;
   if (!stationsLoadPromise) {
     stationsLoadPromise = loadStationsFromApi().finally(() => {
       stationsLoadPromise = null;

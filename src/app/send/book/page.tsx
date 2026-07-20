@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ChevronRight, MapPin } from "lucide-react";
@@ -12,10 +12,12 @@ import { SendWizardSteps } from "@/components/send/SendWizardSteps";
 import { StationIcon } from "@/components/send/StationIcon";
 import { submitBooking } from "@/lib/booking";
 import { loadOperatorLockStatus } from "@/lib/operator-controls";
+import { ensureOperatorBrandingLoaded } from "@/lib/operators";
 import { showValidationAlert } from "@/lib/sweetalert";
 import type { Station } from "@/types/parcel";
 import {
   ensureStationsLoaded,
+  filterStationsByOperator,
   getStationById,
   resolveStationById,
   sortStationsAlphabetically,
@@ -31,12 +33,20 @@ function BookPageForm({ originStation }: { originStation: NonNullable<ReturnType
   const [allStations, setAllStations] = useState<Station[]>([]);
 
   useEffect(() => {
-    ensureStationsLoaded().then(setAllStations);
+    let cancelled = false;
+    void Promise.all([ensureStationsLoaded(), ensureOperatorBrandingLoaded()]).then(([rows]) => {
+      if (!cancelled) setAllStations(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const destinationStations = sortStationsAlphabetically(
-    allStations.filter((s) => s.id !== originStation.id)
-  );
+  // Same transport network as the sender drop-off — every other branch.
+  const destinationStations = useMemo(() => {
+    const network = filterStationsByOperator(allStations, originStation.operator);
+    return sortStationsAlphabetically(network.filter((s) => s.id !== originStation.id));
+  }, [allStations, originStation.id, originStation.operator]);
   const isReviewStep = formStep === FORM_STEPS - 1;
 
   async function handleSubmit(data: ParcelFormData) {

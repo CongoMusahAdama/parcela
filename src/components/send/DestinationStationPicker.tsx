@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, MapPin, Search, X } from "lucide-react";
-import { OperatorFilter } from "@/components/send/OperatorFilter";
-import { getOperatorLabel, listOperatorFilterOptions, operatorAccentColor } from "@/lib/operators";
-import { filterStationsByOperator, listStationOperatorCodes, searchStations } from "@/lib/stations";
+import { ChevronDown, MapPin, Search, SearchX, X } from "lucide-react";
+import { StationCard } from "@/components/send/StationCard";
+import { getOperatorLabel, operatorAccentColor } from "@/lib/operators";
+import { searchStations } from "@/lib/stations";
 import type { Station } from "@/types/parcel";
 import { cn } from "@/lib/utils";
 
@@ -13,10 +13,24 @@ type DestinationStationPickerProps = {
   value: string;
   onChange: (stationId: string) => void;
   error?: string;
+  /** Operator code for the sender drop-off — destinations are that network’s branches. */
+  transportOperator?: string;
 };
 
-function stationLabel(station: Station) {
-  return `${station.name}, ${station.city} · ${getOperatorLabel(station.operator)}`;
+function groupByCity(stations: Station[]): Array<{ city: string; stations: Station[] }> {
+  const byCity = new Map<string, Station[]>();
+  for (const station of stations) {
+    const city = station.city.trim() || "Other";
+    const group = byCity.get(city) ?? [];
+    group.push(station);
+    byCity.set(city, group);
+  }
+  return Array.from(byCity.entries())
+    .map(([city, rows]) => ({
+      city,
+      stations: [...rows].sort((a, b) => a.name.localeCompare(b.name)),
+    }))
+    .sort((a, b) => a.city.localeCompare(b.city));
 }
 
 export function DestinationStationPicker({
@@ -24,22 +38,34 @@ export function DestinationStationPicker({
   value,
   onChange,
   error,
+  transportOperator,
 }: DestinationStationPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [operator, setOperator] = useState<string | "all">("all");
+  const [cityFilter, setCityFilter] = useState<string | "all">("all");
   const searchRef = useRef<HTMLInputElement>(null);
   const selected = stations.find((s) => s.id === value);
 
-  const operatorFilters = useMemo(
-    () => listOperatorFilterOptions(listStationOperatorCodes(stations)),
-    [stations],
-  );
+  const networkCode =
+    transportOperator?.trim().toUpperCase() ||
+    stations[0]?.operator.trim().toUpperCase() ||
+    "";
+  const networkLabel = networkCode ? getOperatorLabel(networkCode) : "Partner";
 
   const filtered = useMemo(() => {
-    const byOperator = filterStationsByOperator(stations, operator);
-    return searchStations(query, byOperator);
-  }, [stations, query, operator]);
+    const searched = searchStations(query, stations);
+    if (cityFilter === "all") return searched;
+    return searched.filter((s) => s.city.trim().toLowerCase() === cityFilter.toLowerCase());
+  }, [stations, query, cityFilter]);
+
+  const cityOptions = useMemo(() => {
+    const searched = searchStations(query, stations);
+    return Array.from(new Set(searched.map((s) => s.city.trim()).filter(Boolean))).sort((a, b) =>
+      a.localeCompare(b),
+    );
+  }, [stations, query]);
+
+  const cityGroups = useMemo(() => groupByCity(filtered), [filtered]);
 
   useEffect(() => {
     if (!open) return;
@@ -56,10 +82,25 @@ export function DestinationStationPicker({
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  function pickStation(stationId: string) {
-    onChange(stationId);
+  function openPicker() {
+    setQuery("");
+    setCityFilter("all");
+    setOpen(true);
+  }
+
+  function closePicker() {
     setOpen(false);
     setQuery("");
+  }
+
+  function pickStation(stationId: string) {
+    onChange(stationId);
+    closePicker();
+  }
+
+  function clearFilters() {
+    setQuery("");
+    setCityFilter("all");
   }
 
   return (
@@ -68,154 +109,195 @@ export function DestinationStationPicker({
         htmlFor="destination-picker-trigger"
         className="font-display mb-2 block text-xs font-semibold uppercase tracking-wide text-muted"
       >
-        Destination station
+        Where should the receiver collect?
       </label>
       <button
         id="destination-picker-trigger"
         type="button"
-        onClick={() => {
-          setQuery("");
-          setOperator("all");
-          setOpen(true);
-        }}
+        onClick={openPicker}
         className={cn(
           "font-body flex w-full min-h-12 items-center justify-between gap-3 rounded-2xl border bg-background px-4 py-3 text-left text-base shadow-sm transition-all",
           error
             ? "border-danger focus:border-danger"
-            : "border-border hover:border-primary/40 focus:border-primary focus:shadow-[0_0_0_3px_rgb(13_148_136/0.12)]"
+            : "border-border hover:border-primary/40 focus:border-primary focus:shadow-[0_0_0_3px_rgb(13_148_136/0.12)]",
         )}
       >
         <span className="flex min-w-0 flex-1 items-center gap-2.5">
           {selected ? (
             <>
               <span
-                className="size-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: operatorAccentColor(selected.operator) }}
-              />
-              <span className="truncate text-foreground">{stationLabel(selected)}</span>
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg"
+                style={{ backgroundColor: `${operatorAccentColor(selected.operator)}18` }}
+              >
+                <MapPin
+                  className="size-4"
+                  style={{ color: operatorAccentColor(selected.operator) }}
+                />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate font-medium text-foreground">{selected.name}</span>
+                <span className="block truncate text-xs text-muted">
+                  {selected.city} · {getOperatorLabel(selected.operator)}
+                </span>
+              </span>
             </>
           ) : (
-            <span className="text-muted">Tap to choose a station</span>
+            <span className="text-muted">Choose a {networkLabel} branch</span>
           )}
         </span>
         <ChevronDown className="size-4 shrink-0 text-muted" />
       </button>
       {error ? <p className="font-body mt-1 text-xs text-danger">{error}</p> : null}
       <p className="font-body mt-1.5 text-[11px] text-muted">
-        Search by city or station name — no scrolling through the full list
+        Browse every {networkLabel} branch — pick where the recipient will collect
       </p>
 
       {open ? (
         <div
-          className="fixed inset-0 z-50 flex justify-center bg-foreground/25 backdrop-blur-[1px]"
+          className="fixed inset-0 z-50 flex justify-center bg-foreground/30 backdrop-blur-[2px]"
           role="dialog"
           aria-modal="true"
-          aria-label="Choose destination station"
+          aria-label="Choose receiver collection station"
         >
           <div className="flex h-full w-full max-w-[430px] flex-col bg-background shadow-[0_0_0_1px_rgb(15_23_42/0.06)]">
-            <div className="flex min-h-0 flex-1 flex-col px-4 pb-5 pt-3 safe-top sm:px-5">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="font-display text-lg font-bold text-foreground sm:text-xl">
-                  Destination station
-                </h2>
+            <header className="z-10 shrink-0 border-b border-border bg-surface px-3 pb-2 pt-2 sm:px-4">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
-                  className="rounded-lg p-2 text-muted hover:bg-surface hover:text-foreground"
+                  onClick={closePicker}
+                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-background hover:text-foreground"
                   aria-label="Close"
                 >
-                  <X className="size-5" />
+                  <X className="size-4" />
                 </button>
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-display truncate text-base font-bold tracking-tight text-foreground">
+                    {networkLabel} stations
+                  </h2>
+                  <p className="font-body text-[11px] text-muted">
+                    Receiver collects here · {stations.length} branch
+                    {stations.length === 1 ? "" : "es"}
+                  </p>
+                </div>
               </div>
 
-              <div className="relative mb-3">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
+              <div className="relative mt-2">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted" />
                 <input
                   ref={searchRef}
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search city or station..."
-                  className="font-body h-11 w-full rounded-xl border border-border bg-surface py-2.5 pl-10 pr-10 text-sm outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgb(13_148_136/0.12)]"
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setCityFilter("all");
+                  }}
+                  placeholder="Search city or station…"
+                  aria-label="Search destination stations"
+                  className="font-body h-10 w-full rounded-xl border border-border bg-background py-2 pl-9 pr-9 text-sm outline-none placeholder:text-muted/60 focus:border-primary focus:shadow-[0_0_0_3px_rgb(13_148_136/0.12)]"
                 />
                 {query ? (
                   <button
                     type="button"
                     onClick={() => setQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted"
                     aria-label="Clear search"
                   >
-                    <X className="size-4" />
+                    <X className="size-3.5" />
                   </button>
                 ) : null}
               </div>
 
-              {operatorFilters.length > 1 ? (
-                <div className="mb-3">
-                  <OperatorFilter value={operator} onChange={setOperator} options={operatorFilters} />
+              {cityOptions.length > 1 ? (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setCityFilter("all")}
+                    className={cn(
+                      "font-display shrink-0 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors",
+                      cityFilter === "all"
+                        ? "bg-foreground text-white"
+                        : "bg-background text-muted hover:text-foreground",
+                    )}
+                  >
+                    All cities
+                  </button>
+                  {cityOptions.map((city) => (
+                    <button
+                      key={city}
+                      type="button"
+                      onClick={() => setCityFilter(city)}
+                      className={cn(
+                        "font-display shrink-0 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors",
+                        cityFilter === city
+                          ? "bg-foreground text-white"
+                          : "bg-background text-muted hover:text-foreground",
+                      )}
+                    >
+                      {city}
+                    </button>
+                  ))}
                 </div>
               ) : null}
 
-              <p className="font-body mb-2 text-[11px] text-muted">
+              <p className="font-body mt-2 text-[11px] text-muted">
                 {filtered.length} station{filtered.length === 1 ? "" : "s"}
+                {cityFilter !== "all" ? ` in ${cityFilter}` : " available"}
               </p>
+            </header>
 
-              <ul className="mobile-scroll min-h-0 flex-1 space-y-2 overscroll-contain pb-2">
-                {filtered.length === 0 ? (
-                  <li className="flex flex-col items-center gap-2 py-12 text-center text-muted">
-                    <MapPin className="size-8 opacity-40" />
-                    <p className="font-body text-sm">No stations match your search</p>
-                    {(query || operator !== "all") && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setQuery("");
-                          setOperator("all");
-                        }}
-                        className="font-display text-sm font-semibold text-primary"
-                      >
-                        Clear filters
-                      </button>
-                    )}
-                  </li>
-                ) : (
-                  filtered.map((station) => {
-                    const isSelected = station.id === value;
-                    return (
-                      <li key={station.id}>
-                        <button
-                          type="button"
-                          onClick={() => pickStation(station.id)}
-                          className={cn(
-                            "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors",
-                            isSelected
-                              ? "border-primary bg-primary/10"
-                              : "border-border bg-surface hover:border-primary/30",
-                          )}
-                        >
-                          <span
-                            className="size-2.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: operatorAccentColor(station.operator) }}
+            <div className="mobile-scroll min-h-0 flex-1 bg-background px-3 pb-6 pt-2 sm:px-4">
+              {stations.length === 0 ? (
+                <div className="mt-6 flex flex-col items-center rounded-2xl border border-dashed border-border bg-surface px-5 py-12 text-center">
+                  <SearchX className="size-7 text-muted/50" />
+                  <p className="font-display mt-3 font-semibold text-foreground">
+                    Loading stations…
+                  </p>
+                  <p className="font-body mt-1 text-sm text-muted">
+                    Fetching {networkLabel} branches
+                  </p>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="mt-6 flex flex-col items-center rounded-2xl border border-dashed border-border bg-surface px-5 py-12 text-center">
+                  <SearchX className="size-7 text-muted/50" />
+                  <p className="font-display mt-3 font-semibold text-foreground">No stations found</p>
+                  <p className="font-body mt-1 text-sm text-muted">
+                    Try another city or clear search
+                  </p>
+                  {(query || cityFilter !== "all") && (
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="font-display mt-3 text-sm font-semibold text-primary"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {cityGroups.map(({ city, stations: cityStations }) => (
+                    <section key={city}>
+                      <div className="sticky top-0 z-[1] -mx-1 mb-1.5 flex items-center gap-2 bg-background/95 px-1 py-1 backdrop-blur-sm">
+                        <h3 className="font-display text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+                          {city}
+                        </h3>
+                        <span className="h-px flex-1 bg-border/70" aria-hidden />
+                        <span className="font-body text-[10px] text-muted">{cityStations.length}</span>
+                      </div>
+                      <div className="grid gap-1.5">
+                        {cityStations.map((station) => (
+                          <StationCard
+                            key={station.id}
+                            station={station}
+                            compact
+                            selected={station.id === value}
+                            onSelect={() => pickStation(station.id)}
                           />
-                          <span className="min-w-0 flex-1">
-                            <span
-                              className={cn(
-                                "font-body block text-sm font-medium",
-                                isSelected ? "text-primary" : "text-foreground",
-                              )}
-                            >
-                              {station.name}
-                            </span>
-                            <span className="font-body block text-xs text-muted">
-                              {station.city} · {getOperatorLabel(station.operator)}
-                            </span>
-                          </span>
-                          {isSelected ? <Check className="size-5 shrink-0 text-primary" /> : null}
-                        </button>
-                      </li>
-                    );
-                  })
-                )}
-              </ul>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

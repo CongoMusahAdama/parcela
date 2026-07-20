@@ -192,7 +192,7 @@ function FormStepNav({ step, maxReachedStep, onGoTo }: FormStepNavProps) {
 
 export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
   function ParcelForm(
-    { destinationStations, step, onStepChange, onSubmit, isSubmitting },
+    { originStation, destinationStations, step, onStepChange, onSubmit, isSubmitting },
     ref
   ) {
     const [form, setForm] = useState<ParcelFormData>({
@@ -200,7 +200,7 @@ export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
       senderPhone: "",
       recipientName: "",
       recipientPhone: "",
-      destinationStationId: destinationStations[0]?.id ?? "",
+      destinationStationId: "",
       items: [emptyItem()],
     });
     const [maxReachedStep, setMaxReachedStep] = useState(0);
@@ -321,6 +321,7 @@ export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
             </div>
             <DestinationStationPicker
               stations={destinationStations}
+              transportOperator={originStation.operator}
               value={form.destinationStationId}
               onChange={(destinationStationId) =>
                 setForm({ ...form, destinationStationId })
