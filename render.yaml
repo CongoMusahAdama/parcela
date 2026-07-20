@@ -14,9 +14,9 @@ services:
       - key: STAFF_TOKEN_SECRET
         sync: false
       - key: CORS_ORIGINS
-        value: https://parcella.netlify.app
+        value: https://parcela.vercel.app
       - key: PUBLIC_WEB_URL
-        value: https://parcella.netlify.app
+        value: https://parcela.vercel.app
       - key: MOBILE_DEEP_LINK_SCHEME
         value: parcela
       - key: SEED_ON_STARTUP
