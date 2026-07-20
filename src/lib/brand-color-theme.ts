@@ -61,3 +61,22 @@ export function brandColorHeroGradient(hex: string): string {
   const theme = brandColorStaffTheme(hex);
   return `linear-gradient(135deg, ${theme.accentDark} 0%, ${theme.accent} 45%, ${theme.accentLight} 100%)`;
 }
+
+/**
+ * Dark brand-tinted panel for auth shells — keeps white text readable
+ * even when the operator colour is bright (orange, yellow, etc.).
+ */
+export function brandColorAuthPanelGradient(hex: string): string {
+  const accent = normalizeHex(hex) ?? "#1e3a5f";
+  const mid = darken(accent, 0.42);
+  const deep = darken(accent, 0.62);
+  const deepest = darken(accent, 0.78);
+  return `linear-gradient(155deg, ${mid} 0%, ${deep} 52%, ${deepest} 100%)`;
+}
+
+/** Solid accent for buttons / highlights on the white auth form. */
+export function brandColorAuthAccent(hex: string | null | undefined): string {
+  if (!hex?.trim()) return "#1e3a5f";
+  return normalizeHex(hex) ?? "#1e3a5f";
+}
+
