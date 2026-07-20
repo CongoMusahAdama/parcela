@@ -77,45 +77,47 @@ export function brandColorHeroGradient(hex: string): string {
 
 /**
  * Dark brand-tinted panel for auth shells — keeps white text readable
- * even when the operator colour is bright (orange, yellow, etc.).
+ * while still showing the operator colour (not a muddy brown wash).
  */
 export function brandColorAuthPanelGradient(hex: string): string {
   const accent = normalizeHex(hex) ?? DEFAULT_AUTH_ACCENT;
-  const mid = darken(accent, 0.42);
-  const deep = darken(accent, 0.62);
-  const deepest = darken(accent, 0.78);
+  const mid = darken(accent, 0.2);
+  const deep = darken(accent, 0.4);
+  const deepest = darken(accent, 0.58);
   return `linear-gradient(155deg, ${mid} 0%, ${deep} 52%, ${deepest} 100%)`;
 }
 
-/** Solid accent for buttons / highlights on the white auth form. */
+/**
+ * Exact configured transport brand colour (or Parcela default).
+ * Title, links, and buttons all use this same hex so left-side accents match.
+ */
 export function brandColorAuthAccent(hex: string | null | undefined): string {
   const raw = hex?.trim() ? normalizeHex(hex) : null;
-  const accent = raw ?? DEFAULT_AUTH_ACCENT;
-  // Keep white label text readable on primary buttons / chips.
-  return relativeLuminance(accent) > 0.48 ? darken(accent, 0.38) : accent;
+  return raw ?? DEFAULT_AUTH_ACCENT;
+}
+
+/** Fill colour for primary CTAs — same as accent unless too light for white text. */
+function brandColorAuthButtonFill(hex?: string | null): string {
+  const accent = brandColorAuthAccent(hex);
+  // Only nudge very light brands so white button labels stay readable.
+  return relativeLuminance(accent) > 0.62 ? darken(accent, 0.18) : accent;
 }
 
 /** Primary CTA button fill from configured transport brand. */
 export function brandColorAuthButtonStyle(hex?: string | null): CSSProperties {
-  const accent = brandColorAuthAccent(hex);
-  const dark = darken(accent, 0.18);
-  const deepest = darken(accent, 0.36);
-  const rgb = hexToRgb(accent) ?? [30, 58, 95];
+  const fill = brandColorAuthButtonFill(hex);
+  const tip = lighten(fill, 0.04);
+  const rgb = hexToRgb(fill) ?? [30, 58, 95];
   return {
-    background: `linear-gradient(120deg, ${accent} 0%, ${dark} 55%, ${deepest} 100%)`,
-    boxShadow: `0 12px 28px rgb(${rgb[0]} ${rgb[1]} ${rgb[2]} / 0.35)`,
+    background: `linear-gradient(180deg, ${tip} 0%, ${fill} 55%, ${fill} 100%)`,
+    boxShadow: `0 12px 28px rgb(${rgb[0]} ${rgb[1]} ${rgb[2]} / 0.32)`,
   };
 }
 
-/** Gradient headline text clipped to brand colour. */
+/** Headline uses the same solid brand colour as the primary button. */
 export function brandColorAuthTitleStyle(hex?: string | null): CSSProperties {
-  const accent = brandColorAuthAccent(hex);
-  const mid = darken(accent, 0.12);
-  const deep = darken(accent, 0.32);
   return {
-    background: `linear-gradient(120deg, ${accent} 0%, ${mid} 55%, ${deep} 100%)`,
-    WebkitBackgroundClip: "text",
-    backgroundClip: "text",
-    color: "transparent",
+    color: brandColorAuthButtonFill(hex),
   };
 }
+
