@@ -16,5 +16,5 @@ export function buildTrackingLinks(
 }
 
 export function trackingLinksForSms(links: TrackingLinks): string {
-  return `Open Parcela app: ${links.app}`;
+  return `Track: ${links.web}`;
 }

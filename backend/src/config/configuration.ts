@@ -1,10 +1,9 @@
+import { resolveCorsOrigins, resolvePublicWebUrl } from './public-web-url';
+
 export default () => ({
   port: parseInt(process.env.PORT ?? '3002', 10),
   mongoUri: process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017/parcela',
-  corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:3001,http://localhost:8081,http://localhost:8082,http://localhost:8083')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean),
+  corsOrigins: resolveCorsOrigins(process.env.CORS_ORIGINS),
   mnotify: {
     apiKey: process.env.MNOTIFY_API_KEY ?? '',
     senderId: process.env.MNOTIFY_SENDER_ID ?? 'Parcela',
@@ -16,7 +15,7 @@ export default () => ({
     reset: process.env.SEED_RESET === 'true',
   },
   app: {
-    publicWebUrl: process.env.PUBLIC_WEB_URL ?? 'http://localhost:3001',
+    publicWebUrl: resolvePublicWebUrl(process.env.PUBLIC_WEB_URL),
     mobileDeepLinkScheme: process.env.MOBILE_DEEP_LINK_SCHEME ?? 'parcela',
   },
   staff: {

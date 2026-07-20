@@ -113,7 +113,7 @@ export class ParcelsService {
         bookingReference: parcel.bookingReference,
         pickupCode: parcel.pickupCode,
         originStationName: parcel.originStationName,
-        trackingAppUrl: links.app,
+        trackingUrl: links.web,
       })
       .catch((err) => this.logger.warn(`Booking SMS failed: ${String(err)}`));
 
@@ -290,7 +290,7 @@ export class ParcelsService {
         recipientName: parcel.recipientName,
         pickupCode: parcel.pickupCode,
         stationName: parcel.destinationStationName,
-        trackingAppUrl: links.app,
+        trackingUrl: links.web,
       });
       smsResults.push({ bookingReference: parcel.bookingReference, sent });
     }

@@ -78,13 +78,13 @@ export class SmsService {
     bookingReference: string;
     pickupCode: string;
     originStationName: string;
-    trackingAppUrl: string;
+    trackingUrl: string;
   }) {
     const message = [
       `Hi ${params.senderName}, your Parcela booking ${params.bookingReference} is confirmed.`,
       `Drop off at ${params.originStationName}.`,
       `Pickup code: ${params.pickupCode}.`,
-      `Open Parcela app: ${params.trackingAppUrl}`,
+      `Track: ${params.trackingUrl}`,
     ].join(' ');
     return this.sendSms(params.senderPhone, message);
   }
@@ -94,12 +94,12 @@ export class SmsService {
     recipientName: string;
     pickupCode: string;
     stationName: string;
-    trackingAppUrl: string;
+    trackingUrl: string;
   }) {
     const message = [
       `Hi ${params.recipientName}, your parcel is ready at ${params.stationName}.`,
       `Pickup code: ${params.pickupCode}.`,
-      `Open Parcela app: ${params.trackingAppUrl}`,
+      `Track: ${params.trackingUrl}`,
     ].join(' ');
     return this.sendSms(params.recipientPhone, message);
   }
