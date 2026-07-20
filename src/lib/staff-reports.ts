@@ -3,11 +3,11 @@ import type { StaffParcelSummary } from "@/types/staff-parcel";
 import { getCollectionQueueParcels } from "@/types/staff-parcel";
 import { toStaffParcelDetail } from "@/types/staff-parcel";
 import { getOperatorStaffTheme } from "@/lib/operator-theme";
+import { hexToRgbTuple } from "@/lib/brand-color-theme";
 import {
   getOperatorLabel,
-  isSupportedOperator,
+  getOperatorLogoSrc,
   OPERATOR_LOGOS,
-  OPERATOR_REPORT_BRAND,
 } from "@/lib/operators";
 import { TRACK_STATUS_LABELS } from "@/lib/tracking";
 
@@ -537,24 +537,16 @@ export function buildStaffReportMeta(input: {
   generatedAt?: string;
 }): StaffReportMeta {
   const operatorCode = input.operator.trim().toUpperCase();
-  const brand = isSupportedOperator(operatorCode)
-    ? OPERATOR_REPORT_BRAND[operatorCode]
-    : {
-        companyName: getOperatorLabel(operatorCode),
-        companyTagline: `${getOperatorLabel(operatorCode)} terminal parcel operations report`,
-        accentRgb: [13, 148, 136] as [number, number, number],
-      };
+  const companyName = getOperatorLabel(operatorCode);
   const theme = getOperatorStaffTheme(operatorCode);
-  const logoSrc = isSupportedOperator(operatorCode)
-    ? OPERATOR_LOGOS[operatorCode]
-    : OPERATOR_LOGOS.STC;
+  const logoSrc = getOperatorLogoSrc(operatorCode) ?? OPERATOR_LOGOS.STC;
 
   return {
-    companyName: brand.companyName,
-    companyTagline: brand.companyTagline,
+    companyName,
+    companyTagline: `${companyName} terminal parcel operations report`,
     logoSrc,
     accentColor: theme.accent,
-    accentRgb: brand.accentRgb,
+    accentRgb: hexToRgbTuple(theme.accent),
     stationName: input.stationName,
     stationCode: input.stationCode,
     operator: operatorCode,

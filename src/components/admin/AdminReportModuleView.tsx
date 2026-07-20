@@ -15,6 +15,7 @@ import { useAdminSession } from "@/components/admin/AdminOperatorShell";
 import { useAdminData } from "@/components/admin/AdminDataContext";
 import { fetchAdminReport } from "@/lib/admin-api";
 import { getAdminOperator } from "@/lib/admin-operator";
+import { logoImageFormat } from "@/lib/brand-color-theme";
 import {
   buildAdminReportMeta,
   formatAdminReportPeriod,
@@ -86,12 +87,18 @@ export function AdminReportModuleView({ moduleId }: AdminReportModuleViewProps) 
       periodLabel: formatAdminReportPeriod(appliedFilter.dateFrom, appliedFilter.dateTo),
       generatedBy: admin.displayName,
       scopeLabel: scopeParts.join(" · "),
+      companyName: admin.operatorName,
+      logoSrc: admin.logoDataUrl,
+      brandColor: admin.brandColor,
     });
   }, [
     appliedFilter,
     operator,
     reportModule,
     admin.displayName,
+    admin.operatorName,
+    admin.logoDataUrl,
+    admin.brandColor,
     city,
     branchId,
     overview.branches,
@@ -652,6 +659,7 @@ function AdminReportPrintSheet({
 }
 
 async function loadLogoDataUrl(src: string) {
+  if (src.startsWith("data:")) return src;
   const response = await fetch(src);
   const blob = await response.blob();
   return new Promise<string>((resolve, reject) => {
@@ -660,10 +668,6 @@ async function loadLogoDataUrl(src: string) {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
-}
-
-function logoFormat(src: string): "PNG" | "JPEG" {
-  return src.toLowerCase().endsWith(".png") ? "PNG" : "JPEG";
 }
 
 async function exportAdminReportExcel(result: AdminReportResult, meta: AdminReportMeta) {
@@ -706,7 +710,7 @@ async function exportAdminReportPdf(result: AdminReportResult, meta: AdminReport
   if (meta.logoSrc) {
     try {
       const logo = await loadLogoDataUrl(meta.logoSrc);
-      doc.addImage(logo, logoFormat(meta.logoSrc), 40, 28, 48, 36);
+      doc.addImage(logo, logoImageFormat(meta.logoSrc), 40, 28, 48, 36);
     } catch {
       // Logo optional — report still exports without it.
     }

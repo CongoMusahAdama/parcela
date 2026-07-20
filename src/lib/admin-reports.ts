@@ -7,8 +7,9 @@ import {
   Layers,
   Package,
 } from "lucide-react";
-import { isLegacyOperator } from "@/lib/admin-operator";
-import { OPERATOR_ACCENT, OPERATOR_LOGOS, OPERATOR_REPORT_BRAND } from "@/lib/operators";
+import { brandColorStaffTheme, hexToRgbTuple } from "@/lib/brand-color-theme";
+import { getOperatorStaffTheme } from "@/lib/operator-theme";
+import { getOperatorLabel, getOperatorLogoSrc } from "@/lib/operators";
 
 export type AdminReportModule = {
   id: AdminReportModuleId;
@@ -139,19 +140,19 @@ export function buildAdminReportMeta(input: {
   periodLabel: string;
   generatedBy: string;
   scopeLabel: string;
+  companyName?: string | null;
+  logoSrc?: string | null;
+  brandColor?: string | null;
 }): AdminReportMeta {
   const code = input.operator.toUpperCase();
-  const legacy = isLegacyOperator(code) ? code : null;
-  const brand = legacy
-    ? OPERATOR_REPORT_BRAND[legacy]
-    : {
-        companyName: `${code} Transport`,
-        companyTagline: `${code} terminal parcel operations report`,
-        accentRgb: [51, 65, 85] as [number, number, number],
-      };
+  const theme = input.brandColor?.trim()
+    ? brandColorStaffTheme(input.brandColor)
+    : getOperatorStaffTheme(code);
+  const companyName = input.companyName?.trim() || getOperatorLabel(code);
+  const logoSrc = input.logoSrc?.trim() || getOperatorLogoSrc(code);
   return {
-    companyName: brand.companyName,
-    companyTagline: brand.companyTagline,
+    companyName,
+    companyTagline: `${companyName} terminal parcel operations report`,
     operator: code,
     reportTitle: input.reportTitle,
     periodLabel: input.periodLabel,
@@ -161,9 +162,9 @@ export function buildAdminReportMeta(input: {
       timeStyle: "short",
     }),
     scopeLabel: input.scopeLabel,
-    logoSrc: legacy ? OPERATOR_LOGOS[legacy] : null,
-    accentColor: legacy ? OPERATOR_ACCENT[legacy] : "#334155",
-    accentRgb: brand.accentRgb,
+    logoSrc,
+    accentColor: theme.accent,
+    accentRgb: hexToRgbTuple(theme.accent),
   };
 }
 

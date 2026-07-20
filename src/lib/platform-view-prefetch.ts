@@ -3,6 +3,7 @@ const PLATFORM_VIEW_LOADERS: Record<string, () => Promise<unknown>> = {
   "/platform/operators": () => import("@/components/platform/PlatformOperatorsView"),
   "/platform/hq-admins": () => import("@/components/platform/PlatformHqAdminsView"),
   "/platform/users": () => import("@/components/platform/PlatformUsersView"),
+  "/platform/notifications": () => import("@/components/platform/PlatformNotificationsView"),
   "/platform/audit": () => import("@/components/platform/PlatformAuditView"),
 };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarRange,
   FileDown,
@@ -29,6 +29,7 @@ import {
   type StaffReportType,
 } from "@/lib/staff-reports";
 import { showInfoAlert, showSuccessAlert, showValidationAlert } from "@/lib/sweetalert";
+import { ensureOperatorBrandingLoaded } from "@/lib/operators";
 import type { StaffAccount } from "@/types/staff";
 import type { StaffParcelSummary } from "@/types/staff-parcel";
 
@@ -75,6 +76,17 @@ export function StationReportsView({
   );
 
   const periodInvalid = dateFrom > dateTo;
+  const [brandingReady, setBrandingReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void ensureOperatorBrandingLoaded().then(() => {
+      if (!cancelled) setBrandingReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [staff.operator]);
 
   const exportMeta = useMemo(() => {
     if (!appliedFilter) return null;
@@ -87,7 +99,7 @@ export function StationReportsView({
       periodLabel: formatReportPeriod(appliedFilter.dateFrom, appliedFilter.dateTo),
       generatedBy: staff.displayName,
     });
-  }, [appliedFilter, staff]);
+  }, [appliedFilter, staff, brandingReady]);
 
   async function handleGeneratePreview() {
     if (periodInvalid) {
@@ -158,14 +170,24 @@ export function StationReportsView({
 
     setExporting(format);
     try {
+      await ensureOperatorBrandingLoaded();
+      const meta = buildStaffReportMeta({
+        stationName: staff.stationName,
+        stationCode: staff.stationCode,
+        operator: staff.operator,
+        reportTitle: exportMeta.reportTitle,
+        periodLabel: exportMeta.periodLabel,
+        generatedBy: staff.displayName,
+        generatedAt: exportMeta.generatedAt,
+      });
       if (format === "excel") {
-        await exportStaffReportExcel(previewResult, exportMeta);
+        await exportStaffReportExcel(previewResult, meta);
       } else {
-        await exportStaffReportPdf(previewResult, exportMeta);
+        await exportStaffReportPdf(previewResult, meta);
       }
       void showSuccessAlert({
         title: "Report downloaded",
-        text: `${exportMeta.reportTitle} exported as ${format === "excel" ? "Excel" : "PDF"}.`,
+        text: `${meta.reportTitle} exported as ${format === "excel" ? "Excel" : "PDF"}.`,
       });
     } catch {
       void showValidationAlert({

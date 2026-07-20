@@ -274,3 +274,32 @@ export async function resetPlatformUserLoginApi(accountId: string): Promise<Plat
     method: "POST",
   });
 }
+
+export type PlatformNotificationAudience = "staff" | "general";
+
+export type PlatformNotificationRow = {
+  id: string;
+  title: string;
+  body: string;
+  audience: PlatformNotificationAudience;
+  recipientCount: number;
+  sentCount: number;
+  failedCount: number;
+  actorEmail: string | null;
+  sentAt: string;
+};
+
+export async function listPlatformNotificationsApi(): Promise<PlatformNotificationRow[]> {
+  return apiFetch<PlatformNotificationRow[]>("/platform/notifications");
+}
+
+export async function sendPlatformNotificationApi(payload: {
+  title: string;
+  body: string;
+  audience: PlatformNotificationAudience;
+}): Promise<PlatformNotificationRow> {
+  return apiFetch<PlatformNotificationRow>("/platform/notifications", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}

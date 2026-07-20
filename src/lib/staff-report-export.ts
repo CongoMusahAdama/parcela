@@ -5,6 +5,7 @@ import type {
   StaffReportResult,
   StaffReportSummaryMetric,
 } from "@/lib/staff-reports";
+import { logoImageFormat } from "@/lib/brand-color-theme";
 
 function slugify(value: string) {
   return value
@@ -39,6 +40,7 @@ function rowsToSheetData(columns: ReportColumn[], rows: ReportRow[]) {
 }
 
 async function loadLogoDataUrl(src: string) {
+  if (src.startsWith("data:")) return src;
   const response = await fetch(src);
   const blob = await response.blob();
   return new Promise<string>((resolve, reject) => {
@@ -47,10 +49,6 @@ async function loadLogoDataUrl(src: string) {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
-}
-
-function logoFormat(src: string): "PNG" | "JPEG" {
-  return src.toLowerCase().endsWith(".png") ? "PNG" : "JPEG";
 }
 
 function summaryLines(summary: StaffReportSummaryMetric[]) {
@@ -103,7 +101,7 @@ export async function exportStaffReportPdf(result: StaffReportResult, meta: Staf
   if (meta.logoSrc) {
     try {
       const logo = await loadLogoDataUrl(meta.logoSrc);
-      doc.addImage(logo, logoFormat(meta.logoSrc), 40, 28, 48, 36);
+      doc.addImage(logo, logoImageFormat(meta.logoSrc), 40, 28, 48, 36);
     } catch {
       // Logo optional — report still exports without it.
     }

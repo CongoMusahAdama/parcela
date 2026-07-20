@@ -15,6 +15,7 @@ import { adminThemeStyle } from "@/lib/admin-theme";
 import { fetchAdminSession } from "@/lib/admin-api";
 import { prefetchAllAdminViews, prefetchAdminView } from "@/lib/admin-view-prefetch";
 import { ensureStationsLoaded } from "@/lib/stations";
+import { ensureOperatorBrandingLoaded } from "@/lib/operators";
 import { showConfirmDialog, showInfoAlert, showSuccessAlert } from "@/lib/sweetalert";
 import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { useSessionValidation } from "@/hooks/use-session-validation";
@@ -129,6 +130,7 @@ export function AdminOperatorShell({ children }: { children: React.ReactNode }) 
     if (!ready) return;
     // Warm stations cache + view chunks so sidebar clicks feel instant.
     void ensureStationsLoaded();
+    void ensureOperatorBrandingLoaded();
     const prefetch = () => void prefetchAllAdminViews();
     if (typeof window.requestIdleCallback === "function") {
       window.requestIdleCallback(prefetch);

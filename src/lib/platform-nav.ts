@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Bell,
   Building2,
   LayoutDashboard,
   ScrollText,
@@ -46,6 +47,12 @@ export const PLATFORM_NAV_SECTIONS: PlatformNavSection[] = [
         href: "/platform/users",
         icon: Users,
         description: "All logins across transports — reset when someone is locked out.",
+      },
+      {
+        label: "Notifications",
+        href: "/platform/notifications",
+        icon: Bell,
+        description: "SMS staff or all portal users about platform updates.",
       },
     ],
   },

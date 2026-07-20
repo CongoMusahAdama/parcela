@@ -48,11 +48,20 @@ const PlatformAuditView = dynamic(
   { loading: () => <PlatformViewLoader message="Loading audit log" /> },
 );
 
+const PlatformNotificationsView = dynamic(
+  () =>
+    import("@/components/platform/PlatformNotificationsView").then((mod) => ({
+      default: mod.PlatformNotificationsView,
+    })),
+  { loading: () => <PlatformViewLoader message="Loading notifications" /> },
+);
+
 const PLATFORM_VIEWS: Record<string, ComponentType> = {
   "/platform/dashboard": PlatformOverviewView,
   "/platform/operators": PlatformOperatorsView,
   "/platform/hq-admins": PlatformHqAdminsView,
   "/platform/users": PlatformUsersView,
+  "/platform/notifications": PlatformNotificationsView,
   "/platform/audit": PlatformAuditView,
 };
 

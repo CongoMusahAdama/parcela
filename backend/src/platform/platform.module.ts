@@ -6,6 +6,7 @@ import { StationsModule } from '../stations/stations.module';
 import { OperatorSettings, OperatorSettingsSchema } from '../admin/schemas/operator-settings.schema';
 import { Parcel, ParcelSchema } from '../parcels/schemas/parcel.schema';
 import { PlatformAuthController } from './controllers/platform-auth.controller';
+import { PlatformNotificationsController } from './controllers/platform-notifications.controller';
 import { PlatformOperatorsController } from './controllers/platform-operators.controller';
 import { PlatformPeopleController } from './controllers/platform-people.controller';
 import { PublicOperatorsController } from './controllers/public-operators.controller';
@@ -13,11 +14,16 @@ import { PlatformAuthGuard } from './guards/platform-auth.guard';
 import { PlatformAdmin, PlatformAdminSchema } from './schemas/platform-admin.schema';
 import { PlatformAuditEntry, PlatformAuditEntrySchema } from './schemas/platform-audit.schema';
 import {
+  PlatformNotification,
+  PlatformNotificationSchema,
+} from './schemas/platform-notification.schema';
+import {
   TransportOperator,
   TransportOperatorSchema,
 } from './schemas/transport-operator.schema';
 import { PlatformAuditService } from './services/platform-audit.service';
 import { PlatformAuthService } from './services/platform-auth.service';
+import { PlatformNotificationsService } from './services/platform-notifications.service';
 import { PlatformOperatorsService } from './services/platform-operators.service';
 import { PlatformPeopleService } from './services/platform-people.service';
 import { PlatformWorkspaceService } from './services/platform-workspace.service';
@@ -28,6 +34,7 @@ import { PlatformWorkspaceService } from './services/platform-workspace.service'
       { name: PlatformAdmin.name, schema: PlatformAdminSchema },
       { name: TransportOperator.name, schema: TransportOperatorSchema },
       { name: PlatformAuditEntry.name, schema: PlatformAuditEntrySchema },
+      { name: PlatformNotification.name, schema: PlatformNotificationSchema },
       { name: OperatorSettings.name, schema: OperatorSettingsSchema },
       { name: Parcel.name, schema: ParcelSchema },
     ]),
@@ -39,6 +46,7 @@ import { PlatformWorkspaceService } from './services/platform-workspace.service'
     PlatformAuthController,
     PlatformOperatorsController,
     PlatformPeopleController,
+    PlatformNotificationsController,
     PublicOperatorsController,
   ],
   providers: [
@@ -46,6 +54,7 @@ import { PlatformWorkspaceService } from './services/platform-workspace.service'
     PlatformAuthGuard,
     PlatformOperatorsService,
     PlatformPeopleService,
+    PlatformNotificationsService,
     PlatformAuditService,
     PlatformWorkspaceService,
   ],

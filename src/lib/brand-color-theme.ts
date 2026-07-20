@@ -52,6 +52,25 @@ function relativeLuminance(hex: string): number {
   return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!;
 }
 
+/** Parse #RRGGBB into an RGB tuple for PDF / print accents. */
+export function hexToRgbTuple(hex: string): [number, number, number] {
+  return hexToRgb(hex) ?? [30, 58, 95];
+}
+
+/** Detect PNG vs JPEG for jsPDF addImage (supports data URLs and file paths). */
+export function logoImageFormat(src: string): "PNG" | "JPEG" {
+  const lower = src.toLowerCase();
+  if (
+    lower.startsWith("data:image/jpeg") ||
+    lower.startsWith("data:image/jpg") ||
+    lower.includes(".jpg") ||
+    lower.includes(".jpeg")
+  ) {
+    return "JPEG";
+  }
+  return "PNG";
+}
+
 /** Build staff-portal CSS theme tokens from an operator brand hex colour. */
 export function brandColorStaffTheme(hex: string): OperatorStaffTheme {
   const accent = normalizeHex(hex) ?? "#fd7e14";

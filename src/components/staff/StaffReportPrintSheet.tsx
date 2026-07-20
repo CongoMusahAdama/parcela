@@ -16,12 +16,14 @@ export function StaffReportPrintSheet({ meta, result }: StaffReportPrintSheetPro
     >
       <header className="staff-report-print-header">
         <div className="flex items-center gap-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={meta.logoSrc}
-            alt={meta.companyName}
-            className="h-14 w-auto max-w-[8rem] object-contain"
-          />
+          {meta.logoSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={meta.logoSrc}
+              alt={meta.companyName}
+              className="h-14 w-auto max-w-[8rem] object-contain"
+            />
+          ) : null}
           <div>
             <p className="staff-report-print-company">{meta.companyName}</p>
             <p className="text-sm text-slate-600">{meta.companyTagline}</p>
