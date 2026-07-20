@@ -21,6 +21,19 @@ type PartnerCard = {
   logoSrc: string | null;
 };
 
+/** API names are often ALL CAPS — present them as readable title case. */
+function formatPartnerName(name: string): string {
+  const trimmed = name.trim().replace(/\s+/g, " ");
+  if (!trimmed) return trimmed;
+  const letters = trimmed.replace(/[^A-Za-z]/g, "");
+  if (letters.length > 2 && letters === letters.toUpperCase()) {
+    return trimmed
+      .toLowerCase()
+      .replace(/\b([a-z])/g, (m) => m.toUpperCase());
+  }
+  return trimmed;
+}
+
 function isLightHex(hex: string): boolean {
   const raw = hex.replace("#", "").trim();
   if (raw.length !== 3 && raw.length !== 6) return false;
@@ -35,7 +48,7 @@ function isLightHex(hex: string): boolean {
   const g = parseInt(full.slice(2, 4), 16);
   const b = parseInt(full.slice(4, 6), 16);
   if ([r, g, b].some((n) => Number.isNaN(n))) return false;
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.65;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.62;
 }
 
 function PartnerLogo({
@@ -55,7 +68,7 @@ function PartnerLogo({
       <img
         src={logoSrc}
         alt={`${name} logo`}
-        className="h-12 w-auto max-w-[9.5rem] object-contain sm:h-14"
+        className="max-h-14 w-auto max-w-[11rem] object-contain sm:max-h-16"
       />
     );
   }
@@ -73,7 +86,7 @@ function PartnerLogo({
   return (
     <span
       className={cn(
-        "font-display flex size-12 items-center justify-center rounded-2xl text-sm font-bold sm:size-14 sm:text-base",
+        "font-display flex size-14 items-center justify-center rounded-2xl text-base font-bold sm:size-16 sm:text-lg",
         light ? "text-slate-900" : "text-white",
       )}
       style={{ backgroundColor: accent }}
@@ -97,7 +110,7 @@ export function PartnerTransportsSection() {
           const code = row.code.trim().toUpperCase();
           return {
             code,
-            name: row.name?.trim() || getOperatorLabel(code),
+            name: formatPartnerName(row.name?.trim() || getOperatorLabel(code)),
             accent: operatorAccentColor(code),
             logoSrc: getOperatorLogoSrc(code),
           };
@@ -112,9 +125,13 @@ export function PartnerTransportsSection() {
 
   const loading = partners === null;
   const empty = partners !== null && partners.length === 0;
+  const single = partners?.length === 1;
 
   return (
-    <section id="partners" className="scroll-mt-20 border-t border-slate-900/5 bg-white">
+    <section
+      id="partners"
+      className="scroll-mt-20 border-t border-slate-900/5 bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_42%,#ffffff_100%)]"
+    >
       <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-xl">
@@ -123,9 +140,8 @@ export function PartnerTransportsSection() {
             </SectionHeading>
             <Reveal delay={1}>
               <p className="font-body mt-3 text-sm leading-relaxed text-muted sm:text-base">
-                Parcela works with onboarded bus and transport operators. Book
-                through their stations — each partner keeps its own brand colour
-                and terminals.
+                Book through onboarded operators. Each partner keeps its brand,
+                colours, and station network.
               </p>
             </Reveal>
           </div>
@@ -134,24 +150,29 @@ export function PartnerTransportsSection() {
               href="/send"
               className="font-display inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
             >
-              Find a station
+              Browse all stations
               <ArrowRight className="size-4" />
             </Link>
           </Reveal>
         </div>
 
         {loading ? (
-          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div
+            className={cn(
+              "mt-10 grid gap-4",
+              "sm:grid-cols-2 lg:grid-cols-3",
+            )}
+          >
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-[7.5rem] animate-pulse rounded-2xl border border-slate-900/8 bg-slate-100/80"
+                className="h-56 animate-pulse rounded-3xl border border-slate-900/8 bg-slate-100/80"
               />
             ))}
           </div>
         ) : empty ? (
           <Reveal>
-            <div className="mt-10 flex flex-col items-center rounded-2xl border border-dashed border-slate-900/15 bg-[#f4f7fb] px-6 py-12 text-center">
+            <div className="mt-10 flex flex-col items-center rounded-3xl border border-dashed border-slate-900/15 bg-white px-6 py-14 text-center">
               <Bus className="size-8 text-primary/50" />
               <p className="font-display mt-3 text-base font-bold text-foreground">
                 Partners coming soon
@@ -165,53 +186,74 @@ export function PartnerTransportsSection() {
         ) : (
           <ul
             className={cn(
-              "mt-10 grid gap-3",
-              partners.length === 1
-                ? "max-w-md sm:grid-cols-1"
+              "mt-10 grid gap-4",
+              single
+                ? "mx-auto max-w-lg"
                 : partners.length === 2
                   ? "sm:grid-cols-2"
                   : "sm:grid-cols-2 lg:grid-cols-3",
             )}
           >
-            {partners.map((partner, index) => (
-              <Reveal key={partner.code} delay={(Math.min(index, 2) + 1) as 1 | 2 | 3}>
-                <li>
-                  <Link
-                    href={`/send?operator=${encodeURIComponent(partner.code)}`}
-                    className="group relative flex h-full items-center gap-4 overflow-hidden rounded-2xl border border-slate-900/8 bg-[#f8fafc] px-5 py-5 transition-all hover:-translate-y-0.5 hover:border-transparent hover:shadow-[0_16px_40px_rgb(15_23_42/0.1)]"
-                  >
-                    <span
-                      className="absolute inset-y-0 left-0 w-1.5"
-                      style={{ backgroundColor: partner.accent }}
-                      aria-hidden
-                    />
-                    <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-900/5">
-                      <PartnerLogo
-                        code={partner.code}
-                        name={partner.name}
-                        accent={partner.accent}
-                        logoSrc={partner.logoSrc}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-display truncate text-base font-bold text-foreground">
-                        {partner.name}
-                      </p>
-                      <p className="font-body mt-0.5 text-xs text-muted">
-                        Partner transport · send via their stations
-                      </p>
-                      <span
-                        className="font-display mt-2 inline-flex items-center gap-1 text-xs font-semibold"
-                        style={{ color: partner.accent }}
+            {partners.map((partner, index) => {
+              const lightAccent = isLightHex(partner.accent);
+              return (
+                <Reveal
+                  key={partner.code}
+                  delay={(Math.min(index, 2) + 1) as 1 | 2 | 3}
+                >
+                  <li className="h-full">
+                    <Link
+                      href={`/send?operator=${encodeURIComponent(partner.code)}`}
+                      className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-slate-900/8 bg-white shadow-[0_1px_0_rgb(15_23_42/0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-900/10 hover:shadow-[0_22px_50px_-28px_rgb(15_23_42/0.35)]"
+                    >
+                      <div
+                        className="relative flex min-h-[7.5rem] items-center justify-center px-6 py-7"
+                        style={{
+                          background: `linear-gradient(145deg, ${partner.accent}18 0%, ${partner.accent}08 48%, #ffffff 100%)`,
+                        }}
                       >
-                        Book with {partner.code}
-                        <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-                      </span>
-                    </div>
-                  </Link>
-                </li>
-              </Reveal>
-            ))}
+                        <span
+                          className="absolute inset-x-0 top-0 h-1"
+                          style={{ backgroundColor: partner.accent }}
+                          aria-hidden
+                        />
+                        <div className="flex min-h-[4.5rem] w-full items-center justify-center rounded-2xl bg-white/90 px-5 py-4 shadow-sm ring-1 ring-slate-900/6 backdrop-blur-sm">
+                          <PartnerLogo
+                            code={partner.code}
+                            name={partner.name}
+                            accent={partner.accent}
+                            logoSrc={partner.logoSrc}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
+                        <p className="font-display text-[0.65rem] font-bold uppercase tracking-[0.16em] text-muted">
+                          Partner · {partner.code}
+                        </p>
+                        <h3 className="font-display mt-1.5 text-lg font-bold leading-snug tracking-tight text-foreground sm:text-xl">
+                          {partner.name}
+                        </h3>
+                        <p className="font-body mt-2 text-sm leading-relaxed text-muted">
+                          Send parcels through their stations — same network your
+                          booking travels on.
+                        </p>
+                        <span
+                          className={cn(
+                            "font-display mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-transform group-hover:translate-y-[-1px]",
+                            lightAccent ? "text-slate-900" : "text-white",
+                          )}
+                          style={{ backgroundColor: partner.accent }}
+                        >
+                          Book with {partner.code}
+                          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                </Reveal>
+              );
+            })}
           </ul>
         )}
       </div>
