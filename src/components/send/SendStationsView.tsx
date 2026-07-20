@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, List, LocateFixed, Map, Search as SearchIcon, SearchX } from "lucide-react";
+import { ArrowLeft, List, LocateFixed, Map as MapIcon, Search as SearchIcon, SearchX } from "lucide-react";
 import { OperatorFilter } from "@/components/send/OperatorFilter";
 import { StationCard } from "@/components/send/StationCard";
 import { AppShell } from "@/components/ui/AppShell";
@@ -155,7 +155,7 @@ export function SendStationsView({ stations: initialStations }: SendStationsView
             {(
               [
                 { id: "list" as const, label: "List", Icon: List },
-                { id: "map" as const, label: "Map", Icon: Map },
+                { id: "map" as const, label: "Map", Icon: MapIcon },
               ] as const
             ).map(({ id, label, Icon }) => (
               <button
