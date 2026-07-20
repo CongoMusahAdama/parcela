@@ -21,7 +21,7 @@ import {
   isServerConfigured,
   clearInvalidStoredApiBaseUrl,
 } from "@/lib/api-server-config";
-import { brandColorAuthPanelGradient } from "@/lib/brand-color-theme";
+import { brandColorAuthAccent, brandColorAuthPanelGradient } from "@/lib/brand-color-theme";
 import type { LoginOperatorBrand } from "@/lib/login-brand";
 import { loginBrandLogoSrc } from "@/lib/login-brand";
 import { platformThemeStyle, PLATFORM_THEME } from "@/lib/platform-theme";
@@ -122,7 +122,10 @@ function TransportCompanyOnForm({
       </h2>
       {brand.stationName ? (
         <p className="font-body mt-1.5 flex items-center justify-center gap-1.5 text-sm text-slate-600">
-          <MapPin className="size-3.5 shrink-0 text-[#1e3a5f]" />
+          <MapPin
+            className="size-3.5 shrink-0"
+            style={{ color: brandColorAuthAccent(brand.brandColor) }}
+          />
           <span className="font-semibold text-slate-800">{brand.stationName}</span>
         </p>
       ) : null}
@@ -182,6 +185,7 @@ export function OperatorPortalAuthShell({
 
   const companySelected = Boolean(brand?.found);
   const logoSrc = brand?.found ? loginBrandLogoSrc(brand) : null;
+  const accent = brandColorAuthAccent(brand?.brandColor);
   const panelBackground =
     brand?.found && brand.brandColor
       ? brandColorAuthPanelGradient(brand.brandColor)
@@ -227,7 +231,8 @@ export function OperatorPortalAuthShell({
                       <button
                         type="button"
                         onClick={() => setServerOpen(true)}
-                        className="font-display mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#1e3a5f] hover:underline"
+                        className="font-display mt-2 inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
+                        style={{ color: accent }}
                       >
                         <Database className="size-3" />
                         Edit / change transport
@@ -238,7 +243,8 @@ export function OperatorPortalAuthShell({
                       <button
                         type="button"
                         onClick={() => setServerOpen(true)}
-                        className="font-display inline-flex items-center gap-2 text-sm font-bold text-[#1e3a5f] hover:underline"
+                        className="font-display inline-flex items-center gap-2 text-sm font-bold hover:underline"
+                        style={{ color: accent }}
                       >
                         <Database className="size-3.5" />
                         Add transport / database

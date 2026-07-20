@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Lock, Phone } from "lucide-react";
 import { OperatorPortalAuthShell } from "@/components/operator/OperatorPortalAuthShell";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
+import { brandColorAuthAccent, brandColorAuthButtonStyle, brandColorAuthTitleStyle } from "@/lib/brand-color-theme";
 import { useLoginOperatorBrand } from "@/lib/login-brand";
 import { changeStaffPasswordApi } from "@/lib/staff-api";
 import {
@@ -121,6 +122,7 @@ export function StaffChangePasswordView() {
 
   const signedIn = Boolean(session);
   const usingTemporaryPassword = session?.staff.mustChangePassword ?? !signedIn;
+  const accent = brandColorAuthAccent(companyBrand?.brandColor);
 
   return (
     <OperatorPortalAuthShell
@@ -133,12 +135,7 @@ export function StaffChangePasswordView() {
       <div>
         <h2
           className="font-display text-3xl font-bold tracking-tight sm:text-[2.15rem]"
-          style={{
-            background: "linear-gradient(120deg, #1e3a5f 0%, #334155 55%, #0d1525 100%)",
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            color: "transparent",
-          }}
+          style={brandColorAuthTitleStyle(companyBrand?.brandColor)}
         >
           {usingTemporaryPassword ? "Set password" : "Change password"}
         </h2>
@@ -216,10 +213,8 @@ export function StaffChangePasswordView() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="font-display w-full min-h-[52px] rounded-full text-sm font-bold uppercase tracking-wider text-white shadow-[0_12px_28px_rgb(30_58_95_/_0.35)] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-          style={{
-            background: "linear-gradient(120deg, #1e3a5f 0%, #152238 55%, #0d1525 100%)",
-          }}
+          className="font-display w-full min-h-[52px] rounded-full text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          style={brandColorAuthButtonStyle(companyBrand?.brandColor)}
         >
           {isSubmitting ? "Updating…" : usingTemporaryPassword ? "Set password" : "Update password"}
         </button>
@@ -227,7 +222,11 @@ export function StaffChangePasswordView() {
 
       <p className="font-body mt-6 text-center text-sm text-slate-500">
         {signedIn ? "Wrong account?" : "Already set your password?"}{" "}
-        <Link href={OPERATOR_LOGIN_PATH} className="font-semibold text-[#1e3a5f] hover:underline">
+        <Link
+          href={OPERATOR_LOGIN_PATH}
+          className="font-semibold hover:underline"
+          style={{ color: accent }}
+        >
           {signedIn ? "Sign in again" : "Back to sign in"}
         </Link>
       </p>

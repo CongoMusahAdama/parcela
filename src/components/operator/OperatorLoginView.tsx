@@ -8,6 +8,7 @@ import { OperatorPortalAuthShell } from "@/components/operator/OperatorPortalAut
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
 import { useClientReady } from "@/hooks/use-client-ready";
 import { getLeadLoginFailureMessage, signInLead, validateLeadLoginInput } from "@/lib/lead-auth";
+import { brandColorAuthAccent, brandColorAuthButtonStyle, brandColorAuthTitleStyle } from "@/lib/brand-color-theme";
 import { useLoginOperatorBrand, type LoginOperatorBrand } from "@/lib/login-brand";
 import {
   getOperatorChangeCredentialPath,
@@ -173,6 +174,10 @@ export function OperatorLoginView() {
     }
   }
 
+  const accent = brandColorAuthAccent(companyBrand?.brandColor);
+  const buttonStyle = brandColorAuthButtonStyle(companyBrand?.brandColor);
+  const titleStyle = brandColorAuthTitleStyle(companyBrand?.brandColor);
+
   return (
     <OperatorPortalAuthShell
       mode={mode}
@@ -184,12 +189,7 @@ export function OperatorLoginView() {
       <div>
         <h2
           className="font-display text-3xl font-bold tracking-tight sm:text-[2.15rem]"
-          style={{
-            background: "linear-gradient(120deg, #1e3a5f 0%, #334155 55%, #0d1525 100%)",
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            color: "transparent",
-          }}
+          style={titleStyle}
         >
           Log in
         </h2>
@@ -200,7 +200,7 @@ export function OperatorLoginView() {
         </p>
         <p className="font-body mt-1 text-xs text-slate-400">
           Server date:{" "}
-          <span className="font-semibold text-[#1e3a5f]">
+          <span className="font-semibold" style={{ color: accent }}>
             {ready ? formatStaffServerDate() : "\u00a0"}
           </span>
         </p>
@@ -232,8 +232,13 @@ export function OperatorLoginView() {
                   <span
                     className={cn(
                       "flex size-7 shrink-0 items-center justify-center rounded-lg",
-                      active ? "bg-[#1e3a5f]/10 text-[#1e3a5f]" : "bg-white text-slate-400",
+                      active ? "" : "bg-white text-slate-400",
                     )}
+                    style={
+                      active
+                        ? { background: `${accent}1a`, color: accent }
+                        : undefined
+                    }
                   >
                     <Icon className="size-3.5" strokeWidth={2.25} />
                   </span>
@@ -322,10 +327,8 @@ export function OperatorLoginView() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="font-display w-full min-h-[52px] rounded-full text-sm font-bold uppercase tracking-wider text-white shadow-[0_12px_28px_rgb(30_58_95_/_0.35)] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-          style={{
-            background: "linear-gradient(120deg, #1e3a5f 0%, #152238 55%, #0d1525 100%)",
-          }}
+          className="font-display w-full min-h-[52px] rounded-full text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          style={buttonStyle}
         >
           {isSubmitting ? "Signing in…" : "Log in"}
         </button>
@@ -334,7 +337,8 @@ export function OperatorLoginView() {
           <p className="font-body text-center text-xs sm:text-sm">
             <Link
               href="/staff/change-password"
-              className="font-semibold text-[#1e3a5f] hover:underline"
+              className="font-semibold hover:underline"
+              style={{ color: accent }}
             >
               Set or change your password
             </Link>
@@ -348,7 +352,11 @@ export function OperatorLoginView() {
 
       <p className="font-body mt-6 text-center text-[11px] leading-relaxed text-slate-400">
         One portal for your terminal — we open the right dashboard after sign-in.{" "}
-        <a href="mailto:support@parcela.app" className="font-semibold text-[#1e3a5f] hover:underline">
+        <a
+          href="mailto:support@parcela.app"
+          className="font-semibold hover:underline"
+          style={{ color: accent }}
+        >
           Contact support
         </a>
       </p>

@@ -1,4 +1,7 @@
+import type { CSSProperties } from "react";
 import type { OperatorStaffTheme } from "@/lib/operator-theme";
+
+const DEFAULT_AUTH_ACCENT = "#1e3a5f";
 
 function normalizeHex(hex: string): string | null {
   const match = hex.trim().match(/^#?([0-9a-f]{6})$/i);
@@ -39,6 +42,16 @@ function lighten(hex: string, amount: number): string {
   );
 }
 
+function relativeLuminance(hex: string): number {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return 0;
+  const channels = rgb.map((channel) => {
+    const s = channel / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!;
+}
+
 /** Build staff-portal CSS theme tokens from an operator brand hex colour. */
 export function brandColorStaffTheme(hex: string): OperatorStaffTheme {
   const accent = normalizeHex(hex) ?? "#fd7e14";
@@ -67,7 +80,7 @@ export function brandColorHeroGradient(hex: string): string {
  * even when the operator colour is bright (orange, yellow, etc.).
  */
 export function brandColorAuthPanelGradient(hex: string): string {
-  const accent = normalizeHex(hex) ?? "#1e3a5f";
+  const accent = normalizeHex(hex) ?? DEFAULT_AUTH_ACCENT;
   const mid = darken(accent, 0.42);
   const deep = darken(accent, 0.62);
   const deepest = darken(accent, 0.78);
@@ -76,7 +89,33 @@ export function brandColorAuthPanelGradient(hex: string): string {
 
 /** Solid accent for buttons / highlights on the white auth form. */
 export function brandColorAuthAccent(hex: string | null | undefined): string {
-  if (!hex?.trim()) return "#1e3a5f";
-  return normalizeHex(hex) ?? "#1e3a5f";
+  const raw = hex?.trim() ? normalizeHex(hex) : null;
+  const accent = raw ?? DEFAULT_AUTH_ACCENT;
+  // Keep white label text readable on primary buttons / chips.
+  return relativeLuminance(accent) > 0.48 ? darken(accent, 0.38) : accent;
 }
 
+/** Primary CTA button fill from configured transport brand. */
+export function brandColorAuthButtonStyle(hex?: string | null): CSSProperties {
+  const accent = brandColorAuthAccent(hex);
+  const dark = darken(accent, 0.18);
+  const deepest = darken(accent, 0.36);
+  const rgb = hexToRgb(accent) ?? [30, 58, 95];
+  return {
+    background: `linear-gradient(120deg, ${accent} 0%, ${dark} 55%, ${deepest} 100%)`,
+    boxShadow: `0 12px 28px rgb(${rgb[0]} ${rgb[1]} ${rgb[2]} / 0.35)`,
+  };
+}
+
+/** Gradient headline text clipped to brand colour. */
+export function brandColorAuthTitleStyle(hex?: string | null): CSSProperties {
+  const accent = brandColorAuthAccent(hex);
+  const mid = darken(accent, 0.12);
+  const deep = darken(accent, 0.32);
+  return {
+    background: `linear-gradient(120deg, ${accent} 0%, ${mid} 55%, ${deep} 100%)`,
+    WebkitBackgroundClip: "text",
+    backgroundClip: "text",
+    color: "transparent",
+  };
+}

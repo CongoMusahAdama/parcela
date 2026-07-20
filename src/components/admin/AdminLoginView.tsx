@@ -6,6 +6,7 @@ import { Lock, Phone } from "lucide-react";
 import { OperatorPortalAuthShell } from "@/components/operator/OperatorPortalAuthShell";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
 import { useClientReady } from "@/hooks/use-client-ready";
+import { brandColorAuthAccent, brandColorAuthButtonStyle, brandColorAuthTitleStyle } from "@/lib/brand-color-theme";
 import {
   formatAdminServerDate,
   getAdminLoginFailureMessage,
@@ -123,12 +124,7 @@ export function AdminLoginView() {
       <div>
         <h2
           className="font-display text-3xl font-bold tracking-tight sm:text-[2.15rem]"
-          style={{
-            background: "linear-gradient(120deg, #1e3a5f 0%, #334155 55%, #0d1525 100%)",
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            color: "transparent",
-          }}
+          style={brandColorAuthTitleStyle(companyBrand?.brandColor)}
         >
           Log in
         </h2>
@@ -138,7 +134,10 @@ export function AdminLoginView() {
         </p>
         <p className="font-body mt-1 text-xs text-slate-400">
           Server date:{" "}
-          <span className="font-semibold text-[#1e3a5f]">
+          <span
+            className="font-semibold"
+            style={{ color: brandColorAuthAccent(companyBrand?.brandColor) }}
+          >
             {ready ? formatAdminServerDate() : "\u00a0"}
           </span>
         </p>
@@ -179,10 +178,8 @@ export function AdminLoginView() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="font-display mt-1 w-full min-h-[52px] rounded-xl text-sm font-bold uppercase tracking-wider text-white shadow-[0_12px_28px_rgb(15_23_42_/_0.28)] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-          style={{
-            background: "linear-gradient(120deg, #1e3a5f 0%, #152238 100%)",
-          }}
+          className="font-display mt-1 w-full min-h-[52px] rounded-xl text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          style={brandColorAuthButtonStyle(companyBrand?.brandColor)}
         >
           {isSubmitting ? "Signing in…" : "Sign in"}
         </button>
