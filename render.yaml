@@ -14,9 +14,9 @@ services:
       - key: STAFF_TOKEN_SECRET
         sync: false
       - key: CORS_ORIGINS
-        value: https://parcela.vercel.app
+        value: https://parcela-eta.vercel.app
       - key: PUBLIC_WEB_URL
-        value: https://parcela.vercel.app
+        value: https://parcela-eta.vercel.app
       - key: MOBILE_DEEP_LINK_SCHEME
         value: parcela
       - key: SEED_ON_STARTUP

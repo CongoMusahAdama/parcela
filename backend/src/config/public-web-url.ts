@@ -1,7 +1,7 @@
 /** Legacy Netlify frontend — never include in SMS or public links. */
 const LEGACY_NETLIFY_HOST = /(?:^https?:\/\/)?(?:[\w-]+\.)?netlify\.app$/i;
 
-const DEFAULT_PRODUCTION_WEB_URL = 'https://parcela.vercel.app';
+const DEFAULT_PRODUCTION_WEB_URL = 'https://parcela-eta.vercel.app';
 
 /**
  * Public website base URL for SMS + tracking links.
