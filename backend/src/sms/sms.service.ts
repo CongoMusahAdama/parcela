@@ -81,12 +81,30 @@ export class SmsService {
     trackingUrl: string;
   }) {
     const message = [
+      `We've got it.`,
       `Hi ${params.senderName}, your Parcela booking ${params.bookingReference} is confirmed.`,
       `Drop off at ${params.originStationName}.`,
       `Pickup code: ${params.pickupCode}.`,
       `Track: ${params.trackingUrl}`,
     ].join(' ');
     return this.sendSms(params.senderPhone, message);
+  }
+
+  async sendInTransitNotification(params: {
+    recipientPhone: string;
+    recipientName: string;
+    originStationName: string;
+    destinationStationName: string;
+    pickupCode: string;
+    trackingUrl: string;
+  }) {
+    const message = [
+      `It's on the way.`,
+      `Hi ${params.recipientName}, your parcel has left ${params.originStationName} and is heading to ${params.destinationStationName}.`,
+      `Pickup code: ${params.pickupCode}.`,
+      `Track: ${params.trackingUrl}`,
+    ].join(' ');
+    return this.sendSms(params.recipientPhone, message);
   }
 
   async sendArrivalNotification(params: {
@@ -97,6 +115,7 @@ export class SmsService {
     trackingUrl: string;
   }) {
     const message = [
+      `Ready for you.`,
       `Hi ${params.recipientName}, your parcel is ready at ${params.stationName}.`,
       `Pickup code: ${params.pickupCode}.`,
       `Track: ${params.trackingUrl}`,

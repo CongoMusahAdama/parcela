@@ -259,6 +259,18 @@ export class ParcelsService {
     parcel.driverPhone = input.driverPhone.replace(/\s/g, '').trim();
     await parcel.save();
 
+    const links = this.trackingLinks(parcel.trackingToken);
+    void this.smsService
+      .sendInTransitNotification({
+        recipientPhone: parcel.recipientPhone,
+        recipientName: parcel.recipientName,
+        originStationName: parcel.originStationName,
+        destinationStationName: parcel.destinationStationName,
+        pickupCode: parcel.pickupCode,
+        trackingUrl: links.web,
+      })
+      .catch((err) => this.logger.warn(`In-transit SMS failed: ${String(err)}`));
+
     return toStaffParcelDetail(parcel.toObject(), stationId);
   }
 
