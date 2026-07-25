@@ -43,6 +43,7 @@ export default function SendBookScreen() {
 
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [detailsAcknowledged, setDetailsAcknowledged] = useState(false);
   const [form, setForm] = useState({
     senderName: "",
     senderPhone: "",
@@ -115,10 +116,19 @@ export default function SendBookScreen() {
 
   async function handleNext() {
     if (step < 3) {
-      if (validateCurrentStep()) setStep((s) => s + 1);
+      if (validateCurrentStep()) {
+        setDetailsAcknowledged(false);
+        setStep((s) => s + 1);
+      }
       return;
     }
     if (!validateCurrentStep()) return;
+    if (!detailsAcknowledged) {
+      setErrors({
+        submit: "Please review your details and tick the confirmation box before booking.",
+      });
+      return;
+    }
     if (!origin || !destStation) {
       setErrors({
         submit: "Missing station details. Go back and choose the destination again.",
@@ -171,9 +181,9 @@ export default function SendBookScreen() {
             <Button label="Back" variant="outline" onPress={() => setStep((s) => s - 1)} style={styles.footerBtn} />
           ) : null}
           <Button
-            label={step === 3 ? (submitting ? "Saving..." : "Confirm booking") : "Continue"}
+            label={step === 3 ? (submitting ? "Booking..." : "Confirm booking") : "Continue"}
             onPress={handleNext}
-            disabled={submitting}
+            disabled={submitting || (step === 3 && !detailsAcknowledged)}
             style={step > 0 ? styles.footerBtn : styles.footerBtnFull}
           />
         </View>
@@ -352,6 +362,22 @@ export default function SendBookScreen() {
               {formatItemLabel({ ...item, id: String(index) }, index)}
             </Text>
           ))}
+          <Pressable
+            onPress={() => setDetailsAcknowledged((v) => !v)}
+            style={styles.ackRow}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: detailsAcknowledged }}
+          >
+            <Ionicons
+              name={detailsAcknowledged ? "checkbox" : "square-outline"}
+              size={22}
+              color={colors.primary}
+            />
+            <Text style={styles.ackText}>
+              I have reviewed these details and they are correct. Press Confirm booking to get my
+              reference.
+            </Text>
+          </Pressable>
         </View>
       )}
 
@@ -407,6 +433,8 @@ const styles = StyleSheet.create({
   reviewRow: { gap: 2 },
   reviewKey: { fontFamily: fonts.display, fontSize: 10, fontWeight: "700", color: colors.muted, textTransform: "uppercase" },
   reviewVal: { fontSize: 14, color: colors.foreground, lineHeight: 20 },
+  ackRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginTop: 4 },
+  ackText: { flex: 1, fontSize: 13, lineHeight: 18, color: colors.foreground },
   submitError: {
     marginTop: 12,
     fontSize: 13,

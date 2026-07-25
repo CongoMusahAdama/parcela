@@ -42,7 +42,11 @@ export function PortalUpdateGate({ portal, accountId }: PortalUpdateGateProps) {
       try {
         const rows = await apiFetch<PortalUpdateItem[]>(portalUpdatesPath(portal));
         if (cancelled) return;
-        setQueue(getUnreadPortalUpdates(portal, accountId, rows));
+        // Newest first; only unseen IDs (dismissed updates stay dismissed).
+        const unread = getUnreadPortalUpdates(portal, accountId, rows).sort(
+          (a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime(),
+        );
+        setQueue(unread);
       } catch {
         if (!cancelled) setQueue([]);
       } finally {

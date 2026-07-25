@@ -44,6 +44,28 @@ export class ParcelsService {
     });
   }
 
+  /** Notify recipient that the sender has settled the fee (skip if receiver is paying at counter). */
+  private notifyRecipientSenderPaid(parcel: {
+    recipientPhone: string;
+    recipientName: string;
+    pickupCode: string;
+    destinationStationName: string;
+    trackingToken: string;
+    paymentWho?: 'sender' | 'receiver';
+  }) {
+    if (parcel.paymentWho === 'receiver') return;
+    const links = this.trackingLinks(parcel.trackingToken);
+    void this.smsService
+      .sendPaymentPaidNotification({
+        recipientPhone: parcel.recipientPhone,
+        recipientName: parcel.recipientName,
+        pickupCode: parcel.pickupCode,
+        stationName: parcel.destinationStationName,
+        trackingUrl: links.web,
+      })
+      .catch((err) => this.logger.warn(`Payment-paid SMS failed: ${String(err)}`));
+  }
+
   private async uniqueBookingReference(): Promise<string> {
     for (let i = 0; i < 8; i++) {
       const ref = generateBookingReference();
@@ -80,6 +102,9 @@ export class ParcelsService {
     const pickupCode = derivePickupCodeFromReference(bookingReference);
     const trackingToken = deriveTrackingToken(bookingReference);
 
+    const paymentWho = dto.paymentWho;
+    const markPaid = dto.markPaid === true && paymentWho === 'sender';
+
     const parcel = await this.parcelModel.create({
       bookingReference,
       pickupCode,
@@ -103,6 +128,9 @@ export class ParcelsService {
         description: item.description.trim(),
         fragile: item.fragile,
       })),
+      ...(paymentWho ? { paymentWho } : {}),
+      paymentStatus: markPaid ? 'paid' : 'unpaid',
+      ...(markPaid ? { paidAt: new Date() } : {}),
     });
 
     const links = this.trackingLinks(trackingToken);
@@ -116,6 +144,10 @@ export class ParcelsService {
         trackingUrl: links.web,
       })
       .catch((err) => this.logger.warn(`Booking SMS failed: ${String(err)}`));
+
+    if (markPaid) {
+      this.notifyRecipientSenderPaid(parcel);
+    }
 
     return toPreBooking(parcel.toObject(), links);
   }
@@ -239,7 +271,13 @@ export class ParcelsService {
   async verifyAndLogParcel(
     reference: string,
     stationId: string,
-    input: { busNumber: string; driverName?: string; driverPhone: string },
+    input: {
+      busNumber: string;
+      driverName?: string;
+      driverPhone: string;
+      paymentWho?: 'sender' | 'receiver';
+      markPaid?: boolean;
+    },
   ) {
     const parcel = await this.parcelModel.findOne({
       bookingReference: reference.trim().toUpperCase(),
@@ -251,6 +289,19 @@ export class ParcelsService {
     }
     if (parcel.status !== 'pending_dropoff') {
       throw new BadRequestException('Parcel is not awaiting drop-off');
+    }
+
+    const paymentWho = input.paymentWho ?? parcel.paymentWho;
+    if (!paymentWho) {
+      throw new BadRequestException('Choose who pays — sender or receiver — before logging to a bus');
+    }
+    parcel.paymentWho = paymentWho;
+
+    parcel.paymentWho = paymentWho;
+
+    if (input.markPaid === true) {
+      parcel.paymentStatus = 'paid';
+      parcel.paidAt = new Date();
     }
 
     parcel.status = 'in_transit';
@@ -268,6 +319,8 @@ export class ParcelsService {
         destinationStationName: parcel.destinationStationName,
         pickupCode: parcel.pickupCode,
         trackingUrl: links.web,
+        paymentStatus: parcel.paymentStatus === 'paid' ? 'paid' : 'unpaid',
+        paymentWho: parcel.paymentWho,
       })
       .catch((err) => this.logger.warn(`In-transit SMS failed: ${String(err)}`));
 
@@ -303,6 +356,8 @@ export class ParcelsService {
         pickupCode: parcel.pickupCode,
         stationName: parcel.destinationStationName,
         trackingUrl: links.web,
+        paymentStatus: parcel.paymentStatus === 'paid' ? 'paid' : 'unpaid',
+        paymentWho: parcel.paymentWho,
       });
       smsResults.push({ bookingReference: parcel.bookingReference, sent });
     }
@@ -313,6 +368,50 @@ export class ParcelsService {
       bookingReferences: updated,
       sms: smsResults,
     };
+  }
+
+  async markParcelPaid(
+    reference: string,
+    stationId: string,
+    input: { paymentWho?: 'sender' | 'receiver'; markPaid?: boolean },
+  ) {
+    const parcel = await this.parcelModel.findOne({
+      bookingReference: reference.trim().toUpperCase(),
+    });
+    if (!parcel) throw new NotFoundException('Parcel not found');
+
+    const belongsToStation =
+      parcel.originStationId === stationId || parcel.destinationStationId === stationId;
+    if (!belongsToStation) {
+      throw new ForbiddenException('Parcel is not linked to your station');
+    }
+
+    if (parcel.status === 'collected') {
+      throw new BadRequestException('Parcel is already collected');
+    }
+
+    const paymentWho = input.paymentWho ?? parcel.paymentWho;
+    if (!paymentWho) {
+      throw new BadRequestException('Choose who pays — sender or receiver — before marking paid');
+    }
+    const wasUnpaid = parcel.paymentStatus !== 'paid';
+    parcel.paymentWho = paymentWho;
+
+    if (input.markPaid === false) {
+      throw new BadRequestException('markPaid must be true to record payment');
+    }
+
+    parcel.paymentStatus = 'paid';
+    parcel.paidAt = new Date();
+    await parcel.save();
+
+    // Sender paid remotely — tell the recipient before they travel to collect.
+    // Receiver paying at the counter does not need an SMS (they are already there).
+    if (wasUnpaid && paymentWho === 'sender') {
+      this.notifyRecipientSenderPaid(parcel);
+    }
+
+    return toStaffParcelDetail(parcel.toObject(), stationId);
   }
 
   async releaseParcel(reference: string, stationId: string, pickupCode: string) {
@@ -326,6 +425,16 @@ export class ParcelsService {
     }
     if (parcel.status !== 'ready_for_collection') {
       throw new BadRequestException('Parcel is not ready for collection');
+    }
+
+    if (parcel.paymentStatus !== 'paid') {
+      throw new BadRequestException(
+        parcel.paymentWho === 'receiver'
+          ? 'Collect payment from the receiver and mark paid before releasing'
+          : parcel.paymentWho === 'sender'
+            ? 'Sender payment is not marked paid yet — mark paid before releasing'
+            : 'Choose who pays and mark the fee paid before releasing',
+      );
     }
 
     const normalizedCode = pickupCode.trim().toUpperCase();

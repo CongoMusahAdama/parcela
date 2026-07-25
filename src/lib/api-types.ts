@@ -10,4 +10,6 @@ export type CreateBookingPayload = {
     description: string;
     fragile: boolean;
   }>;
+  paymentWho?: 'sender' | 'receiver';
+  markPaid?: boolean;
 };

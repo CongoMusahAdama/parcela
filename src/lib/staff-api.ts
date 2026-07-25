@@ -27,13 +27,32 @@ export async function fetchStaffParcelDetail(reference: string): Promise<StaffPa
 
 export async function verifyAndLogParcelApi(
   reference: string,
-  body: { busNumber: string; driverPhone: string; driverName?: string },
+  body: {
+    busNumber: string;
+    driverPhone: string;
+    driverName?: string;
+    paymentWho?: "sender" | "receiver";
+    markPaid?: boolean;
+  },
 ): Promise<StaffParcelDetail> {
   return apiFetch<StaffParcelDetail>(
     `/staff/parcels/${encodeURIComponent(reference)}/verify-log`,
     {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function markParcelPaidApi(
+  reference: string,
+  body: { paymentWho?: "sender" | "receiver"; markPaid?: boolean } = {},
+): Promise<StaffParcelDetail> {
+  return apiFetch<StaffParcelDetail>(
+    `/staff/parcels/${encodeURIComponent(reference)}/mark-paid`,
+    {
+      method: "POST",
+      body: JSON.stringify({ markPaid: true, ...body }),
     },
   );
 }

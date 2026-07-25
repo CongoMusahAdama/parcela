@@ -24,6 +24,7 @@ import { SmsService } from '../sms/sms.service';
 import { ConfirmBusArrivalDto } from './dto/confirm-bus-arrival.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginBrandQueryDto } from './dto/login-brand-query.dto';
+import { MarkParcelPaidDto } from './dto/mark-parcel-paid.dto';
 import { ReleaseParcelDto } from './dto/release-parcel.dto';
 import { StaffLoginDto } from './dto/staff-login.dto';
 import { VerifyLogDto } from './dto/verify-log.dto';
@@ -151,6 +152,20 @@ export class StaffController {
   ) {
     await this.assertStaffOpsUnlocked(req.staff.staff.operator);
     return this.parcelsService.verifyAndLogParcel(reference, req.staff.staff.stationId, dto);
+  }
+
+  @Post('parcels/:reference/mark-paid')
+  @UseGuards(StaffAuthGuard)
+  async markParcelPaid(
+    @Param('reference') reference: string,
+    @Body() dto: MarkParcelPaidDto,
+    @Req() req: StaffRequest,
+  ) {
+    await this.assertStaffOpsUnlocked(req.staff.staff.operator);
+    return this.parcelsService.markParcelPaid(reference, req.staff.staff.stationId, {
+      paymentWho: dto.paymentWho,
+      markPaid: dto.markPaid !== false,
+    });
   }
 
   @Post('buses/confirm-arrival')

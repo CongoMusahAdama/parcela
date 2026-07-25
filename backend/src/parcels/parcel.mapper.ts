@@ -120,6 +120,9 @@ export type StaffParcelSummaryDto = {
   busNumber?: string;
   driverName?: string;
   driverPhone?: string;
+  paymentWho?: 'sender' | 'receiver';
+  paymentStatus: 'unpaid' | 'paid';
+  paidAt?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -156,6 +159,9 @@ export function toStaffParcelSummary(
     busNumber: parcel.busNumber,
     driverName: parcel.driverName,
     driverPhone: parcel.driverPhone,
+    paymentWho: parcel.paymentWho,
+    paymentStatus: parcel.paymentStatus === 'paid' ? 'paid' : 'unpaid',
+    paidAt: parcel.paidAt?.toISOString(),
     createdAt: (parcel.createdAt ?? new Date()).toISOString(),
     updatedAt: (parcel.updatedAt ?? parcel.createdAt ?? new Date()).toISOString(),
   };

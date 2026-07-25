@@ -40,6 +40,9 @@ export type ParcelFormHandle = {
   goToStep: (step: number) => void;
 };
 
+/** "compact" fits the mobile sender flow; "comfortable" gives desktop portals more room. */
+export type ParcelFormDensity = "compact" | "comfortable";
+
 type ParcelFormProps = {
   originStation: Station;
   destinationStations: Station[];
@@ -47,6 +50,7 @@ type ParcelFormProps = {
   onStepChange: (step: number) => void;
   onSubmit: (data: ParcelFormData) => void;
   isSubmitting?: boolean;
+  density?: ParcelFormDensity;
 };
 
 const PARCEL_TYPES: {
@@ -126,14 +130,25 @@ function ReviewRow({ label, value }: ReviewRowProps) {
 type ReviewCardProps = {
   title: string;
   onEdit: () => void;
+  roomy?: boolean;
   children: React.ReactNode;
 };
 
-function ReviewCard({ title, onEdit, children }: ReviewCardProps) {
+function ReviewCard({ title, onEdit, roomy, children }: ReviewCardProps) {
   return (
-    <div className="rounded-xl border border-border bg-surface">
-      <div className="flex items-center justify-between border-b border-border/80 px-3.5 py-2.5">
-        <p className="font-display text-xs font-semibold uppercase tracking-wide text-muted">
+    <div className={cn("border border-border bg-surface", roomy ? "rounded-2xl" : "rounded-xl")}>
+      <div
+        className={cn(
+          "flex items-center justify-between border-b border-border/80",
+          roomy ? "px-5 py-3.5" : "px-3.5 py-2.5"
+        )}
+      >
+        <p
+          className={cn(
+            "font-display font-semibold uppercase tracking-wide text-muted",
+            roomy ? "text-[11px] tracking-wider" : "text-xs"
+          )}
+        >
           {title}
         </p>
         <button
@@ -145,7 +160,9 @@ function ReviewCard({ title, onEdit, children }: ReviewCardProps) {
           Edit
         </button>
       </div>
-      <div className="divide-y divide-border/60 px-3.5">{children}</div>
+      <div className={cn("divide-y divide-border/60", roomy ? "px-5 py-1" : "px-3.5")}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -154,11 +171,17 @@ type FormStepNavProps = {
   step: number;
   maxReachedStep: number;
   onGoTo: (step: number) => void;
+  roomy?: boolean;
 };
 
-function FormStepNav({ step, maxReachedStep, onGoTo }: FormStepNavProps) {
+function FormStepNav({ step, maxReachedStep, onGoTo, roomy }: FormStepNavProps) {
   return (
-    <div className="flex gap-1 rounded-xl bg-background p-1 ring-1 ring-border/80">
+    <div
+      className={cn(
+        "flex rounded-xl bg-background ring-1 ring-border/80",
+        roomy ? "gap-1.5 rounded-2xl p-1.5" : "gap-1 p-1"
+      )}
+    >
       {SUB_STEPS.map((s) => {
         const isActive = step === s.id;
         const isDone = s.id < step;
@@ -172,14 +195,20 @@ function FormStepNav({ step, maxReachedStep, onGoTo }: FormStepNavProps) {
             disabled={!canVisit}
             onClick={() => canVisit && onGoTo(s.id)}
             className={cn(
-              "font-display flex flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-[10px] font-semibold transition-all",
+              "font-display flex flex-1 items-center justify-center font-semibold transition-all",
+              roomy
+                ? "gap-2 rounded-xl px-3 py-3 text-sm"
+                : "flex-col gap-0.5 rounded-lg px-1 py-1.5 text-[10px]",
               isActive && "bg-surface text-primary shadow-sm ring-1 ring-border/60",
               !isActive && canVisit && "text-foreground hover:bg-surface/80",
               !canVisit && "cursor-not-allowed text-muted/50"
             )}
           >
             <Icon
-              className={cn("size-3.5", isActive ? "text-primary" : isDone ? "text-primary" : "")}
+              className={cn(
+                roomy ? "size-4" : "size-3.5",
+                isActive ? "text-primary" : isDone ? "text-primary" : ""
+              )}
               strokeWidth={2}
             />
             {s.short}
@@ -192,9 +221,24 @@ function FormStepNav({ step, maxReachedStep, onGoTo }: FormStepNavProps) {
 
 export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
   function ParcelForm(
-    { originStation, destinationStations, step, onStepChange, onSubmit, isSubmitting },
+    {
+      originStation,
+      destinationStations,
+      step,
+      onStepChange,
+      onSubmit,
+      isSubmitting,
+      density = "compact",
+    },
     ref
   ) {
+    const roomy = density === "comfortable";
+    const sectionClass = roomy
+      ? "rounded-2xl border border-border bg-surface p-5 sm:p-6"
+      : "rounded-xl border border-border bg-surface p-3.5";
+    const fieldGridClass = roomy ? "grid gap-5 sm:grid-cols-2" : "space-y-3";
+    const labelClass = roomy ? "mb-2 text-sm" : "mb-1 text-xs";
+    const inputClass = roomy ? "!min-h-12 !rounded-xl" : "!min-h-11 !rounded-xl";
     const [form, setForm] = useState<ParcelFormData>({
       senderName: "",
       senderPhone: "",
@@ -247,84 +291,104 @@ export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
     }
 
     return (
-      <form id="parcel-form" onSubmit={handleSubmit} className="space-y-3">
-        <FormStepNav step={step} maxReachedStep={maxReachedStep} onGoTo={goToStep} />
+      <form
+        id="parcel-form"
+        onSubmit={handleSubmit}
+        className={roomy ? "space-y-5" : "space-y-3"}
+      >
+        <FormStepNav
+          step={step}
+          maxReachedStep={maxReachedStep}
+          onGoTo={goToStep}
+          roomy={roomy}
+        />
 
-        <p className="font-body px-0.5 text-[12px] leading-snug text-muted">{meta.subtitle}</p>
+        <p
+          className={cn(
+            "font-body leading-snug text-muted",
+            roomy ? "px-0.5 text-sm" : "px-0.5 text-[12px]"
+          )}
+        >
+          {meta.subtitle}
+        </p>
 
         {step === 0 && (
-          <section className="space-y-3 rounded-xl border border-border bg-surface p-3.5">
-            <div>
-              <Label htmlFor="senderName" className="mb-1 text-xs">
-                Full name
-              </Label>
-              <Input
-                id="senderName"
-                placeholder="Your full name"
-                value={form.senderName}
-                onChange={(e) => setForm({ ...form, senderName: e.target.value })}
-                autoComplete="name"
-                className="!min-h-11 !rounded-xl"
-              />
-              {errors.senderName && (
-                <p className="font-body mt-1 text-xs text-danger">{errors.senderName}</p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="senderPhone" className="mb-1 text-xs">
-                Phone number
-              </Label>
-              <Input
-                id="senderPhone"
-                type="tel"
-                placeholder="e.g. 024 123 4567"
-                value={form.senderPhone}
-                onChange={(e) => setForm({ ...form, senderPhone: e.target.value })}
-                autoComplete="tel"
-                className="!min-h-11 !rounded-xl"
-              />
-              {errors.senderPhone && (
-                <p className="font-body mt-1 text-xs text-danger">{errors.senderPhone}</p>
-              )}
+          <section className={cn(sectionClass, roomy ? undefined : "space-y-3")}>
+            <div className={fieldGridClass}>
+              <div>
+                <Label htmlFor="senderName" className={labelClass}>
+                  Full name
+                </Label>
+                <Input
+                  id="senderName"
+                  placeholder="Your full name"
+                  value={form.senderName}
+                  onChange={(e) => setForm({ ...form, senderName: e.target.value })}
+                  autoComplete="name"
+                  className={inputClass}
+                />
+                {errors.senderName && (
+                  <p className="font-body mt-1 text-xs text-danger">{errors.senderName}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="senderPhone" className={labelClass}>
+                  Phone number
+                </Label>
+                <Input
+                  id="senderPhone"
+                  type="tel"
+                  placeholder="e.g. 024 123 4567"
+                  value={form.senderPhone}
+                  onChange={(e) => setForm({ ...form, senderPhone: e.target.value })}
+                  autoComplete="tel"
+                  className={inputClass}
+                />
+                {errors.senderPhone && (
+                  <p className="font-body mt-1 text-xs text-danger">{errors.senderPhone}</p>
+                )}
+              </div>
             </div>
           </section>
         )}
 
         {step === 1 && (
-          <section className="space-y-3">
-            <div className="space-y-3 rounded-xl border border-border bg-surface p-3.5">
-              <div>
-                <Label htmlFor="recipientName" className="mb-1 text-xs">
-                  Full name
-                </Label>
-                <Input
-                  id="recipientName"
-                  placeholder="Recipient full name"
-                  value={form.recipientName}
-                  onChange={(e) => setForm({ ...form, recipientName: e.target.value })}
-                  autoComplete="name"
-                  className="!min-h-11 !rounded-xl"
-                />
-                {errors.recipientName && (
-                  <p className="font-body mt-1 text-xs text-danger">{errors.recipientName}</p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="recipientPhone" className="mb-1 text-xs">
-                  Phone number
-                </Label>
-                <Input
-                  id="recipientPhone"
-                  type="tel"
-                  placeholder="e.g. 055 987 6543"
-                  value={form.recipientPhone}
-                  onChange={(e) => setForm({ ...form, recipientPhone: e.target.value })}
-                  autoComplete="tel"
-                  className="!min-h-11 !rounded-xl"
-                />
-                {errors.recipientPhone && (
-                  <p className="font-body mt-1 text-xs text-danger">{errors.recipientPhone}</p>
-                )}
+          <section className={roomy ? "space-y-5" : "space-y-3"}>
+            <div className={cn(sectionClass, roomy ? undefined : "space-y-3")}>
+              <div className={fieldGridClass}>
+                <div>
+                  <Label htmlFor="recipientName" className={labelClass}>
+                    Full name
+                  </Label>
+                  <Input
+                    id="recipientName"
+                    placeholder="Recipient full name"
+                    value={form.recipientName}
+                    onChange={(e) => setForm({ ...form, recipientName: e.target.value })}
+                    autoComplete="name"
+                    className={inputClass}
+                  />
+                  {errors.recipientName && (
+                    <p className="font-body mt-1 text-xs text-danger">{errors.recipientName}</p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="recipientPhone" className={labelClass}>
+                    Phone number
+                  </Label>
+                  <Input
+                    id="recipientPhone"
+                    type="tel"
+                    placeholder="e.g. 055 987 6543"
+                    value={form.recipientPhone}
+                    onChange={(e) => setForm({ ...form, recipientPhone: e.target.value })}
+                    autoComplete="tel"
+                    className={inputClass}
+                  />
+                  {errors.recipientPhone && (
+                    <p className="font-body mt-1 text-xs text-danger">{errors.recipientPhone}</p>
+                  )}
+                </div>
               </div>
             </div>
             <DestinationStationPicker
@@ -341,14 +405,17 @@ export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
         )}
 
         {step === 2 && (
-          <section className="space-y-3">
-            <p className="font-body px-0.5 text-[11px] text-muted">
+          <section className={roomy ? "space-y-5" : "space-y-3"}>
+            <p className={cn("font-body px-0.5 text-muted", roomy ? "text-xs" : "text-[11px]")}>
               One booking, one tracking ID — add all parcels in this trip.
             </p>
             {form.items.map((item, index) => (
               <div
                 key={index}
-                className="space-y-3.5 rounded-2xl border border-border bg-surface p-4"
+                className={cn(
+                  "rounded-2xl border border-border bg-surface",
+                  roomy ? "space-y-5 p-5 sm:p-6" : "space-y-3.5 p-4"
+                )}
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-display text-sm font-bold text-foreground">
@@ -389,7 +456,7 @@ export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
                 </div>
                 <div>
                   <Label>Parcel type</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className={cn("grid gap-2", roomy ? "grid-cols-4" : "grid-cols-2")}>
                     {PARCEL_TYPES.map((type) => {
                       const Icon = type.icon;
                       const selected = item.parcelType === type.value;
@@ -446,13 +513,13 @@ export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
         )}
 
         {step === 3 && (
-          <section className="space-y-3">
-            <ReviewCard title="Sender" onEdit={() => goToStep(0)}>
+          <section className={roomy ? "space-y-4" : "space-y-3"}>
+            <ReviewCard title="Sender" onEdit={() => goToStep(0)} roomy={roomy}>
               <ReviewRow label="Name" value={form.senderName || "—"} />
               <ReviewRow label="Phone" value={form.senderPhone || "—"} />
             </ReviewCard>
 
-            <ReviewCard title="Recipient" onEdit={() => goToStep(1)}>
+            <ReviewCard title="Recipient" onEdit={() => goToStep(1)} roomy={roomy}>
               <ReviewRow label="Name" value={form.recipientName || "—"} />
               <ReviewRow label="Phone" value={form.recipientPhone || "—"} />
               <ReviewRow
@@ -461,7 +528,11 @@ export const ParcelForm = forwardRef<ParcelFormHandle, ParcelFormProps>(
               />
             </ReviewCard>
 
-            <ReviewCard title={`Items (${form.items.length})`} onEdit={() => goToStep(2)}>
+            <ReviewCard
+              title={`Items (${form.items.length})`}
+              onEdit={() => goToStep(2)}
+              roomy={roomy}
+            >
               {form.items.map((item, index) => (
                 <ReviewRow
                   key={index}

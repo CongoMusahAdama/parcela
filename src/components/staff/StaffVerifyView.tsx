@@ -14,6 +14,11 @@ import {
 } from "lucide-react";
 import { StaffParcelsLoading } from "@/components/staff/StaffParcelsLoading";
 import { StaffPageHeader } from "@/components/staff/StaffPageHeader";
+import {
+  paymentStatusBadge,
+  StaffPaymentFields,
+  type ParcelPaymentWho,
+} from "@/components/staff/StaffPaymentFields";
 import { useStaffSession } from "@/components/staff/StaffOperatorShell";
 import { useStaffParcels } from "@/components/staff/StaffParcelsContext";
 import { StaffParcelTagFillModal, type StaffTagFillContext } from "@/components/staff/StaffParcelTagFillModal";
@@ -61,6 +66,9 @@ export function StaffVerifyView() {
   const [parcelMatches, setParcelMatches] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagFillContext, setTagFillContext] = useState<StaffTagFillContext | null>(null);
+  const [refRefreshTried, setRefRefreshTried] = useState<string | null>(null);
+  const [paymentWho, setPaymentWho] = useState<ParcelPaymentWho | "">("");
+  const [markPaid, setMarkPaid] = useState(false);
 
   const filtered = useMemo(
     () => pending.filter((p) => matchesStaffParcelQuery(p, query)),
@@ -74,17 +82,26 @@ export function StaffVerifyView() {
 
   useEffect(() => {
     const ref = searchParams.get("ref");
-    if (ref && pending.some((p) => p.bookingReference === ref)) {
+    if (!ref) return;
+    if (pending.some((p) => p.bookingReference === ref)) {
       setSelectedRef(ref);
+      return;
     }
-  }, [searchParams, pending]);
+    // Walk-in create redirects here; refresh once if the new row is not yet in memory.
+    if (refRefreshTried !== ref && !loading) {
+      setRefRefreshTried(ref);
+      void refresh();
+    }
+  }, [searchParams, pending, refresh, refRefreshTried, loading]);
 
   useEffect(() => {
     setParcelMatches(false);
     setBusNumber("");
     setDriverPhone("");
     setDriverName("");
-  }, [selectedRef]);
+    setPaymentWho(selected?.paymentWho ?? "");
+    setMarkPaid(selected?.paymentStatus === "paid");
+  }, [selectedRef, selected?.paymentWho, selected?.paymentStatus]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -102,6 +119,14 @@ export function StaffVerifyView() {
       await showValidationAlert({
         title: "Confirm parcel match",
         text: "Tick the parcel match check before logging it to a bus.",
+      });
+      return;
+    }
+
+    if (!paymentWho) {
+      await showValidationAlert({
+        title: "Who pays?",
+        text: "Choose whether the sender or the receiver pays before logging to a bus.",
       });
       return;
     }
@@ -158,6 +183,8 @@ export function StaffVerifyView() {
         busNumber: loggedBus,
         driverPhone: normalizedDriverPhone,
         driverName: trimmedDriverName,
+        paymentWho,
+        markPaid: paymentWho === "sender" && markPaid,
       };
       const result = await runOrQueueStaffMutation({
         execute: () => verifyAndLogParcelApi(selected.bookingReference, body),
@@ -396,6 +423,31 @@ export function StaffVerifyView() {
                       Parcel matches booking and has been received at the counter
                     </span>
                   </label>
+
+                  <div className="mt-4 rounded-xl border border-border bg-surface px-3 py-3">
+                    {selected.paymentStatus === "paid" ? (
+                      <p
+                        className={cn(
+                          "font-display inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase",
+                          paymentStatusBadge(selected).className,
+                        )}
+                      >
+                        {paymentStatusBadge(selected).label}
+                      </p>
+                    ) : (
+                      <StaffPaymentFields
+                        paymentWho={paymentWho}
+                        onPaymentWhoChange={(value) => {
+                          setPaymentWho(value);
+                          if (value !== "sender") setMarkPaid(false);
+                        }}
+                        markPaid={markPaid}
+                        onMarkPaidChange={setMarkPaid}
+                        showMarkPaid={paymentWho === "sender"}
+                        disabled={isSubmitting}
+                      />
+                    )}
+                  </div>
                 </section>
 
                 <section className="rounded-2xl border border-border bg-background p-4">

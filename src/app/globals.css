@@ -124,10 +124,27 @@
     font-family: var(--font-display);
   }
 
-  /* Staff + lead portals — Syne (display) + Onest (body), same as mobile app */
+  /* Public marketing only — Onest for headings + body; portals keep Syne/Onest */
+  .landing-site {
+    --font-display: var(--font-onest), ui-sans-serif, sans-serif;
+    --font-body: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-body);
+  }
+
+  .landing-site .font-display,
+  .landing-site .brand-wordmark,
+  .landing-site h1,
+  .landing-site h2,
+  .landing-site h3,
+  .landing-site h4 {
+    font-family: var(--font-display);
+  }
+
+  /* Staff, lead, HQ, platform dashboards — original Syne + Onest (unchanged) */
   .staff-portal,
   .lead-portal,
-  .admin-portal {
+  .admin-portal,
+  .platform-portal {
     font-family: var(--font-body);
   }
 
@@ -142,7 +159,11 @@
   .admin-portal h1,
   .admin-portal h2,
   .admin-portal h3,
-  .admin-portal .font-display {
+  .admin-portal .font-display,
+  .platform-portal h1,
+  .platform-portal h2,
+  .platform-portal h3,
+  .platform-portal .font-display {
     font-family: var(--font-display);
   }
 
@@ -163,7 +184,13 @@
   .admin-portal label,
   .admin-portal p,
   .admin-portal a,
-  .admin-portal span {
+  .admin-portal span,
+  .platform-portal input,
+  .platform-portal button,
+  .platform-portal label,
+  .platform-portal p,
+  .platform-portal a,
+  .platform-portal span {
     font-family: inherit;
   }
 
@@ -509,15 +536,60 @@
 }
 
 @keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  @keyframes landing-caret-blink {
+    0%,
+    45% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
   }
-}
+
+  .landing-typing-caret {
+    animation: landing-caret-blink 0.9s steps(1, end) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-typing-caret {
+      animation: none;
+      opacity: 1;
+    }
+  }
+
+  @keyframes partner-carousel-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .partner-carousel-track--animate {
+    animation: partner-carousel-scroll var(--partner-carousel-duration, 28s) linear infinite;
+  }
+
+  .partner-carousel:hover .partner-carousel-track--animate {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .partner-carousel-track--animate {
+      animation: none;
+    }
+  }
 
 @keyframes hero-ken {
   from {
@@ -612,7 +684,9 @@
   #staff-report-print,
   #staff-report-print *,
   #admin-report-print,
-  #admin-report-print * {
+  #admin-report-print *,
+  #staff-station-qr-print,
+  #staff-station-qr-print * {
     visibility: visible !important;
   }
 
@@ -627,6 +701,25 @@
     font-family: var(--font-body), ui-sans-serif, sans-serif !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  #staff-station-qr-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .staff-station-qr-screen {
+    display: none !important;
   }
 
   .staff-report-print-header,
@@ -816,7 +909,9 @@
   }
 
   #booking-receipt,
-  #booking-receipt * {
+  #booking-receipt *,
+  #staff-station-qr-print,
+  #staff-station-qr-print * {
     visibility: visible !important;
   }
 
@@ -831,9 +926,22 @@
     border: none !important;
   }
 
+  #staff-station-qr-print {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
   footer,
   header,
-  .no-print {
+  .no-print,
+  .staff-station-qr-screen {
     display: none !important;
   }
 }

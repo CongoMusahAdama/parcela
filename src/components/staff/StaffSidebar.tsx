@@ -136,22 +136,10 @@ export function StaffSidebar({ mobileOpen, onMobileClose, onSignOut }: StaffSide
       </nav>
 
       <div className="border-t border-white/15 p-4">
-        <div className="staff-sidebar-profile rounded-2xl border border-white/20 bg-gradient-to-br from-white/14 to-white/6 px-3.5 py-3.5 backdrop-blur-sm">
-          <p className="font-display truncate text-sm font-semibold text-white">
-            {staff.displayName}
-          </p>
-          <p className="font-body mt-0.5 truncate text-xs capitalize text-white/80">
-            {staff.role.replace("_", " ")} · {staff.operator}
-          </p>
-          <div className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-white/10 px-2 py-1.5 text-[11px] text-white/85 ring-1 ring-white/15">
-            <MapPin className="size-3.5 shrink-0" />
-            <span className="truncate font-medium">{staff.stationCode}</span>
-          </div>
-        </div>
         <button
           type="button"
           onClick={() => void onSignOut()}
-          className="staff-sidebar-sign-out font-display mt-3 flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors"
+          className="staff-sidebar-sign-out font-display flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors"
         >
           <LogOut className="size-4" />
           Sign out

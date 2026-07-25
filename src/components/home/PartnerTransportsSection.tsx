@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowRight, Bus } from "lucide-react";
-import { Reveal } from "@/components/home/Reveal";
-import { SectionHeading } from "@/components/home/SectionHeading";
 import {
   getOperatorLabel,
   getOperatorLogoSrc,
@@ -51,7 +49,7 @@ function isLightHex(hex: string): boolean {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.62;
 }
 
-function PartnerLogo({
+function PartnerMark({
   code,
   name,
   accent,
@@ -68,7 +66,7 @@ function PartnerLogo({
       <img
         src={logoSrc}
         alt={`${name} logo`}
-        className="max-h-14 w-auto max-w-[11rem] object-contain sm:max-h-16"
+        className="max-h-10 w-auto max-w-[8.5rem] object-contain opacity-80 grayscale transition duration-300 group-hover:opacity-100 group-hover:grayscale-0 sm:max-h-11"
       />
     );
   }
@@ -86,7 +84,7 @@ function PartnerLogo({
   return (
     <span
       className={cn(
-        "font-display flex size-14 items-center justify-center rounded-2xl text-base font-bold sm:size-16 sm:text-lg",
+        "font-display flex h-10 min-w-[4.5rem] items-center justify-center rounded-lg px-3 text-sm font-bold tracking-wide opacity-80 transition group-hover:opacity-100 sm:h-11",
         light ? "text-slate-900" : "text-white",
       )}
       style={{ backgroundColor: accent }}
@@ -94,6 +92,54 @@ function PartnerLogo({
     >
       {initials}
     </span>
+  );
+}
+
+function PartnerCarouselTrack({ partners }: { partners: PartnerCard[] }) {
+  // Duplicate for seamless infinite scroll when there are enough logos
+  const loop = partners.length > 1 ? [...partners, ...partners] : partners;
+  const durationSec = Math.max(18, partners.length * 6);
+
+  return (
+    <div className="partner-carousel relative mt-10 overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-[#f7f8fa] to-transparent sm:w-20"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-[#f7f8fa] to-transparent sm:w-20"
+        aria-hidden
+      />
+
+      <div
+        className={cn(
+          "partner-carousel-track flex w-max items-center gap-10 sm:gap-14",
+          partners.length > 1 && "partner-carousel-track--animate",
+        )}
+        style={
+          partners.length > 1
+            ? ({ ["--partner-carousel-duration"]: `${durationSec}s` } as CSSProperties)
+            : undefined
+        }
+      >
+        {loop.map((partner, index) => (
+          <Link
+            key={`${partner.code}-${index}`}
+            href={`/send?operator=${encodeURIComponent(partner.code)}`}
+            className="group flex shrink-0 items-center justify-center"
+            title={partner.name}
+            aria-label={`Book with ${partner.name}`}
+          >
+            <PartnerMark
+              code={partner.code}
+              name={partner.name}
+              accent={partner.accent}
+              logoSrc={partner.logoSrc}
+            />
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -125,136 +171,51 @@ export function PartnerTransportsSection() {
 
   const loading = partners === null;
   const empty = partners !== null && partners.length === 0;
-  const single = partners?.length === 1;
 
   return (
-    <section
-      id="partners"
-      className="scroll-mt-20 border-t border-slate-900/5 bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_42%,#ffffff_100%)]"
-    >
-      <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+    <section id="partners" className="scroll-mt-20 bg-[#f7f8fa]">
+      <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
           <div className="max-w-xl">
-            <SectionHeading className="text-2xl sm:text-3xl">
-              Partner transport services
-            </SectionHeading>
-            <Reveal delay={1}>
-              <p className="font-body mt-3 text-sm leading-relaxed text-muted sm:text-base">
-                Book through onboarded operators. Each partner keeps its brand,
-                colours, and station network.
-              </p>
-            </Reveal>
+            <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-[1.75rem]">
+              Partner transports
+            </h2>
+            <p className="font-body mt-2 text-sm leading-relaxed text-muted sm:text-[15px]">
+              Book through onboarded operators across Ghana — each keeps its brand
+              and station network.
+            </p>
           </div>
-          <Reveal delay={2}>
-            <Link
-              href="/send"
-              className="font-display inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
-            >
-              Browse all stations
-              <ArrowRight className="size-4" />
-            </Link>
-          </Reveal>
+          <Link
+            href="/send"
+            className="font-display inline-flex shrink-0 items-center gap-1.5 pt-1 text-sm font-semibold text-foreground transition hover:text-primary"
+          >
+            Show all partners
+            <ArrowRight className="size-4" strokeWidth={2.25} />
+          </Link>
         </div>
 
         {loading ? (
-          <div
-            className={cn(
-              "mt-10 grid gap-4",
-              "sm:grid-cols-2 lg:grid-cols-3",
-            )}
-          >
-            {Array.from({ length: 3 }).map((_, i) => (
+          <div className="mt-10 flex items-center gap-10 overflow-hidden">
+            {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="h-56 animate-pulse rounded-3xl border border-slate-900/8 bg-slate-100/80"
+                className="h-10 w-28 shrink-0 animate-pulse rounded-lg bg-slate-200/80"
               />
             ))}
           </div>
         ) : empty ? (
-          <Reveal>
-            <div className="mt-10 flex flex-col items-center rounded-3xl border border-dashed border-slate-900/15 bg-white px-6 py-14 text-center">
-              <Bus className="size-8 text-primary/50" />
-              <p className="font-display mt-3 text-base font-bold text-foreground">
-                Partners coming soon
-              </p>
-              <p className="font-body mt-1 max-w-sm text-sm text-muted">
-                Transport services will appear here as they are onboarded onto
-                Parcela.
-              </p>
-            </div>
-          </Reveal>
+          <div className="mt-10 flex flex-col items-center rounded-2xl border border-dashed border-slate-900/12 bg-white px-6 py-12 text-center">
+            <Bus className="size-8 text-primary/50" />
+            <p className="font-display mt-3 text-base font-bold text-foreground">
+              Partners coming soon
+            </p>
+            <p className="font-body mt-1 max-w-sm text-sm text-muted">
+              Transport services will appear here as they are onboarded onto
+              Parcela.
+            </p>
+          </div>
         ) : (
-          <ul
-            className={cn(
-              "mt-10 grid gap-4",
-              single
-                ? "mx-auto max-w-lg"
-                : partners.length === 2
-                  ? "sm:grid-cols-2"
-                  : "sm:grid-cols-2 lg:grid-cols-3",
-            )}
-          >
-            {partners.map((partner, index) => {
-              const lightAccent = isLightHex(partner.accent);
-              return (
-                <Reveal
-                  key={partner.code}
-                  delay={(Math.min(index, 2) + 1) as 1 | 2 | 3}
-                >
-                  <li className="h-full">
-                    <Link
-                      href={`/send?operator=${encodeURIComponent(partner.code)}`}
-                      className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-slate-900/8 bg-white shadow-[0_1px_0_rgb(15_23_42/0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-900/10 hover:shadow-[0_22px_50px_-28px_rgb(15_23_42/0.35)]"
-                    >
-                      <div
-                        className="relative flex min-h-[7.5rem] items-center justify-center px-6 py-7"
-                        style={{
-                          background: `linear-gradient(145deg, ${partner.accent}18 0%, ${partner.accent}08 48%, #ffffff 100%)`,
-                        }}
-                      >
-                        <span
-                          className="absolute inset-x-0 top-0 h-1"
-                          style={{ backgroundColor: partner.accent }}
-                          aria-hidden
-                        />
-                        <div className="flex min-h-[4.5rem] w-full items-center justify-center rounded-2xl bg-white/90 px-5 py-4 shadow-sm ring-1 ring-slate-900/6 backdrop-blur-sm">
-                          <PartnerLogo
-                            code={partner.code}
-                            name={partner.name}
-                            accent={partner.accent}
-                            logoSrc={partner.logoSrc}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
-                        <p className="font-display text-[0.65rem] font-bold uppercase tracking-[0.16em] text-muted">
-                          Partner · {partner.code}
-                        </p>
-                        <h3 className="font-display mt-1.5 text-lg font-bold leading-snug tracking-tight text-foreground sm:text-xl">
-                          {partner.name}
-                        </h3>
-                        <p className="font-body mt-2 text-sm leading-relaxed text-muted">
-                          Send parcels through their stations — same network your
-                          booking travels on.
-                        </p>
-                        <span
-                          className={cn(
-                            "font-display mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-transform group-hover:translate-y-[-1px]",
-                            lightAccent ? "text-slate-900" : "text-white",
-                          )}
-                          style={{ backgroundColor: partner.accent }}
-                        >
-                          Book with {partner.code}
-                          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-                        </span>
-                      </div>
-                    </Link>
-                  </li>
-                </Reveal>
-              );
-            })}
-          </ul>
+          <PartnerCarouselTrack partners={partners} />
         )}
       </div>
     </section>

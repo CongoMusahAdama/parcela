@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
   ValidateNested,
@@ -57,4 +58,14 @@ export class CreateBookingDto {
   @ValidateNested({ each: true })
   @Type(() => BookingItemDto)
   items!: BookingItemDto[];
+
+  /** Optional — set by staff walk-in. Public online bookings leave this unset. */
+  @IsOptional()
+  @IsEnum(['sender', 'receiver'])
+  paymentWho?: 'sender' | 'receiver';
+
+  /** When true with paymentWho=sender, marks the walk-in fee as collected now. */
+  @IsOptional()
+  @IsBoolean()
+  markPaid?: boolean;
 }

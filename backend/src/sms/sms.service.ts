@@ -97,11 +97,41 @@ export class SmsService {
     destinationStationName: string;
     pickupCode: string;
     trackingUrl: string;
+    paymentStatus?: 'paid' | 'unpaid';
+    paymentWho?: 'sender' | 'receiver';
   }) {
+    const paymentLine =
+      params.paymentStatus === 'paid'
+        ? 'Fee already paid — nothing to pay at collection.'
+        : params.paymentWho === 'receiver'
+          ? 'Payment will be due at collection.'
+          : params.paymentStatus === 'unpaid'
+            ? 'Payment status: unpaid — check before you collect.'
+            : null;
     const message = [
       `It's on the way.`,
       `Hi ${params.recipientName}, your parcel has left ${params.originStationName} and is heading to ${params.destinationStationName}.`,
+      paymentLine,
       `Pickup code: ${params.pickupCode}.`,
+      `Track: ${params.trackingUrl}`,
+    ]
+      .filter(Boolean)
+      .join(' ');
+    return this.sendSms(params.recipientPhone, message);
+  }
+
+  /** Sender paid at origin — tell the recipient they won’t need to pay at collection. */
+  async sendPaymentPaidNotification(params: {
+    recipientPhone: string;
+    recipientName: string;
+    pickupCode: string;
+    stationName: string;
+    trackingUrl: string;
+  }) {
+    const message = [
+      `Fee paid.`,
+      `Hi ${params.recipientName}, the sender has paid for your parcel (${params.pickupCode}).`,
+      `No payment needed when you collect at ${params.stationName}.`,
       `Track: ${params.trackingUrl}`,
     ].join(' ');
     return this.sendSms(params.recipientPhone, message);
@@ -113,10 +143,17 @@ export class SmsService {
     pickupCode: string;
     stationName: string;
     trackingUrl: string;
+    paymentStatus?: 'paid' | 'unpaid';
+    paymentWho?: 'sender' | 'receiver';
   }) {
+    const paid = params.paymentStatus === 'paid';
+    const paymentLine = paid
+      ? 'Fee already paid — nothing to pay at the counter.'
+      : 'Payment not received yet — please pay at the counter before collection.';
     const message = [
       `Ready for you.`,
       `Hi ${params.recipientName}, your parcel is ready at ${params.stationName}.`,
+      paymentLine,
       `Pickup code: ${params.pickupCode}.`,
       `Track: ${params.trackingUrl}`,
     ].join(' ');

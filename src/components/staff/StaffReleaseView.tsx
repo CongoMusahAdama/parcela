@@ -16,9 +16,14 @@ import { StaffParcelsLoading } from "@/components/staff/StaffParcelsLoading";
 import { StaffAuthField } from "@/components/staff/StaffAuthField";
 import { StaffPageHeader } from "@/components/staff/StaffPageHeader";
 import { StaffParcelDetailDrawer } from "@/components/staff/StaffParcelDetailDrawer";
+import {
+  paymentStatusBadge,
+  StaffPaymentFields,
+  type ParcelPaymentWho,
+} from "@/components/staff/StaffPaymentFields";
 import { useStaffSession } from "@/components/staff/StaffOperatorShell";
 import { useStaffParcels } from "@/components/staff/StaffParcelsContext";
-import { releaseParcelApi } from "@/lib/staff-api";
+import { markParcelPaidApi, releaseParcelApi } from "@/lib/staff-api";
 import { runOrQueueStaffMutation } from "@/lib/staff-mutation-queue";
 import { matchesStaffParcelQuery } from "@/lib/staff-parcel-filters";
 import { getStaffFreezeMessage, loadOperatorLockStatus } from "@/lib/operator-controls";
@@ -40,6 +45,9 @@ export function StaffReleaseView() {
   const [parcelHandedOver, setParcelHandedOver] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+  const [paymentWho, setPaymentWho] = useState<ParcelPaymentWho | "">("");
+  const [markPaidChecked, setMarkPaidChecked] = useState(false);
 
   const queue = useMemo(() => {
     return getCollectionQueueParcels(parcels)
@@ -63,7 +71,74 @@ export function StaffReleaseView() {
     setSignatureName(selected?.recipientName ?? "");
     setRecipientPresent(false);
     setParcelHandedOver(false);
-  }, [selectedRef, selected?.recipientName, selected?.recipientPhone]);
+    setPaymentWho(selected?.paymentWho ?? "");
+    setMarkPaidChecked(false);
+  }, [selectedRef, selected?.recipientName, selected?.recipientPhone, selected?.paymentWho]);
+
+  const isPaid = selected?.paymentStatus === "paid";
+  const payBadge = selected ? paymentStatusBadge(selected) : null;
+
+  async function handleMarkPaid() {
+    if (!selected) return;
+    if (!paymentWho) {
+      await showValidationAlert({
+        title: "Who pays?",
+        text: "Choose whether the sender or the receiver pays before marking paid.",
+      });
+      return;
+    }
+    if (!markPaidChecked) {
+      await showValidationAlert({
+        title: "Confirm payment",
+        text: "Tick that the fee has been collected before marking paid.",
+      });
+      return;
+    }
+
+    const locks = await loadOperatorLockStatus(staff.operator);
+    if (locks.staffOpsLocked) {
+      await showValidationAlert({
+        title: "Operations frozen by HQ",
+        text: getStaffFreezeMessage(staff.operator),
+      });
+      return;
+    }
+
+    setIsMarkingPaid(true);
+    try {
+      const body = { paymentWho, markPaid: true as const };
+      const outcome = await runOrQueueStaffMutation({
+        execute: () => markParcelPaidApi(selected.bookingReference, body),
+        queueWhenOffline: () => ({
+          type: "mark-paid" as const,
+          reference: selected.bookingReference,
+          body,
+          label: `Mark paid ${selected.bookingReference}`,
+        }),
+      });
+
+      if (outcome.status === "queued") {
+        await showSuccessAlert({
+          title: "Queued — will sync when online",
+          text: "Payment will be marked when the connection returns.",
+        });
+        return;
+      }
+
+      await refresh();
+      await showSuccessAlert({
+        title: "Marked as paid",
+        text: "You can release the parcel to the recipient now.",
+      });
+    } catch (err) {
+      await showValidationAlert({
+        title: "Could not mark paid",
+        text: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  }
 
   async function handleRelease(e: React.FormEvent) {
     e.preventDefault();
@@ -72,6 +147,17 @@ export function StaffReleaseView() {
       await showValidationAlert({
         title: "Select a parcel",
         text: "Choose a parcel from the collection queue before releasing it.",
+      });
+      return;
+    }
+
+    if (selected.paymentStatus !== "paid") {
+      await showValidationAlert({
+        title: "Payment required",
+        text:
+          selected.paymentWho === "receiver"
+            ? "Collect payment from the receiver and mark paid before releasing."
+            : "Mark this parcel as paid before releasing it to the recipient.",
       });
       return;
     }
@@ -228,6 +314,14 @@ export function StaffReleaseView() {
                       </p>
                       <p className="font-body mt-1 text-xs text-muted">{parcel.recipientName}</p>
                       <p className="font-mono mt-0.5 text-[11px] text-muted">{parcel.pickupCode}</p>
+                      <span
+                        className={cn(
+                          "font-display mt-2 inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase",
+                          paymentStatusBadge(parcel).className,
+                        )}
+                      >
+                        {paymentStatusBadge(parcel).label}
+                      </span>
                     </button>
                   </li>
                 );
@@ -266,10 +360,46 @@ export function StaffReleaseView() {
                       </p>
                       <p className="font-mono text-xs text-muted">Pickup {selected.pickupCode}</p>
                     </div>
-                    <span className="font-display staff-status-ready rounded-full px-2.5 py-1 text-[10px] font-bold uppercase">
-                      Ready to collect
-                    </span>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span className="font-display staff-status-ready rounded-full px-2.5 py-1 text-[10px] font-bold uppercase">
+                        Ready to collect
+                      </span>
+                      {payBadge ? (
+                        <span
+                          className={cn(
+                            "font-display rounded-full px-2.5 py-1 text-[10px] font-bold uppercase",
+                            payBadge.className,
+                          )}
+                        >
+                          {payBadge.label}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
+
+                  {!isPaid ? (
+                    <div className="mt-4 rounded-xl border border-amber-200/70 bg-amber-50/60 px-3 py-3">
+                      <StaffPaymentFields
+                        paymentWho={paymentWho}
+                        onPaymentWhoChange={(value) => {
+                          setPaymentWho(value);
+                          setMarkPaidChecked(false);
+                        }}
+                        markPaid={markPaidChecked}
+                        onMarkPaidChange={setMarkPaidChecked}
+                        showMarkPaid
+                        disabled={isMarkingPaid || isSubmitting}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleMarkPaid()}
+                        disabled={isMarkingPaid || isSubmitting}
+                        className="font-display mt-3 w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition-opacity disabled:opacity-50"
+                      >
+                        {isMarkingPaid ? "Saving…" : "Mark fee as paid"}
+                      </button>
+                    </div>
+                  ) : null}
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div className="flex gap-2">

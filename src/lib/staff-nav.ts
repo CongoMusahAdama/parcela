@@ -6,9 +6,11 @@ import {
   LayoutDashboard,
   Package,
   PackageCheck,
+  QrCode,
   Search,
   ShieldCheck,
   Truck,
+  UserPlus,
 } from "lucide-react";
 
 export type StaffNavItem = {
@@ -38,6 +40,12 @@ export const STAFF_NAV_SECTIONS: StaffNavSection[] = [
   {
     title: "Sender Desk",
     items: [
+      {
+        label: "New walk-in",
+        href: "/staff/walk-in",
+        icon: UserPlus,
+        description: "Create a booking for a sender at your counter, then verify and log.",
+      },
       {
         label: "Awaiting drop-off",
         href: "/staff/pending",
@@ -89,6 +97,12 @@ export const STAFF_NAV_SECTIONS: StaffNavSection[] = [
         href: "/staff/search",
         icon: Search,
         description: "Find parcels by reference, sender, recipient, bus, or destination.",
+      },
+      {
+        label: "Station booking QR",
+        href: "/staff/station-qr",
+        icon: QrCode,
+        description: "Print a QR poster that opens booking for this station.",
       },
       {
         label: "Station records",

@@ -106,6 +106,16 @@ export class Parcel {
 
   @Prop()
   arrivedAt?: Date;
+
+  /** Who is responsible for the transport fee — set by counter staff. */
+  @Prop({ enum: ['sender', 'receiver'] })
+  paymentWho?: 'sender' | 'receiver';
+
+  @Prop({ enum: ['unpaid', 'paid'], default: 'unpaid' })
+  paymentStatus!: 'unpaid' | 'paid';
+
+  @Prop()
+  paidAt?: Date;
 }
 
 export const ParcelSchema = SchemaFactory.createForClass(Parcel);

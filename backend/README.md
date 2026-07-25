@@ -35,7 +35,7 @@ Edit `.env`:
 | `MNOTIFY_API_KEY` | From mNotify dashboard |
 | `MNOTIFY_SENDER_ID` | Approved sender ID (e.g. `Parcela`) |
 | `MNOTIFY_ENABLED` | `true` to send real SMS; `false` logs only |
-| `PUBLIC_WEB_URL` | Used in SMS tracking links |
+| `PUBLIC_WEB_URL` | Used in SMS tracking + portal links (production: `https://useparcela.com`) |
 | `CORS_ORIGINS` | Web + Expo dev URLs |
 | `SEED_ON_STARTUP` | `true` (default) — upsert stations on API start |
 | `SEED_RESET` | `true` — remove legacy demo parcels from the database (one-off) |

@@ -27,6 +27,7 @@ export function OperatorPortalWelcomeGate({
 
   useEffect(() => {
     if (!accountId) return;
+    // Only once per account until welcome version is bumped.
     if (shouldShowPortalWelcome(portal, accountId)) {
       setOpen(true);
     }

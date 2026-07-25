@@ -2,6 +2,7 @@ import { ApiError } from "@/lib/api-client";
 import { isBrowserOffline, isRetriableNetworkError } from "@/lib/network";
 import {
   confirmBusArrivalApi,
+  markParcelPaidApi,
   releaseParcelApi,
   verifyAndLogParcelApi,
 } from "@/lib/staff-api";
@@ -17,7 +18,13 @@ export type StaffQueuedMutation =
       retries: number;
       lastError?: string;
       reference: string;
-      body: { busNumber: string; driverPhone: string; driverName?: string };
+      body: {
+        busNumber: string;
+        driverPhone: string;
+        driverName?: string;
+        paymentWho?: "sender" | "receiver";
+        markPaid?: boolean;
+      };
       label: string;
     }
   | {
@@ -37,6 +44,16 @@ export type StaffQueuedMutation =
       lastError?: string;
       reference: string;
       pickupCode: string;
+      label: string;
+    }
+  | {
+      id: string;
+      type: "mark-paid";
+      createdAt: string;
+      retries: number;
+      lastError?: string;
+      reference: string;
+      body: { paymentWho?: "sender" | "receiver"; markPaid?: boolean };
       label: string;
     };
 
@@ -115,6 +132,8 @@ async function runMutation(item: StaffQueuedMutation) {
       return confirmBusArrivalApi(item.busNumber);
     case "release":
       return releaseParcelApi(item.reference, item.pickupCode);
+    case "mark-paid":
+      return markParcelPaidApi(item.reference, item.body);
     default: {
       const _exhaustive: never = item;
       return _exhaustive;

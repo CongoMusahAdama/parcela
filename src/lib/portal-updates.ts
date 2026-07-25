@@ -15,8 +15,9 @@ function seenKey(portal: PortalUpdateKind, accountId: string) {
 }
 
 function readSeenIds(portal: PortalUpdateKind, accountId: string): Set<string> {
-  if (typeof localStorage === "undefined") return new Set();
+  if (!accountId) return new Set();
   try {
+    if (typeof localStorage === "undefined") return new Set();
     const raw = localStorage.getItem(seenKey(portal, accountId));
     if (!raw) return new Set();
     const parsed = JSON.parse(raw) as string[];
@@ -27,9 +28,22 @@ function readSeenIds(portal: PortalUpdateKind, accountId: string): Set<string> {
 }
 
 function writeSeenIds(portal: PortalUpdateKind, accountId: string, ids: Set<string>) {
-  if (typeof localStorage === "undefined") return;
-  const trimmed = Array.from(ids).slice(-100);
-  localStorage.setItem(seenKey(portal, accountId), JSON.stringify(trimmed));
+  if (!accountId) return;
+  try {
+    if (typeof localStorage === "undefined") return;
+    const trimmed = Array.from(ids).slice(-100);
+    localStorage.setItem(seenKey(portal, accountId), JSON.stringify(trimmed));
+  } catch {
+    // Private mode / blocked storage — update may reappear this browser session only.
+  }
+}
+
+export function hasSeenPortalUpdate(
+  portal: PortalUpdateKind,
+  accountId: string,
+  updateId: string,
+): boolean {
+  return readSeenIds(portal, accountId).has(updateId);
 }
 
 export function getUnreadPortalUpdates(
@@ -38,7 +52,7 @@ export function getUnreadPortalUpdates(
   items: PortalUpdateItem[],
 ): PortalUpdateItem[] {
   const seen = readSeenIds(portal, accountId);
-  return items.filter((item) => !seen.has(item.id));
+  return items.filter((item) => item.id && !seen.has(item.id));
 }
 
 export function markPortalUpdateSeen(
@@ -46,8 +60,22 @@ export function markPortalUpdateSeen(
   accountId: string,
   updateId: string,
 ) {
+  if (!updateId) return;
   const seen = readSeenIds(portal, accountId);
   seen.add(updateId);
+  writeSeenIds(portal, accountId, seen);
+}
+
+/** Mark every currently loaded update as seen (e.g. after draining the popup queue). */
+export function markPortalUpdatesSeen(
+  portal: PortalUpdateKind,
+  accountId: string,
+  updateIds: string[],
+) {
+  const seen = readSeenIds(portal, accountId);
+  for (const id of updateIds) {
+    if (id) seen.add(id);
+  }
   writeSeenIds(portal, accountId, seen);
 }
 

@@ -1,5 +1,6 @@
 const STAFF_VIEW_LOADERS: Record<string, () => Promise<unknown>> = {
   "/staff/dashboard": () => import("@/components/staff/StaffDashboardView"),
+  "/staff/walk-in": () => import("@/components/staff/StaffWalkInView"),
   "/staff/pending": () => import("@/components/staff/StaffPendingView"),
   "/staff/verify": () => import("@/components/staff/StaffVerifyView"),
   "/staff/in-transit": () => import("@/components/staff/StaffInTransitView"),
@@ -7,6 +8,7 @@ const STAFF_VIEW_LOADERS: Record<string, () => Promise<unknown>> = {
   "/staff/collection": () => import("@/components/staff/StaffCollectionView"),
   "/staff/release": () => import("@/components/staff/StaffReleaseView"),
   "/staff/search": () => import("@/components/staff/StaffSearchView"),
+  "/staff/station-qr": () => import("@/components/staff/StaffStationQrView"),
   "/staff/reports": () => import("@/components/staff/StaffReportsView"),
 };
 

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString, Matches, MinLength } from 'class-validator';
 
 export class VerifyLogDto {
   @IsString()
@@ -14,4 +14,14 @@ export class VerifyLogDto {
     message: 'Enter a valid Ghana driver phone number (e.g. 0244555666).',
   })
   driverPhone!: string;
+
+  /** Staff chooses who pays. Required if not already set on the parcel. */
+  @IsOptional()
+  @IsEnum(['sender', 'receiver'])
+  paymentWho?: 'sender' | 'receiver';
+
+  /** Mark fee collected now (typically when sender pays at origin). Parcel can still leave unpaid. */
+  @IsOptional()
+  @IsBoolean()
+  markPaid?: boolean;
 }

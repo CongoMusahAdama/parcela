@@ -28,6 +28,10 @@ export type StaffParcelSummary = {
   busNumber?: string;
   driverName?: string;
   driverPhone?: string;
+  /** Staff-chosen: who pays the transport fee. */
+  paymentWho?: "sender" | "receiver";
+  paymentStatus?: "unpaid" | "paid";
+  paidAt?: string;
   /** Present on detail responses only — omitted from list summaries to keep payloads small. */
   items?: StaffParcelItem[];
   createdAt: string;

@@ -1,11 +1,14 @@
 /** Legacy Netlify frontend — never include in SMS or public links. */
 const LEGACY_NETLIFY_HOST = /(?:^https?:\/\/)?(?:[\w-]+\.)?netlify\.app$/i;
 
-const DEFAULT_PRODUCTION_WEB_URL = 'https://parcela-eta.vercel.app';
+/** Previous Vercel preview host — prefer the custom domain in production links. */
+const LEGACY_VERCEL_HOSTS = new Set(['parcela-eta.vercel.app']);
+
+const DEFAULT_PRODUCTION_WEB_URL = 'https://useparcela.com';
 
 /**
  * Public website base URL for SMS + tracking links.
- * Rewrites legacy Netlify hosts to the Vercel frontend.
+ * Rewrites legacy Netlify / old Vercel hosts to useparcela.com.
  */
 export function resolvePublicWebUrl(raw?: string | null): string {
   const fallback =
@@ -15,11 +18,17 @@ export function resolvePublicWebUrl(raw?: string | null): string {
 
   try {
     const host = new URL(value).hostname;
-    if (LEGACY_NETLIFY_HOST.test(host) || host.endsWith('.netlify.app')) {
+    if (
+      LEGACY_NETLIFY_HOST.test(host) ||
+      host.endsWith('.netlify.app') ||
+      LEGACY_VERCEL_HOSTS.has(host)
+    ) {
       return DEFAULT_PRODUCTION_WEB_URL;
     }
   } catch {
-    if (/netlify\.app/i.test(value)) return DEFAULT_PRODUCTION_WEB_URL;
+    if (/netlify\.app/i.test(value) || /parcela-eta\.vercel\.app/i.test(value)) {
+      return DEFAULT_PRODUCTION_WEB_URL;
+    }
   }
 
   return value;
@@ -41,9 +50,19 @@ export function resolveCorsOrigins(raw?: string | null): string[] {
     });
 
   const publicWeb = resolvePublicWebUrl(process.env.PUBLIC_WEB_URL);
+  let wwwWeb: string | null = null;
+  try {
+    const u = new URL(publicWeb);
+    if (!u.hostname.startsWith('www.')) {
+      u.hostname = `www.${u.hostname}`;
+      wwwWeb = u.toString().replace(/\/$/, '');
+    }
+  } catch {
+    wwwWeb = null;
+  }
   const defaults =
     process.env.NODE_ENV === 'production'
-      ? [publicWeb]
+      ? [publicWeb, ...(wwwWeb ? [wwwWeb] : [])]
       : [
           'http://localhost:3001',
           'http://localhost:8081',

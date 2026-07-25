@@ -67,7 +67,7 @@ export function StaffPendingView() {
           <p className="font-body mt-2 text-sm text-muted">
             {query
               ? "Try a different reference or sender name."
-              : "New online bookings for your station will show up here."}
+              : "New online or walk-in bookings for your station will show up here."}
           </p>
         </div>
       ) : (
